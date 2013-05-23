@@ -197,7 +197,13 @@
     {%
     	\relax%
     	% put your own suitable typewriter font here
-    	%\renewcommand{\ttdefault}{\rmdefault}
+      %\PassOptionsToPackage{defaultmono}{droidmono}
+      %\RequirePackage{droidmono}
+      %
+      %\RequirePackage{inconsolata}
+      %
+      \PassOptionsToPackage{scaled=0.85}{DejaVuSansMono}%
+      \RequirePackage{DejaVuSansMono}
     } 
 \ifthenelse{\boolean{@eulermath}}%
     {\PassOptionsToPackage{euler-digits}{eulervm}%
@@ -205,8 +211,8 @@
     {\relax}
 
 \ifthenelse{\boolean{@eulerchapternumbers}}% font for the chapter numbers
-    {\newfont{\chapterNumber}{eurb10 scaled 7000}}%
-    {\newfont{\chapterNumber}{pplr9d scaled 7000}}          
+    {\newfont{\chapterNumber}{eurb10 scaled 14000}}%
+    {\newfont{\chapterNumber}{pplr9d scaled 14000}}          
     % Euler eurb10 / Palatino OSF pplr9d / Palatino SC pplrc9d
     % Latin Modern cork-lmr10 / Minion MinionPro-Regular-osf-t1
     % (MinionPro-SemiboldCapt-osf-t1 MinionPro-SemiboldDisp-osf-t1)
@@ -281,9 +287,6 @@
    \tolerance=2000 \hyphenpenalty=300 \exhyphenpenalty=300%
    \doublehyphendemerits=100000%
    \finalhyphendemerits=\doublehyphendemerits}
-%\DeclareRobustCommand{\graffito}[1]{\marginpar%
-% [\graffito@setup\raggedleft\hspace{0pt}{#1}]%
-% {\graffito@setup\raggedright\hspace{0pt}{#1}}}
 \let\oldmarginpar\marginpar
 \renewcommand{\marginpar}[1]{\oldmarginpar%
  [\graffito@setup\raggedleft\hspace{0pt}{#1}]%
@@ -354,34 +357,51 @@
 		% parts
 		\ifthenelse{\boolean{@parts}}%
 		{%
-%		\newcommand{\ctparttext}{\relax}
 		\newcommand{\ct@parttext}{\relax} % Thanks to Ivo
 		\newcommand{\ctparttext}[1]{\renewcommand{\ct@parttext}{#1 \relax}} 
     \titleformat{\part}[display]
-        {\normalfont\centering\large}%
-        {\thispagestyle{empty}\partname~\MakeTextUppercase{\thepart}}{1em}%
-        {\color{Maroon}\spacedallcaps}[\bigskip\normalfont\normalsize\color{Black}\begin{quote}\ct@parttext\end{quote}]
+        {\normalfont\centering\large}% format
+        {\LARGE \thispagestyle{empty}\partname~\MakeTextUppercase{\thepart}}% label
+        {1em}% sep
+        {\huge \color{\partTitleColor}\spacedallcaps}% before code
+        [\bigskip\normalfont\normalsize\color{Black}\begin{quote}\ct@parttext\end{quote}]% after code
     }{\relax}
     % chapters
     \ifthenelse{\boolean{@linedheaders}}%
     {% lines above and below, number right
     \titleformat{\chapter}[display]%             
-        {\relax}{\raggedleft{\color{halfgray}\chapterNumber\thechapter} \\ }{0pt}%
-        {\titlerule\vspace*{.9\baselineskip}\raggedright\spacedallcaps}[\normalsize\vspace*{.8\baselineskip}\titlerule]%
+        {\relax}% format
+        {\raggedleft{\color{\chapterNumberColor}\chapterNumber\thechapter} \\ }% label
+        {0pt}% sep
+        {\Large \titlerule\vspace*{.9\baselineskip}\raggedright\spacedallcaps}% before code
+        [\normalsize\vspace*{.8\baselineskip}\titlerule]% after code
     }{% something like Bringhurst  
     \titleformat{\chapter}[display]%
-        {\relax}{\mbox{}\oldmarginpar{\vspace*{-3\baselineskip}\color{halfgray}\chapterNumber\thechapter}}{0pt}%
-        {\raggedright\spacedallcaps}[\normalsize\vspace*{.8\baselineskip}\titlerule]% 
+        {\relax}% format
+        {\mbox{}\oldmarginpar{\vspace*{-4\baselineskip}\color{\chapterNumberColor}\chapterNumber\thechapter}}% label
+        {0pt}% sep
+        {\Large \raggedright\spacedallcaps}% before code
+        [\normalsize\vspace*{.8\baselineskip}\titlerule]% after code
     }
     % sections \FloatBarrier
     \titleformat{\section}
-        {\relax}{\textsc{\MakeTextLowercase{\thesection}}}{1em}{\spacedlowsmallcaps}
+        {\large}% format
+        {\textsc{\MakeTextLowercase{\thesection}}}% label
+        {1em}% sep
+        {\spacedlowsmallcaps}% before code
+        [\normalsize]% after code
     % subsections
     \titleformat{\subsection}
-        {\relax}{\textsc{\MakeTextLowercase{\thesubsection}}}{1em}{\normalsize\itshape}
+        {\relax}% format
+        {\textsc{\MakeTextLowercase{\thesubsection}}}% label
+        {1em}% sep
+        {\itshape}% before code
     % subsubsections
     \titleformat{\subsubsection}
-        {\relax}{\textsc{\MakeTextLowercase{\thesubsubsection}}}{1em}{\normalsize\itshape}        
+        {\relax}% format
+        {\textsc{\MakeTextLowercase{\thesubsubsection}}}% label
+        {1em}% sep
+        {\itshape}% before code
     % paragraphs
     \titleformat{\paragraph}[runin]
         {\normalfont\normalsize}{\theparagraph}{0pt}{\spacedlowsmallcaps}    
@@ -428,10 +448,7 @@
     {%
       \renewcommand{\thepart}{\roman{part}}%
       \renewcommand{\cftpartpresnum}{\scshape}%  \MakeTextLowercase
-%      \renewcommand{\cftpartaftersnum}{\cftchapaftersnum}%
-%      \renewcommand{\cftpartaftersnumb}{\quad}%
-%      \setlength{\cftpartnumwidth}{\cftpartnumwidth}
-      \renewcommand{\cftpartfont}{\color{Maroon}\normalfont}%
+      \renewcommand{\cftpartfont}{\color{\partTOCColor}\normalfont}%
       \renewcommand{\cftpartpagefont}{\normalfont}%
       \ifthenelse{\boolean{@dottedtoc}}{\relax}%
       {%
@@ -454,7 +471,6 @@
             	\renewcommand{\cftchapleader}{\hspace{1.5em}}% 
             	\renewcommand{\cftchapafterpnum}{\cftparfillskip}% 
             }
-            %\setlength{\cftbeforechapskip}{.1em}%           
         }
     % sections
     \ifthenelse{\boolean{@nochapters}}%        
@@ -515,7 +531,6 @@
       \newlength{\tablelabelwidth}
       \settowidth{\tablelabelwidth}{\cfttabpresnum~999}
       \addtolength{\tablelabelwidth}{2.5em}
-      %\cftsetindents{table}{0em}{\tablelabelwidth}
       \cftsetindents{table}{0em}{\figurelabelwidth}
     % listings
     \ifthenelse{\boolean{@listings}}%        
@@ -533,7 +548,6 @@
 			\newlength{\listingslabelwidth}%
 			\settowidth{\listingslabelwidth}{\cftlistingspresnum~999}%
 			\addtolength{\listingslabelwidth}{2.5em}%
-			%\cftsetindents{listings}{0em}{\listingslabelwidth}%
 			\cftsetindents{listings}{0em}{\figurelabelwidth}%
 			\let\l@lstlisting\l@listings%
 			\let\lstlistoflistings\listoflistings%
@@ -594,16 +608,6 @@
 		\ifthenelse{\boolean{@listsseparated}}{%
 		 \PackageWarningNoLine{classicthesis}{Option "listsseparated" deprecated as of version 2.9.}%
 		}{\relax}
-%    \ifthenelse{\boolean{@listsseparated}}{%
-%        \AtBeginDocument{%
-%            \addtocontents{lof}{\protect\vspace{-\cftbeforechapskip}}%
-%            \addtocontents{lot}{\protect\vspace{-\cftbeforechapskip}}%
-%            \ifthenelse{\boolean{@listings}}%        
-%    				{%
-%             	\addtocontents{lol}{\protect\vspace{-\cftbeforechapskip}}%
-%            }{\relax}%
-%        }%
-%    }{%
         \DeclareRobustCommand*{\deactivateaddvspace}{\let\addvspace\@gobble}% 
         \AtBeginDocument{%      
             \addtocontents{lof}{\deactivateaddvspace}% 
@@ -613,7 +617,6 @@
              	\addtocontents{lol}{\deactivateaddvspace}%
             }{\relax}%                  
         }%
-%    } 
    
 % ********************************************************************
 % footnotes setup   
@@ -636,15 +639,11 @@
 \RequirePackage{scrtime} % time access
 \newcommand{\finalVersionString}{}
 \ifthenelse{\boolean{@drafting}}{% 
-%    \RequirePackage{draftwatermark}%
-%    	\SetWatermarkLightness{0.9}
-%			\SetWatermarkScale{.5}
-%			\SetWatermarkText{\today\ at \thistime}
 		\PassOptionsToPackage{draft}{prelim2e}
 		\RequirePackage{prelim2e}
         \renewcommand{\PrelimWords}{\relax}
-        \renewcommand{\PrelimText}{\footnotesize[\,\today\ at \thistime\ -- \texttt{classicthesis} \myVersion\,]}
-}{\renewcommand{\finalVersionString}{\emph{Final Version} as of \today\ (\texttt{classicthesis} \myVersion).}}    
+        \renewcommand{\PrelimText}{\footnotesize[\,\today\ at \thistime\ -- \myVersion\,]}
+}{\renewcommand{\finalVersionString}{\emph{Final Version} as of \today\ (\myVersion).}}    
 
 % ********************************************************************
 % Caption numbering now w/o chapter number

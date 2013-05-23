@@ -59,10 +59,6 @@
 
 \include{FrontBackMatter/Titleback} % Back of the title page
 
-%\cleardoublepage\include{FrontBackMatter/Dedication} % Dedication page
-
-%\cleardoublepage\include{FrontBackMatter/Foreword} % Uncomment and create a Foreword.tex to include a foreword
-
 \cleardoublepage\include{FrontBackMatter/Abstract} % Abstract page
 
 \cleardoublepage\include{FrontBackMatter/Publication} % Publications from the thesis page
@@ -82,23 +78,10 @@
 %	THESIS CONTENT - CHAPTERS
 %----------------------------------------------------------------------------------------
 
-\ctparttext{You can put some informational part preamble text here. Illo principalmente su nos. Non message \emph{occidental} angloromanic da. Debitas effortio simplificate sia se, auxiliar summarios da que, se avantiate publicationes via. Pan in terra summarios, capital interlingua se que. Al via multo esser specimen, campo responder que da. Le usate medical addresses pro, europa origine sanctificate nos se.} % Text on the Part 1 page describing  the content in Part 1
-
-\part{Some Kind of Manual} % First part of the thesis
-
 \include{Chapters/Chapter01} % Chapter 1
-
-\cleardoublepage % Empty page before the start of the next part
-
-%------------------------------------------------
-
-\ctparttext{You can put some informational part preamble text here. Illo principalmente su nos. Non message \emph{occidental} angloromanic da. Debitas effortio simplificate sia se, auxiliar summarios da que, se avantiate publicationes via. Pan in terra summarios, capital interlingua se que. Al via multo esser specimen, campo responder que da. Le usate medical addresses pro, europa origine sanctificate nos se.} % Text on the Part 2 page describing the content in Part 2
-
-\part{The Showcase} % Second part of the thesis
-
 \include{Chapters/Chapter02} % Chapter 2
 \include{Chapters/Chapter03} % Chapter 3
-%\include{Chapters/Chapter04} % Chapter 4 - empty template
+\include{Chapters/Chapter04} % Chapter 4 - empty template
 
 %----------------------------------------------------------------------------------------
 %	THESIS CONTENT - APPENDICES
@@ -106,7 +89,7 @@
 
 \appendix
 
-\part{Appendix} % New part of the thesis for the appendix
+\part*{Appendix} % New part of the thesis for the appendix
 
 \include{Chapters/Chapter0A} % Appendix A
 %\include{Chapters/Chapter0B} % Appendix B - empty template
@@ -119,7 +102,9 @@
 
 \cleardoublepage\include{FrontBackMatter/Colophon} % Colophon
 
-\cleardoublepage\include{FrontBackMatter/Declaration} % Declaration
+%\cleardoublepage\include{FrontBackMatter/Declaration} % Declaration
+
+\cleardoublepage\include{FrontBackMatter/CV} % CV
 
 %----------------------------------------------------------------------------------------
 

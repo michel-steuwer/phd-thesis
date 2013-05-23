@@ -18,9 +18,9 @@
                       drafting,
                       pdfspacing,
                       subfig,
-                      beramono,
-                      eulermath,
-                      parts}{classicthesis}
+                      parts,
+                      eulermath
+                     }{classicthesis}
 % Available options: drafting parts nochapters linedheaders eulerchapternumbers beramono eulermath pdfspacing minionprospacing tocaligned dottedtoc manychapters listings floatperchapter subfig
 % Adding 'dottedtoc' will make page numbers in the table of contents flushed right with dots leading to them
 
@@ -38,10 +38,20 @@
 \newcommand{\myTime}{2014\xspace}
 \newcommand{\myVersion}{Version 0.1\xspace}
 
+% color settings
 \usepackage[dvipsnames]{xcolor}
 \definecolor{PantoneBlack7}{cmyk}{0, 0, 0.1, 0.9}
 \definecolor{Pantone877}{cmyk}{0.38, 0.27, 0.26, 0.09}
-\newcommand{\mainColor}{PantoneBlack7}
+\definecolor{titleGray}{gray}{0.3}
+\definecolor{partGray}{gray}{0.3}
+\definecolor{chapterGray}{gray}{0.8}
+
+\newcommand{\titleColor}{titleGray}
+\newcommand{\partTitleColor}{partGray}
+\newcommand{\partTOCColor}{black}
+\newcommand{\chapterNumberColor}{chapterGray}
+
+\newcommand{\finalDate}{\today}
 
 %----------------------------------------------------------------------------------------
 %	USEFUL COMMANDS
@@ -132,22 +142,20 @@
 %----------------------------------------------------------------------------------------
 
 \usepackage{listings} 
-%\lstset{emph={trueIndex,root},emphstyle=\color{BlueViolet}}%\underbar} % for special keywords
-\lstset{language=[LaTeX]Tex, % Specify the language for listings here
-keywordstyle=\color{RoyalBlue}, % Add \bfseries for bold
-basicstyle=\small\ttfamily, % Makes listings a smaller font size and a different font
-%identifierstyle=\color{NavyBlue}, % Color of text inside brackets
-commentstyle=\color{Green}\ttfamily, % Color of comments
-stringstyle=\rmfamily, % Font type to use for strings
-numbers=left, % Change left to none to remove line numbers
-numberstyle=\scriptsize, % Font size of the line numbers
-stepnumber=5, % Increment of line numbers
-numbersep=8pt, % Distance of line numbers from code listing
-showstringspaces=false, % Sets whether spaces in strings should appear underlined
-breaklines=true, % Force the code to stay in the confines of the listing box
-%frameround=ftff, % Uncomment for rounded frame
-frame=single, % Frame border - none/leftline/topline/bottomline/lines/single/shadowbox/L
-belowcaptionskip=.75\baselineskip % Space after the "Listing #: Desciption" text and the listing box
+\lstset{language=C++, % Specify the language for listings here
+  keywordstyle=\bfseries, % Add \bfseries for bold
+  basicstyle=\normalsize\ttfamily, % Makes listings a smaller font size and a different font
+  commentstyle=\itshape, % Color of comments
+  stringstyle=\rmfamily, % Font type to use for strings
+  numbers=left, % Change left to none to remove line numbers
+  numberstyle=\scriptsize, % Font size of the line numbers
+  stepnumber=5, % Increment of line numbers
+  numbersep=8pt, % Distance of line numbers from code listing
+  showstringspaces=false, % Sets whether spaces in strings should appear underlined
+  breaklines=true, % Force the code to stay in the confines of the listing box
+  %frameround=ftff, % Uncomment for rounded frame
+  frame=single, % Frame border - none/leftline/topline/bottomline/lines/single/shadowbox/L
+  belowcaptionskip=.75\baselineskip % Space after the "Listing #: Desciption" text and the listing box
 }
 
 %----------------------------------------------------------------------------------------
@@ -167,7 +175,7 @@ colorlinks=true, linktocpage=true, pdfstartpage=3, pdfstartview=FitV,
 %colorlinks=false, linktocpage=false, pdfborder={0 0 0}, pdfstartpage=3, pdfstartview=FitV, 
 breaklinks=true, pdfpagemode=UseNone, pageanchor=true, pdfpagemode=UseOutlines,
 plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,
-hypertexnames=true, pdfhighlight=/O, urlcolor=webbrown, linkcolor=RoyalBlue, citecolor=webgreen,
+hypertexnames=true, pdfhighlight=/O, urlcolor=RoyalBlue, linkcolor=RoyalBlue, citecolor=RoyalBlue,
 %------------------------------------------------
 % PDF file meta-information
 pdftitle={\myTitle},
@@ -185,7 +193,7 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 
 \usepackage{ifthen} % Allows the user of the \ifthenelse command
 \newboolean{enable-backrefs} % Variable to enable backrefs in the bibliography
-\setboolean{enable-backrefs}{false} % Variable value: true or false
+\setboolean{enable-backrefs}{true} % Variable value: true or false
 
 \newcommand{\backrefnotcitedstring}{\relax} % (Not cited.)
 \newcommand{\backrefcitedsinglestring}[1]{(Cited on page~#1.)}
