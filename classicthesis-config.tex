@@ -19,7 +19,8 @@
                       pdfspacing,
                       subfig,
                       beramono,
-                      eulermath,parts}{classicthesis}
+                      eulermath,
+                      parts}{classicthesis}
 % Available options: drafting parts nochapters linedheaders eulerchapternumbers beramono eulermath pdfspacing minionprospacing tocaligned dottedtoc manychapters listings floatperchapter subfig
 % Adding 'dottedtoc' will make page numbers in the table of contents flushed right with dots leading to them
 
@@ -36,6 +37,11 @@
 \newcommand{\myLocation}{M\"unster\xspace}
 \newcommand{\myTime}{2014\xspace}
 \newcommand{\myVersion}{Version 0.1\xspace}
+
+\usepackage[dvipsnames]{xcolor}
+\definecolor{PantoneBlack7}{cmyk}{0, 0, 0.1, 0.9}
+\definecolor{Pantone877}{cmyk}{0.38, 0.27, 0.26, 0.09}
+\newcommand{\mainColor}{PantoneBlack7}
 
 %----------------------------------------------------------------------------------------
 %	USEFUL COMMANDS
@@ -256,4 +262,4 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 %\usepackage[light,condensed,math]{iwona}
 %\renewcommand{\sfdefault}{iwona}
 %\usepackage{lmodern} % <-- no osf support :-(
-%\usepackage[urw-garamond]{mathdesign} <-- no osf support :-(
+%\usepackage[urw-garamond]{mathdesign} %<-- no osf support :-(
