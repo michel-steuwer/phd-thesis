@@ -10,4 +10,8 @@
 *.lot
 *.out
 *.toc
+*.idx
+*.ilg
+*.ind
+*.swp
 main.pdf
