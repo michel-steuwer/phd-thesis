@@ -26,17 +26,16 @@
 
 \newcommand{\myTitle}{My Title\xspace}
 %\newcommand{\mySubtitle}{My Subtitle\xspace}
-\newcommand{\myDegree}{Doktor-Ingenieur (Dr.-Ing.)\xspace}
+\newcommand{\myDegree}{Dr. rer. nat.\xspace}
 \newcommand{\myName}{Michel Steuwer\xspace}
 \newcommand{\myDekan}{Prof. Dr. Martin Stein\xspace}
 \newcommand{\myProf}{Prof. Dr. habil. Sergei Gorlatch\xspace}
-\newcommand{\myOtherProf}{Put name here\xspace}
+\newcommand{\myOtherProf}{Prof. Christophe Dubach\xspace}
 \newcommand{\myFaculty}{Institut for Computer Science\xspace}
 \newcommand{\myDepartment}{Department for Mathematics and Computer Science\xspace}
 \newcommand{\myUni}{University of M\"unster\xspace}
 \newcommand{\myLocation}{M\"unster\xspace}
 \newcommand{\myTime}{2014\xspace}
-\newcommand{\myVersion}{Version 0.1\xspace}
 
 % color settings
 \usepackage[dvipsnames]{xcolor}
@@ -78,12 +77,12 @@
 
 %------------------------------------------------
  
-\PassOptionsToPackage{latin9}{inputenc} % latin9 (ISO-8859-9) = latin1+"Euro sign"
+\PassOptionsToPackage{utf8}{inputenc}
 \usepackage{inputenc}
  
  %------------------------------------------------
 
-%\PassOptionsToPackage{ngerman,american}{babel}  % Change this to your language(s)
+\PassOptionsToPackage{ngerman,american}{babel}  % Change this to your language(s)
 % Spanish languages need extra options in order to work with this template
 %\PassOptionsToPackage{spanish,es-lcroman}{babel}
 \usepackage{babel}
@@ -129,6 +128,10 @@
 
 \PassOptionsToPackage{pdftex}{graphicx}
 \usepackage{graphicx} 
+
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+
+\graphicspath{ {./Figures/} }
 
 %----------------------------------------------------------------------------------------
 %	FLOATS: TABLES, FIGURES AND CAPTIONS SETUP
