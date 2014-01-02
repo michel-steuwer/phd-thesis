@@ -7,9 +7,10 @@
 \let\cleardoublepage\relax
 \let\cleardoublepage\relax
 
-\chapter*{Abstract} % Abstract name
+% Fix for pandoc conversion problem for unnumbered chapters/sections
+\renewcommand{\addcontentsline}[3]{}
 
-Short summary of the contents\dots
+\input{FrontBackMatter/Abstract.md.tex}
 
 \endgroup			
 

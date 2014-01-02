@@ -13,13 +13,14 @@
 %----------------------------------------------------------------------------------------
 
 % Remove drafting to get rid of the '[ Date - classicthesis version 4.0 ]' text at the bottom of every page
-\PassOptionsToPackage{eulerchapternumbers,
-                      listings,
-                      drafting,
-                      pdfspacing,
-                      subfig,
-                      parts,
-                      eulermath
+\PassOptionsToPackage{ eulerchapternumbers
+                      ,parts
+                      ,eulermath
+                      ,dottedtoc
+                      ,pdfspacing
+                      ,listings
+                      ,subfig
+                      ,drafting
                      }{classicthesis}
 % Available options: drafting parts nochapters linedheaders eulerchapternumbers beramono eulermath pdfspacing minionprospacing tocaligned dottedtoc manychapters listings floatperchapter subfig
 % Adding 'dottedtoc' will make page numbers in the table of contents flushed right with dots leading to them
@@ -279,3 +280,4 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 %\renewcommand{\sfdefault}{iwona}
 %\usepackage{lmodern} % <-- no osf support :-(
 %\usepackage[urw-garamond]{mathdesign} %<-- no osf support :-(
+\usepackage{longtable}
