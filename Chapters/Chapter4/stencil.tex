@@ -1,0 +1,305 @@
+\section{Stencil Applications}
+
+\from{HiStencils begin}
+For evaluating our two skeleton implementations, we study two stencil applications:
+1) the Gaussian blur, a popular noise reduction technique in image processing, and
+2) the Canny algorithm for detecting edges in images.
+These two applications have different characteristics.
+The Gaussian blur applies a single stencil computation, possibly iterated multiple times, for reducing the noise in images.
+The Canny edge detection algorithm consists of a sequence of stencil operations which are applied once to obtain the final result.
+For each application, we compare the performance of our MapOverlap and Stencil skeletons using an input image of size $4096 \times 3072$.
+
+The measurements run on a Tesla S1070 computing system with $4$ GPUs, each providing $4$ GB of memory, accessing this memory with $102$ GB/s, and $240$ compute units per GPU running at $1.44$ GHz.
+The GPUs are connected to the host system with a quad-core CPU (Intel E5520, $2.26$ GHz) and 12 GB of main memory.
+$200$ runs were performed for each configuration and the average was calculated; to reduce measuring inaccuracy, the best and worst $5\%$ measurements were not considered. 
+\from{HiStencils end}
+
+\from{HiStencils begin}
+\subsection{Gaussion Blur (HiStencils)}
+
+\paragraph{Gaussian Blur with a single iteration}
+
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[width=\columnwidth]{HiStencils/GaussOpenCL.pdf}
+	\caption{Runtime of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an OpenCL version using local memory and SkelCL's MapOverlap and Stencil skeletons.}
+	\label{fig:gaussAbs}
+\end{figure} 
+
+Figure~\ref{fig:gaussAbs} shows the total runtime of the Gaussian blur using:
+1) a na{\"i}ve OpenCL implementation using global memory,
+2) an optimized OpenCL version using local memory, and
+3) the MapOverlap, and
+4) the Stencil skeletons for different sizes of stencil shape, correspondingly.
+We observe that on larger stencil shape sizes, MapOverlap and Stencil outperform the na{\"i}ve OpenCL implementation by $65\%$ and $62\%$, respectively.
+The optimized OpenCL version, which copies all necessary elements into local memory prior to calculation, is $5\%$ faster than MapOverlap and $10\%$ faster than Stencil for small stencil shapes.
+When increasing the stencil shape size, this disadvantage is reduced to $3\%$ for MapOverlap and $5\%$ for Stencil with stencil shape's extent of $10$ in each direction.
+
+As expected, the Stencil skeleton's implementation is slower for small stencil shapes than the MapOverlap skeleton's, up to $32\%$ slower for an stencil shape size of $1$. 
+However, this disadvantage is reduced to $4.2\%$ for an stencil shape size of $5$ and becoming negligible for bigger stencil shape sizes.
+Due to the increased branching in Stencil's kernel function, one might expect a worse runtime for the Stencil skeleton. 
+As the ratio of copying into local memory decreases in comparison to the number of calculations when enlarging the stencil shape's extents, the Stencil skeleton kernel function's runtime converges to the MapOverlap skeleton's.
+The Stencil skeleton's disadvantage is also due to its ability to manage multiple stencil shapes and explicitly support the use of iterations.
+While both features are not used in this use case, they incur some overhead for the Stencil skeleton as compared to the MapOverlap skeleton for simple stencil computations.
+
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[width=\columnwidth]{HiStencils/LOC.pdf}
+	\caption{Lines of code (LOCs) of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an optimized OpenCL version using local memory and SkelCL's MapOverlap and Stencil skeletons.}
+	\label{fig:gaussLOCs}
+\end{figure} 
+
+Figure~\ref{fig:gaussLOCs} shows the program sizes (in lines of code) for the four implementations. 
+The application developer needs $57$ lines of OpenCL host code and 13 LOCs for performing a Gaussian blur with global memory. 
+When using local memory, some more arguments are passed to the kernel, increasing the host-LOCs to $65$, while the LOCs for the kernel function, which copies all necessary elements for a work-group's calculation into local memory, requires $88$ LOCs with explicit out-of-bounds handling and complex index calculations.
+MapOverlap and Stencil are similar to use and both require only $15$ LOCs host code and $9$ LOCs kernel code to perform a Gaussian blur. 
+The support for multi-GPU systems is implicitly given when using SkelCL's skeletons, such that the kernel remains the same as for one-GPU systems.
+This is an important advantage of SkelCL over the OpenCL implementations of the Gaussian blur which are single-GPU only, and they require additional LOCs when fitting to multi-GPU environments.
+
+The implementations using MapOverlap and Stencil are only $5-10\%$ slower than an optimized OpenCL implementation of the Gaussian blur while being much shorter than the OpenCL version.
+
+\paragraph{Gaussian Blur using multiple GPUs}
+
+Figure \ref{fig:GaussMult} shows the speedup achieved on the Gaussian blur using \code{Stencil} on up to four devices.
+The higher the computational complexity for increasing size of stencil shape, the better the overhead is hidden, leading to a maximum speedup of $1.90$ for two devices, $2.66$ for three devices, and $3.34$ for four devices.
+\begin{figure}
+	\centering
+	\includegraphics[width=.85\columnwidth]{HiStencils/SpeedupGauss.pdf}
+	\caption{Speedup on up to four GPUs.}
+	\label{fig:GaussMult}
+\end{figure} 
+\from{HiStencils end}
+
+
+\from{Paraphrase begin}
+\subsection{Application study: Sobel edge detection (Paraphrase)}
+\label{sec:application_study}
+To evaluate the  usability and performance of the MapOverlap skeleton and the matrix data type, we implemented an algorithm commonly used in image processing:
+The Sobel edge detection is applied to an input image and produces an output image, in which the detected edges in the input image are marked in white and plain areas are shown in black.
+Figure~\ref{fig:lena} shows the famous Lena image~\cite{Lena} and the output of Sobel edge detection applied to it.
+
+\begin{figure}[tb]
+  \centering
+  \begin{subfigure}[t]{.45\textwidth}
+    \includegraphics[width=\textwidth]{Paraphrase/lena.png}
+    \caption{Original image}
+    \label{fig:lena:orig}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{.45\textwidth}
+    \includegraphics[width=\textwidth]{Paraphrase/sobel_filtered-lena.png}
+    \caption{Image after Sobel edge detection}
+    \label{fig:lena:sobel}
+  \end{subfigure}
+  \caption{The famous Lena image often used as an example in image processing.}
+  \label{fig:lena}
+\end{figure}
+
+Listing~\ref{lst:sobel_seq} shows the algorithm of the Sobel edge detection in pseudo-code.
+To keep this version simple, necessary boundary checks are omitted.
+In this sequential version, for computing one output value \texttt{out\_img[i][j]} the input value \texttt{img[i][j]} and the direct neighboring elements are needed.
+Therefore, the MapOverlap skeleton is a perfect fit for implementing the Sobel edge detection.
+\begin{lstlisting}[%
+caption={Sequential implementation of the Sobel edge detection.},%
+float=tbp,%
+label={lst:sobel_seq}]
+for (i = 0; i < width; ++i)
+  for (j = 0; j < height; ++j)
+    h = -1*img[i-1][j-1] +1*img[i+1][j-1]
+        -2*img[i-1][j  ] +2*img[i+1][j  ]
+        -1*img[i-1][j+1] +1*img[i+1][j+1];
+    v = ...;
+    out_img[i][j] = sqrt(h*h + v*v);
+\end{lstlisting}
+
+Listing~\ref{lst:sobel_skelcl} shows the SkelCL implementation using the MapOverlap skeleton and the matrix type.
+The implementation is straightforward and very similar to the sequential version in Listing~\ref{lst:sobel_seq}.
+The only notable difference is that for accessing elements the \texttt{get} function is used instead of the square bracket notation.
+
+\begin{lstlisting}[%
+caption={SkelCL implementation of the Sobel edge detection.},%
+float=tbp,%
+label={lst:sobel_skelcl}]
+// skeleton customized with Sobel edge detection algorithm
+MapOverlap<char(char)> m( "char func(const char* img) {
+  short h = -1*get(img,-1,-1) +1*get(img,+1,-1)
+            -2*get(img,-1, 0) +2*get(img,+1, 0)
+            -1*get(img,-1,+1) +1*get(img,+1,+1);
+  short v = ...;
+  return sqrt(h*h + v*v); }", 1, SCL_NEUTRAL, 0);
+Matrix<char> out_img = m(img); // execution of the skeleton
+\end{lstlisting}
+
+Listing~\ref{lst:sobel_opencl} shows a part of the standard OpenCL implementation for Sobel edge detection.
+The actual computation is performed inside the \texttt{computeSobel} function, which is omitted in the listing, since it is quite similar to the sequential version describing the actual Sobel edge detection algorithm.
+The listing shows that extra low-level code is necessary to deal with technical details, like boundary checks and index calculations.
+These extra lines are arguably complex and error-prone because they handle low-level details, rather than the application logic.
+
+\begin{lstlisting}[%
+caption={Additional boundary checks and index calculations, necessary in the standard OpenCL implementation.},%
+float=tbp,%
+label={lst:sobel_opencl}]
+__kernel void sobel_kernel( __global const char* img,
+                            __global       char* out_img,
+                                     int w, int h ) {
+ size_t i = get_global_id(0);   size_t j = get_global_id(1);
+
+ if(i < w && j < h) {
+  // perform boundary checks
+  char ul = (j-1 > 0 && i-1 > 0) ? img[((j-1)*w)+(i-1)] : 0;
+  char um = (j-1 > 0           ) ? img[((j-1)*w)+(i+0)] : 0;
+  char ur = (j-1 > 0 && i+1 < w) ? img[((j-1)*w)+(i+1)] : 0;
+  // ... 5 more
+  char lr = (j+1 < h && i+1 < w) ? img[((j+1)*w)+(i+1)] : 0;
+
+  out_img[j * w + i] = computeSobel(ul, um, ur, ..., lr); } }
+\end{lstlisting}
+
+We performed runtime experiments using a NVIDIA Tesla T10 GPU with 480 processing elements and 4 GByte memory.
+Figure~\ref{fig:measurements} shows the runtime of the OpenCL version in Listing~\ref{lst:sobel_opencl} vs. the SkelCL version with the MapOverlap skeleton in Listing~\ref{lst:sobel_skelcl}.
+Only the kernel runtimes are shown, as the data transfer times are equal for both versions.
+Measurements were taken using the OpenCL profiling API.
+Besides the Lena image~\cite{Lena} with a size of $512\times 512$ pixel, we also used a bigger image by NASA showing the world~\cite{NASA} with a resolution of $15296\times 7648$ pixel.
+The mean values of 6 runs are shown in Figure~\ref{fig:measurements}.
+The Lena image is shown on the left, the NASA world image on the right.
+
+\begin{figure}[tb]
+  \centering
+  \begin{subfigure}[t]{.45\textwidth}
+    \includegraphics[width=\textwidth]{Paraphrase/lena.pdf}
+    \caption{Example image: Lena}
+    \label{fig:measurements:lena}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{.45\textwidth}
+    \includegraphics[width=\textwidth]{Paraphrase/world.pdf}
+    \caption{Performance results (runtimes)}
+    \label{fig:measurements:world}
+  \end{subfigure}
+  \caption{Performance results (runtimes)}
+  \label{fig:measurements}
+\end{figure}
+
+The SkelCL version clearly outperforms the OpenCL implementation.
+This is due to the fact, that the MapOverlap skeleton uses the fast local memory inside its implementation which is hidden from the application developer.
+
+In addition to the performance advantage, the SkelCL program is also significantly simpler than the cumbersome OpenCL implementation.
+The OpenCL implementation requires 19 lines in total while the SkelCL program only comprises 4.
+No index calculations or boundary checks are necessary in the SkelCL version whereas they are crucial for a correct implementation in OpenCL.
+
+The OpenCL program in Listing~\ref{lst:sobel_opencl} is not an optimized, but rather a straightforward version most programmers who are not OpenCL experts would write.
+Since SkelCL targets such programmers rather than GPU experts, we take this version for comparison with the SkelCL version.
+An optimized OpenCL version, e.g., using local memory would probably perform better but would definitely require additional low-level code.
+\from{Paraphrase end}
+
+\from{PaCT begin}
+\subsection{Application Study: Sobel Edge Detection (PaCT)}
+\label{sec:application_study}
+To evaluate the  usability and performance of the MapOverlap skeleton on the matrix data type, we implemented the Sobel edge detection that produces an output image in which the detected edges in the input image are marked in white and plain areas are shown in black.
+
+\bigskip
+\begin{lstlisting}[%
+caption={Sequential implementation of the Sobel edge detection.},%
+label={lst:sobel_seq}]
+for (i = 0; i < width; ++i)
+  for (j = 0; j < height; ++j)
+    h = -1*img[i-1][j-1] +1*img[i+1][j-1]
+        -2*img[i-1][j  ] +2*img[i+1][j  ]
+        -1*img[i-1][j+1] +1*img[i+1][j+1];
+    v = ...;
+    out_img[i][j] = sqrt(h*h + v*v);
+\end{lstlisting}
+\bigskip
+
+Listing~\ref{lst:sobel_seq} shows the algorithm of the Sobel edge detection in pseudo-code, with omitted boundary checks for brevity.
+In this sequential version, for computing an output value \texttt{out\_img[i][j]} the input value \texttt{img[i][j]} and the direct neighboring elements are needed.
+Therefore, the MapOverlap skeleton is a perfect fit for implementing the Sobel edge detection.
+
+\bigskip
+\begin{lstlisting}[%
+caption={SkelCL implementation of the Sobel edge detection.},%
+label={lst:sobel_skelcl}]
+// skeleton customized with Sobel edge detection algorithm
+MapOverlap<char(char)> m( "char func(const char* img) {
+  short h = -1*get(img,-1,-1) +1*get(img,+1,-1)
+            -2*get(img,-1, 0) +2*get(img,+1, 0)
+            -1*get(img,-1,+1) +1*get(img,+1,+1);
+  short v = ...;
+  return sqrt(h*h + v*v); }", 1, SCL_NEUTRAL, 0);
+Matrix<char> out_img = m(img); // execution of the skeleton
+\end{lstlisting}
+\bigskip
+
+Listing~\ref{lst:sobel_skelcl} shows the SkelCL implementation using the MapOverlap skeleton and the matrix data type.
+The implementation is straightforward and very similar to the sequential version in Listing~\ref{lst:sobel_seq}.
+The only notable difference is that for accessing elements the \texttt{get} function is used instead of the square bracket notation.
+
+\bigskip
+\begin{lstlisting}[%
+caption={Additional boundary checks and index calculations for Sobel algorithm, necessary in the standard OpenCL implementation.},%
+label={lst:sobel_opencl}]
+__kernel void sobel_kernel( __global const uchar* img,
+                            __global       uchar* out_img)
+ uint i = get_global_id(0);   uint j = get_global_id(1);
+ uint w = get_global_size(0); uint h = get_global_size(1);
+ // perform boundary checks
+ if(i >= 1 && i < (w-1) && j >= 1 && j < (h-1)) {
+  char ul = img[((j-1)*w)+(i-1)];
+  char um = img[((j-1)*w)+(i+0)];
+  char ur = img[((j-1)*w)+(i+1)];
+  // ... 5 more
+  char lr = img[((j+1)*w)+(i+1)];
+
+  out_img[j * w + i] = computeSobel(ul, um, ur, ..., lr); } }
+\end{lstlisting}
+\bigskip
+
+
+Listing~\ref{lst:sobel_opencl} shows a part of the OpenCL implementation for Sobel edge detection provided by AMD as an example for their software development kit~\cite{AMDSDK-13}.
+The actual computation is performed inside the \texttt{computeSobel} function, which is omitted in the listing, since it is quite similar to the sequential version in Listing~\ref{lst:sobel_seq}.
+The listing shows that extra low-level code is necessary to deal with technical details, like boundary checks and index calculations, which are arguably complex and error-prone.
+
+\begin{figure}[tbp]
+  \vspace{.5em}
+  \centering
+  \includegraphics[height=4.5cm]{PaCT/lena.pdf}
+  \caption{Performance results for Sobel edge detection}
+  \label{fig:measurements}
+  \vspace{-1em}
+\end{figure}
+We performed runtime experiments using one NVIDIA Tesla GPU with 480 processing elements and 4 GByte memory.
+Figure~\ref{fig:measurements} shows the runtime of two OpenCL versions (from AMD and NVIDIA SDK) vs. the SkelCL version with the MapOverlap skeleton presented in Listing~\ref{lst:sobel_skelcl}.
+Only the kernel runtimes are shown, as the data transfer times are equal for all versions.
+Measurements were taken using the OpenCL profiling API.
+We used the popular Lena image~\cite{Lena} with a size of $512\times 512$ pixel and took the mean values of six runs.
+The AMD version is clearly slower then the two other implementations, because it does not use the fast local memory which the NVIDIA implementation and the MapOverlap skeleton of SkelCL do.
+SkelCL totally hides the memory management details inside its implementation from the application developer.
+The NVIDIA and SkelCL implementations perform similar.
+In this particular example, SkelCL even slightly outperforms the implementation by NVIDIA.
+
+In addition to the performance advantage over the AMD and NVIDIA versions, the SkelCL program is also significantly simpler than the cumbersome OpenCL implementation.
+The SkelCL program only comprises the few lines of code shown in Listing~\ref{lst:sobel_skelcl}.
+The AMD implementations requires 37 lines of code for its kernel implementation and the NVIDIA implementation requires even 208 lines of code.
+Both versions require additional lines of code for the host program which manages the execution of the OpenCL kernel.
+No index calculations or boundary checks are necessary in the SkelCL version whereas they are crucial for a correct implementation in OpenCL.
+\from{PaCT end}
+
+
+\from{HiStencils begin}
+\subsection{Canny Edge Detection (HiStencils)}
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[width=.9\columnwidth]{HiStencils/Canny.pdf}
+	\caption{Runtime of the Canny algorithm implemented with the MapOverlap and Stencil skeletons.}
+	\label{fig:canny}
+\end{figure} 
+
+Figure~\ref{fig:canny} shows the absolute runtime of the Canny algorithm (Listing \ref{lst:canny01}). 
+As the MapOverlap skeleton appends padding elements to the matrix, the matrix has to be downloaded, resized and uploaded again to the GPU between each step of the sequence.
+This additional work to an increased time for data transfers. 
+The Gaussian blur with a stencil shape extent of $2$, as well as the Sobel filter and the non-maximum suppression with a stencil shape of $1$, are $2.1$ to $2.2$ times faster when using MapOverlap. 
+However, the threshold operation, which is expressed as the Map skeleton in the Stencil sequence, is $6.8$ times faster than MapOverlap's threshold operation.
+Overall, when performing sequences of stencil operations, the Stencil skeleton reduces the number of copy operations and therefore leads to a better overall performance.
+When performing the Canny algorithm, Stencil outperforms MapOverlap by $21\%$.
+\from{HiStencils end}
+

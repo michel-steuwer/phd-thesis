@@ -1,0 +1,27 @@
+\section{Experimental Setup}
+
+\from{HIPS begin}
+\subsection{HIPS}
+We developed implementations of two application case studies using the SkelCL library:
+1) the calculation of a Mandelbrot fractal as a simple benchmark application, and, 2) a real-world algorithm for medical image reconstruction.
+In this section, both implementations are compared to similar implementations in CUDA and OpenCL regarding programming effort and runtime performance.
+
+For our runtime experiments we use a common PC with a quad-core CPU (Intel Xeon E5520, 2.26\,GHz) and 12\,GB of memory.
+The system is connected to a Tesla S1070 computing system equipped with 4 Tesla GPUs.
+Its dedicated 16\,GB of memory (4\,GB per GPU) is accessed with up to 408\,GB/s (102\,GB/s per GPU).
+Each GPU comprises 240 streaming processor cores running at up to 1.44\,GHz.
+\from{HIPS end}
+
+
+\from{PaCT begin}
+\subsection{PaCT}
+We consider two application case studies using the SkelCL library:
+1) the calculation of a Mandelbrot fractal, and 2) the Sobel edge detection.
+Both SkelCL implementations are compared to similar implementations in CUDA and OpenCL regarding their programming effort and runtime performance.
+
+For our runtime experiments we use a PC with a quad-core CPU (Intel Xeon E5520, 2.26\,GHz) and 12\,GB of memory.
+The system is connected to a Tesla S1070 computing system equipped with 4 Tesla GPUs.
+Its dedicated 16\,GB of memory (4\,GB per GPU) is accessed with up to 408\,GB/s (102\,GB/s per GPU).
+Each GPU comprises 240 streaming processor cores running at 1.44\,GHz.
+\from{PaCT end}
+

@@ -1,0 +1,51 @@
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 encoding
+
+\documentclass{llncs}
+
+\usepackage[utf8x]{inputenc}
+\usepackage[english]{babel}
+\usepackage{xcolor}
+
+\definecolor{Gray0}{rgb}{0.9, 0.9, 0.9}
+\definecolor{Gray1}{rgb}{0.8, 0.8, 0.8}
+\definecolor{Gray2}{rgb}{0.7, 0.7, 0.7}
+\definecolor{Gray3}{rgb}{0.6, 0.6, 0.6}
+
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shadows}
+\usetikzlibrary{arrows}
+\usetikzlibrary{chains}
+\usetikzlibrary{scopes}
+\usetikzlibrary{patterns}
+\usetikzlibrary{fit}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{decorations}
+\usetikzlibrary{shapes}
+
+% Use preview.sty to crop the page
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0cm}%
+
+\begin{document}
+  \begin{tikzpicture}[every node/.style={font=\LARGE, line width=.75mm}]
+    \node at (0,1) ()  {\bfseries CPU};
+    
+    \node at (+0,-2.8) () {\bfseries GPUs};
+    \node at (-2,-2.75) () {\bfseries 0};
+    \node at (+2,-2.75) () {\bfseries 1};
+
+    \node[draw, minimum height=.75cm, minimum width=3cm] at (0,0) (host) {};
+    
+    \node[draw, minimum height=.75cm, minimum width=3cm] at (-2,-2) (dev0) {};
+
+    \node[draw, minimum height=.75cm, minimum width=3cm] at (+2,-2) (dev1) {};
+
+    \draw[->, >=open triangle 45, line width=.75mm] (host.south) -- (dev0.north);
+    \draw[->, >=open triangle 45, line width=.75mm] (host.south) -- (dev1.north);
+  \end{tikzpicture}
+\end{document}

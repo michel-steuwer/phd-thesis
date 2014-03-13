@@ -1,0 +1,57 @@
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 encoding
+
+\documentclass{llncs}
+
+\usepackage[utf8x]{inputenc}
+\usepackage[english]{babel}
+\usepackage{xcolor}
+
+\definecolor{darkgray}{rgb}{0.3, 0.3, 0.3}
+\definecolor{lightgray}{rgb}{0.95, 0.95, 0.95}
+\definecolor{verydarkgray}{rgb}{0.2, 0.2, 0.2}
+
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shadows}
+\usetikzlibrary{arrows}
+\usetikzlibrary{chains}
+\usetikzlibrary{scopes}
+\usetikzlibrary{patterns}
+\usetikzlibrary{fit}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{decorations}
+\usetikzlibrary{shapes}
+
+% Use preview.sty to crop the page
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0cm}%
+
+\begin{document}
+  \begin{tikzpicture}[every node/.style={font=\LARGE, line width=.75mm}]
+    \node at (0,1.5) ()  {\bfseries CPU};
+    
+    \node at (+0,-4.0) () {\bfseries GPUs};
+    \node at (-2,-4.0) () {\bfseries 0};
+    \node at (+2,-4.0) () {\bfseries 1};
+    
+    \node[minimum height=1cm, minimum width=2cm] at (0,+.5) (hostnorth) {};
+    \node[minimum height=1cm, minimum width=2cm] at (0,-.5) (hostsouth) {};
+    \draw[dashed] (hostnorth.south west) -- (hostnorth.south east);
+    \node[draw, minimum height=2cm, minimum width=2cm] at (0,0) (host) {};
+    
+    \node[draw, minimum height=1.25cm, minimum width=2cm] at (-1.5,-2) (dev0) {};
+    \node[draw, minimum height=0.25cm, minimum width=2cm, fill, pattern=vertical lines] at (-1.5,-2.5) {};
+
+    \node[draw, minimum height=1.25cm, minimum width=2cm] at (+1.5,-3) (dev1) {};
+    \node[draw, minimum height=0.25cm, minimum width=2cm, fill, pattern=vertical lines] at (+1.5,-2.5) {};
+    
+    \draw[->, >=open triangle 45, line width=.75mm] (hostnorth.west) to[bend right] (dev0.north);
+    \draw[->, >=open triangle 45, line width=.75mm] (hostsouth.east) to[bend left] (dev1.north);
+
+    %\node[minimum height=.75cm, minimum width=3cm] at (+2,-1.5) (transparent_dev) {};
+  \end{tikzpicture}
+\end{document}

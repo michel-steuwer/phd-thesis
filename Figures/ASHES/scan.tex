@@ -1,0 +1,272 @@
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 encoding
+
+\documentclass{llncs}
+
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[english]{babel}
+\usepackage{cite}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{wasysym}
+\usepackage{pifont}
+
+\definecolor{Gray0}{rgb}{0.9, 0.9, 0.9}
+\definecolor{Gray1}{rgb}{0.8, 0.8, 0.8}
+\definecolor{Gray2}{rgb}{0.7, 0.7, 0.7}
+\definecolor{Gray3}{rgb}{0.6, 0.6, 0.6}
+
+\lstset{
+    aboveskip       = \bigskipamount,
+    belowskip       = \bigskipamount,
+    language        = C++,
+    extendedchars   = true,
+    backgroundcolor = \color{lightgray},
+    basicstyle      = \ttfamily\Large,
+    keywordstyle    = \bfseries,
+    commentstyle    = \slshape\color{darkgray},
+    stringstyle     = \itshape,
+    showstringspaces= false,
+    captionpos      = b,
+    frame           = single,
+    tabsize         = 4,
+    numbers         = none,
+    breakautoindent = true,
+    breakindent     = 2em,
+    breaklines      = true,
+    mathescape      = true,
+    escapeinside    = {(*@}{@*)}
+}
+
+\usepackage{ifthen}
+\usepackage{twoopt}
+\newcommand{\code}[2][\empty]{\ifthenelse{\equal{#1}{\empty}}%
+{\lstinline!#2!}%
+{\lstinline[basicstyle=\ttfamily#1]!#2!}%
+}
+
+\usepackage{tikz}
+\usetikzlibrary{snakes}
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shadows}
+\usetikzlibrary{arrows}
+\usetikzlibrary{chains}
+\usetikzlibrary{scopes}
+\usetikzlibrary{patterns}
+\usetikzlibrary{fit}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{decorations}
+\usetikzlibrary{shapes}
+
+% Use preview.sty to crop the page
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0cm}%
+
+\begin{document}
+	\begin{figure}[tbp]
+		\centering
+		\begin{tikzpicture}[markedCircle/.style={circle, scale=1, draw=black, thick, anchor=base},
+												annotation/.style={anchor=base, draw=none, text width=2.5cm},
+												dev0/.style={fill=Gray0},
+												dev1/.style={fill=Gray1},
+												dev2/.style={fill=Gray0},
+												dev3/.style={fill=Gray1},
+												arr/.style={->, >=stealth', thick},
+												every node/.style={text centered, text width=1cm, minimum height=1cm, draw=black, very thin, rectangle, scale=0.65,
+												font=\Large},
+												node distance=0cm,
+												start chain=1 going right,
+												start chain=2 going right,
+												start chain=3 going right,
+												start chain=4 going right,
+												row1/.style={on chain=1},
+												row2/.style={on chain=2},
+												row3/.style={on chain=3},
+												row4/.style={on chain=4},
+												decoration={brace},]
+			\node[row1, dev0] at (0,0) (0) {$1$};
+			\node[row1, dev0] (1)  {$2$};
+			\node[row1, dev0] (2)  {$3$};
+			\node[row1, dev0] (3)  {$4$};
+			\node[row1, dev1, xshift=0.5cm] (4)  {$5$};
+			\node[row1, dev1] (5)  {$6$};
+			\node[row1, dev1] (6)  {$7$};
+			\node[row1, dev1] (7)  {$8$};
+			\node[row1, dev2, xshift=0.5cm] (8)  {$9$};
+			\node[row1, dev2] (9)  {$10$};
+			\node[row1, dev2] (10) {$11$};
+			\node[row1, dev2] (11) {$12$};
+			\node[row1, dev3, xshift=0.5cm] (12) {$13$};
+			\node[row1, dev3] (13) {$14$};
+			\node[row1, dev3] (14) {$15$};
+			\node[row1, dev3] (15) {$16$};
+			
+			\node[markedCircle] (11Marked) at  (3) {};
+			\node[markedCircle] (12Marked) at  (7) {};
+			\node[markedCircle] (13Marked) at (11) {};
+			
+			\node[draw=none, minimum height=0cm] (firstRow) at ([xshift=-.25cm] 0.west) {};
+
+      %\node[left, draw=none] at (0.north west) (row1Left) {};
+			
+			\node[row2, dev0] at (0,-1.5) (0) {$0$};
+			\node[row2, dev0] (1)  {$1$};
+			\node[row2, dev0] (2)  {$3$};
+			\node[row2, dev0] (3)  {$6$};
+			\node[row2, dev1, xshift=0.5cm] (4)  {$0$};
+			\node[row2, dev1] (5)  {$5$};
+			\node[row2, dev1] (6)  {$11$};
+			\node[row2, dev1] (7)  {$18$};
+			\node[row2, dev2, xshift=0.5cm] (8)  {$0$};
+			\node[row2, dev2] (9)  {$9$};
+			\node[row2, dev2] (10) {$19$};
+			\node[row2, dev2] (11) {$30$};
+			\node[row2, dev3, xshift=0.5cm] (12) {$0$};
+			\node[row2, dev3] (13) {$13$};
+			\node[row2, dev3] (14) {$27$};
+			\node[row2, dev3] (15) {$42$};
+			
+			\node[markedCircle] (21Marked) at  (3) {};
+			\node[markedCircle] (22Marked) at  (7) {};
+			\node[markedCircle] (23Marked) at (11) {};
+			
+			\node[draw=none, minimum height=0cm] (secondRow) at ([xshift=-.25cm] 0.west) {};
+			
+			\draw[->, bend right, arr] (firstRow) to (secondRow) node[pos=.5, anchor=base, draw=none, left]{\LARGE\ding{172}};
+      %\node[left, draw=none] at (0.south west) (row2Left) {};
+      %\draw[arr] (row1Left) -- node[left, draw=none] {\LARGE \emph{1)}} (row2Left);
+
+			\node[row3, dev0] at (0,-4.0) (0) {$0$};
+			\node[row3, dev0] (1)  {$1$};
+			\node[row3, dev0] (2)  {$3$};
+			\node[row3, dev0] (3)  {$6$};
+			\node[row3, dev1, xshift=0.5cm] (4)  {$10$};
+			\node[row3, dev1] (5)  {$15$};
+			\node[row3, dev1] (6)  {$21$};
+			\node[row3, dev1] (7)  {$28$};
+			\node[row3, dev2, xshift=0.5cm] (8)  {$36$};
+			\node[row3, dev2] (9)  {$45$};
+			\node[row3, dev2] (10) {$55$};
+			\node[row3, dev2] (11) {$66$};
+			\node[row3, dev3, xshift=0.5cm] (12) {$78$};
+			\node[row3, dev3] (13) {$91$};
+			\node[row3, dev3] (14) {$105$};
+			\node[row3, dev3] (15) {$120$};
+			
+			\node[annotation, above=0.1cm] (firstSum) at (4.north) {\lstinline!Map!:$6+4$};
+			\node[annotation, above=0.1cm] (firstEndSum) at ([xshift=0.3cm] 15.north east) {};
+			\node[annotation, above=0.4cm] (secondSum) at (8.north) {\lstinline!Map!:$18+8$};
+			\node[annotation, above=0.4cm] (secondEndSum) at ([xshift=0.3cm] 15.north east) {};
+			\node[annotation, above=0.7cm] (thirdSum) at (12.north) {\lstinline!Map!:$30+12$};
+			\node[annotation, above=0.7cm] (thirdEndSum) at ([xshift=0.3cm] 15.north east) {};
+			
+			\node[draw=none, minimum height=0cm] (thirdRow) at ([xshift=-.25cm] 0.west) {};
+			
+			\draw[->, bend right, arr] (secondRow) to (thirdRow) node[pos=.5, anchor=base, draw=none, left]{\LARGE\ding{173}};
+			
+			\draw[->] (firstSum)  -- (firstEndSum);
+			\draw[->] (secondSum) -- (secondEndSum);
+			\draw[->] (thirdSum)  -- (thirdEndSum);
+
+			%\node[row4, dev0] at (0,-6) (0) {$0$};
+			%\node[row4, dev0] (1)  {$1$};
+			%\node[row4, dev0] (2)  {$3$};
+			%\node[row4, dev0] (3)  {$6$};
+			%\node[row4, dev1, xshift=0.5cm] (4)  {$10$};
+			%\node[row4, dev1] (5)  {$15$};
+			%\node[row4, dev1] (6)  {$21$};
+			%\node[row4, dev1] (7)  {$28$};
+			%\node[row4, dev2, xshift=0.5cm] (8)  {$36$};
+			%\node[row4, dev2] (9)  {$45$};
+			%\node[row4, dev2] (10) {$55$};
+			%\node[row4, dev2] (11) {$66$};
+			%\node[row4, dev3, xshift=0.5cm] (12) {$78$};
+			%\node[row4, dev3] (13) {$91$};
+			%\node[row4, dev3] (14) {$105$};
+			%\node[row4, dev3] (15) {$120$};
+			
+			%\node[left, draw=none] at (0.west) {\Huge 4)};	
+			
+			\draw[decorate, decoration={brace}] let \p1=(0.south west), \p2=(3.south east) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[annotation, text width=3cm, below] {First GPU} ($(\x1, \y1) + (0, -0.2cm)$);
+			\draw[decorate, decoration={brace}] let \p1=(4.south west), \p2=(7.south east) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[annotation, text width=3.5cm, below] {Second GPU} ($(\x1, \y1) + (0, -0.2cm)$);
+			\draw[decorate, decoration={brace}] let \p1=(8.south west), \p2=(11.south east) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[annotation, text width=3cm, below] {Third GPU} ($(\x1, \y1) + (0, -0.2cm)$);
+			\draw[decorate, decoration={brace}] let \p1=(12.south west), \p2=(15.south east) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[annotation, text width=3cm, below] {Fourth GPU} ($(\x1, \y1) + (0, -0.2cm)$);
+			
+			\draw[arr] (11Marked.south) -- ([xshift=0.5cm, yshift=-0.1cm] firstSum.north);
+			\draw[arr] (21Marked.south) -- ([xshift=0cm, yshift=-0.1cm] firstSum.north);
+			
+			\draw[arr] (12Marked.south) -- ([xshift=0.6cm, yshift=-0.1cm] secondSum.north);
+			\draw[arr] (22Marked.south) -- ([xshift=-0cm, yshift=-0.1cm] secondSum.north);
+			
+			\draw[arr] (13Marked.south) -- ([xshift=0.6cm, yshift=-0.1cm] thirdSum.north);
+			\draw[arr] (23Marked.south) -- ([xshift=0cm, yshift=-0.1cm] thirdSum.north);
+		\end{tikzpicture}		
+		\caption{An example of the multi-GPU scan algorithm used in SkelCL\@.}
+		\label{fig:multi_gpu_scan}
+	\end{figure}
+\end{document}
+%------------------------------------------------------------------------------
+
+  \begin{tikzpicture}[markedCircle/.style={circle, scale=1, draw=black, thick, anchor=base},
+											annotation/.style={anchor=base, draw=none, text width=3cm},
+											dev0/.style={fill=white},
+											dev1/.style={fill=Gray0},
+											arr/.style={->, >=open triangle 45},
+											every node/.style={text centered, text width=1cm, minimum height=1cm, draw=black, very thin, rectangle, scale=0.65, font=\Large},
+											node distance=0cm,
+											start chain=1 going right,
+											start chain=2 going right,
+											start chain=3 going right,
+											row1/.style={on chain=1},
+											row2/.style={on chain=2},
+											row3/.style={on chain=3},
+											decoration={brace},]
+		\node[row1, dev0] at (0,0) (0) {$1$};
+		\node[row1, dev0] (1)  {$2$};
+		\node[row1, dev0] (2)  {$3$};
+		\node[row1, dev0] (3)  {$4$};
+		\node[row1, dev1, xshift=0.5cm] (4)  {$5$};
+		\node[row1, dev1] (5)  {$6$};
+		\node[row1, dev1] (6)  {$7$};
+		\node[row1, dev1] (7)  {$8$};
+		\node[markedCircle] (11Marked) at  (3) {};
+		\node[left, draw=none] at (0.north west) (row1Left) {};
+		
+		\node[row2, dev0] at (0,-1.25) (0) {$0$};
+		\node[row2, dev0] (1)  {$1$};
+		\node[row2, dev0] (2)  {$3$};
+		\node[row2, dev0] (3)  {$6$};
+		\node[row2, dev1, xshift=0.5cm] (4)  {$0$};
+		\node[row2, dev1] (5)  {$5$};
+		\node[row2, dev1] (6)  {$11$};
+		\node[row2, dev1] (7)  {$18$};
+		\node[markedCircle] (21Marked) at  (3) {};
+		\node[left, draw=none] at (0.south west) (row2Left) {};
+		
+		\draw[arr] (row1Left) -- node[left, draw=none] {\emph{1)}} (row2Left);
+		
+
+		\node[row3, dev0] at (0,-3.5) (0) {$0$};
+		\node[row3, dev0] (1)  {$1$};
+		\node[row3, dev0] (2)  {$3$};
+		\node[row3, dev0] (3)  {$6$};
+		\node[row3, dev1, xshift=0.5cm] (4)  {$10$};
+		\node[row3, dev1] (5)  {$15$};
+		\node[row3, dev1] (6)  {$21$};
+		\node[row3, dev1] (7)  {$28$};
+		
+		\node[annotation, above=0.1cm] (firstSum) at ([xshift=-1cm, yshift=0.3cm] 4.north) {\emph{2)} \texttt{Map}: $6+4$};
+		\node[annotation, above=0.1cm] (firstEndSum) at ([xshift=1cm, yshift=0.3cm] 7.north) {};
+		
+		\draw[arr] (firstSum)  -- node[above, draw=none] {\emph{3)}} (firstEndSum);
+		
+		\draw[decorate, decoration={brace}] let \p1=(0.south west), \p2=(3.south east) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[annotation, text width=5cm, below] {First device} ($(\x1, \y1) + (0, -0.2cm)$);
+		\draw[decorate, decoration={brace}] let \p1=(4.south west), \p2=(7.south east) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[annotation, text width=5cm, below] {Second device} ($(\x1, \y1) + (0, -0.2cm)$);
+  \end{tikzpicture}
+

@@ -1,0 +1,219 @@
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 encoding
+
+\documentclass{llncs}
+
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[english]{babel}
+\usepackage{cite}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{wasysym}
+
+\definecolor{Gray0}{rgb}{0.9, 0.9, 0.9}
+\definecolor{Gray1}{rgb}{0.8, 0.8, 0.8}
+\definecolor{Gray2}{rgb}{0.7, 0.7, 0.7}
+\definecolor{Gray3}{rgb}{0.6, 0.6, 0.6}
+
+\lstset{
+    aboveskip       = \bigskipamount,
+    belowskip       = \bigskipamount,
+    language        = C++,
+    extendedchars   = true,
+    backgroundcolor = \color{lightgray},
+    basicstyle      = \ttfamily\Large,
+    keywordstyle    = \bfseries,
+    commentstyle    = \slshape\color{darkgray},
+    stringstyle     = \itshape,
+    showstringspaces= false,
+    captionpos      = b,
+    frame           = single,
+    tabsize         = 4,
+    numbers         = none,
+    breakautoindent = true,
+    breakindent     = 2em,
+    breaklines      = true,
+    mathescape      = true,
+    escapeinside    = {(*@}{@*)}
+}
+
+\usepackage{ifthen}
+\usepackage{twoopt}
+\newcommand{\code}[2][\empty]{\ifthenelse{\equal{#1}{\empty}}%
+{\lstinline!#2!}%
+{\lstinline[basicstyle=\ttfamily#1]!#2!}%
+}
+
+\usepackage{tikz}
+\usetikzlibrary{snakes}
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shadows}
+\usetikzlibrary{arrows}
+\usetikzlibrary{chains}
+\usetikzlibrary{scopes}
+\usetikzlibrary{patterns}
+\usetikzlibrary{fit}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{decorations}
+\usetikzlibrary{shapes}
+
+% Use preview.sty to crop the page
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0cm}%
+
+\usepackage{graphicx}
+\newcommand{\plus}{\raisebox{.3\height}{\scalebox{.45}{+}}}
+
+\begin{document}
+	\begin{figure}[tbp]
+		\centering
+		\begin{tikzpicture}[vector/.style={minimum height=1cm, minimum width=0.5cm, draw},
+                          blockvector/.style={minimum height=1cm, minimum width=0.5cm, draw, dotted},
+                          borderLine/.style={densely dashed},
+                          closingLine/.style={dash pattern=on 0.15cm off 0.2cm on 0.15cm},]
+          \begin{scope}[color=gray, font=\scriptsize]
+            \node[rotate=90]      at (-0.1, 1.50)        {GPU 0};
+            \node[rotate=90]      at (-0.1, 0.00)        {CPU};
+            \node[rotate=90]      at (-0.1,-1.50)        {GPU 1};
+          \end{scope}
+          
+          \node[blockvector]    at ( 1.25, 1.50) (d0s)  {$S$};
+          \begin{scope}[xshift=1.25cm, yshift=1.50cm]
+            \path[draw] (-.25,0) -- (-.25,-.5) -- (.25,-.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          \node[vector]         at ( 2.00, 1.50) (d0f)  {$f_l$};
+          
+          \node[vector]         at ( 0.50, 0.00) (hs)   {$S$};
+          \node[vector]         at ( 1.25, 0.00) (hf)   {$f_l$};
+          
+          \node[blockvector]    at ( 1.25,-1.50) (d1s)  {$S$};
+          \begin{scope}[xshift=1.25cm, yshift=-1.50cm]
+            \path[draw] (-.25,0) -- (-.25,.5) -- (.25,.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          \node[vector]         at ( 2.00,-1.50) (d1f)  {$f_l$};
+          
+          \draw[->] (hs) -- (d0s);
+          \draw[->] (hs) -- (d1s);
+          \draw[->] (hf) -- (d0f);
+          \draw[->] (hf) -- (d1f);
+          
+          \path 
+            let
+              \p1 = (hs.west),
+              \p2 = (d0f.east)
+            in
+              coordinate (uploadBegin)  at (\x1,0)
+              coordinate (uploadEnd)    at (\x2,0);
+          
+          % ----
+          \draw[borderLine] ([yshift=0.75cm] uploadBegin) -- ([yshift=0.75cm] uploadEnd);
+          \draw[borderLine] ([yshift=-0.75cm] uploadBegin) -- ([yshift=-0.75cm] uploadEnd);
+          % ----
+          
+          \node[vector]         at ( 3.50, 1.50) (d0c)  {$c_l$};
+          \node[vector]         at ( 3.50,-1.50) (d1c)  {$c_l$};
+          
+          \path (d0f.east) -- (d0c.west) node[pos=0.5]{$\Rightarrow$};;
+          \path (d1f.east) -- (d1c.west) node[pos=0.5]{$\Rightarrow$};;
+          
+          \node[vector]         at ( 4.25, 0.00) (hc)   {$c_l$};
+          
+          \draw[->] (d0c) -- (hc);
+          \draw[->] (d1c) -- (hc);
+          
+          \node[blockvector]    at ( 5.00, 1.50) (d0c')  {$c_l$};
+          \begin{scope}[xshift=5.00cm, yshift=1.50cm]
+            \path[draw] (-.25,0) -- (-.25,-.5) -- (.25,-.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          \node[blockvector]    at ( 5.00,-1.50) (d1c')  {$c_l$};
+          \begin{scope}[xshift=5.00cm, yshift=-1.50cm]
+            \path[draw] (-.25,0) -- (-.25,.5) -- (.25,.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          
+          \draw[->] (hc) -- (d0c');
+          \draw[->] (hc) -- (d1c');
+          
+          \node[vector]         at ( 5.50, 0.00) (hf)   {$f_l$};
+          \node[blockvector]    at ( 5.75, 1.50) (d0f)  {$f_l$};
+          \begin{scope}[xshift=5.75cm, yshift=1.50cm]
+            \path[draw] (-.25,0) -- (-.25,-.5) -- (.25,-.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          \node[blockvector]    at ( 5.75,-1.50) (d1f)  {$f_l$};
+          \begin{scope}[xshift=5.75cm, yshift=-1.50cm]
+            \path[draw] (-.25,0) -- (-.25,.5) -- (.25,.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          
+          \draw[->] (hf) -- (d0f);
+          \draw[->] (hf) -- (d1f);
+          
+          \path 
+            let
+              \p1 = (d0c.west),
+              \p2 = (d0f.east)
+            in
+              coordinate (redistributeBegin)  at (\x1,0)
+              coordinate (redistributeEnd)    at (\x2,0);
+          
+          % ----
+          \draw[borderLine] ([yshift=0.75cm] redistributeBegin) -- ([yshift=0.75cm] redistributeEnd);
+          \draw[borderLine] ([yshift=-0.75cm] redistributeBegin) -- ([yshift=-0.75cm] redistributeEnd);
+          % ----
+          
+          \node[blockvector]    at ( 7.25, 1.50) (d0f') {$f_l$};
+          \begin{scope}[xshift=7.25cm, yshift=1.50cm]
+            \path[draw] (-.25,0) -- (-.25,-.5) -- (.25,-.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          \node[blockvector]    at ( 7.25,-1.50) (d1f') {$f_l$};
+          \begin{scope}[xshift=7.25cm, yshift=-1.50cm]
+            \path[draw] (-.25,0) -- (-.25,.5) -- (.25,.5) -- (.25,0);
+            \path[draw, closingLine] (-.25,0) -- (.25,0);
+          \end{scope}
+          
+          \path (d0f.east)  -- (d0f'.west) node[pos=0.5]{$\Rightarrow$};
+          \path (d1f.east)  -- (d1f'.west) node[pos=0.5]{$\Rightarrow$};
+          
+          \node[vector]         at ( 8.00, 0.00) (hf) {};
+          \node at (hf) (new) {$f_{l\plus 1}$};
+          
+          \draw[->] (d0f') -- (hf);
+          \draw[->] (d1f') -- (hf);
+          
+          \path 
+            let
+              \p1 = (d0f'.west),
+              \p2 = (hf.east)
+            in
+              coordinate (downloadBegin)  at (\x1,0)
+              coordinate (downloadEnd)    at (\x2,0);
+          
+          % ----
+          \draw[borderLine] ([yshift=0.75cm] downloadBegin) -- ([yshift=0.75cm] downloadEnd);
+          \draw[borderLine] ([yshift=-0.75cm] downloadBegin) -- ([yshift=-0.75cm] downloadEnd);
+          % ----
+          
+          \begin{scope}[font=\scriptsize]
+			\draw[decorate, decoration={brace}] let \p1=([yshift=-2cm] uploadBegin), \p2=([yshift=-2cm] uploadEnd) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[below=0.1cm] {Upload} ($(\x1, \y1) + (0, -0.2cm)$);
+			\draw[decorate, decoration={brace}] let \p1=([yshift=-2cm] redistributeBegin), \p2=([yshift=-2cm] redistributeEnd) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[below=0.1cm] {Redistribution} ($(\x1, \y1) + (0, -0.2cm)$);
+			\draw[decorate, decoration={brace}] let \p1=([yshift=-2cm] downloadBegin), \p2=([yshift=-2cm] downloadEnd) in ($(\x2, \y2) + (0, -0.2cm)$) -- node[below=0.1cm] {Download} ($(\x1, \y1) + (0, -0.2cm)$);
+			\draw[decorate, decoration={brace}] let \p1=([yshift=2cm] redistributeBegin), \p2=([yshift=2cm] uploadEnd) in ($(\x2, \y2) + (0, 0.2cm)$) -- node[above=0.1cm] {Step 1} ($(\x1, \y1) + (0, +0.2cm)$);
+			\draw[decorate, decoration={brace}] let \p1=([yshift=2cm] downloadBegin), \p2=([yshift=2cm] redistributeEnd) in ($(\x2, \y2) + (0, 0.2cm)$) -- node[above=0.1cm] {Step 2} ($(\x1, \y1) + (0, +0.2cm)$);
+          \end{scope}
+		\end{tikzpicture}		
+		\caption{An example of the multi-GPU scan algorithm used in SkelCL\@.}
+		\label{fig:multi_gpu_scan}
+	\end{figure}
+\end{document}
+

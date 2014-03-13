@@ -1,0 +1,86 @@
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 encoding
+
+\documentclass{llncs}
+
+\usepackage[utf8x]{inputenc}
+\usepackage[english]{babel}
+\usepackage{xcolor}
+
+\definecolor{Gray0}{rgb}{0.9, 0.9, 0.9}
+\definecolor{Gray1}{rgb}{0.8, 0.8, 0.8}
+\definecolor{Gray2}{rgb}{0.7, 0.7, 0.7}
+\definecolor{Gray3}{rgb}{0.6, 0.6, 0.6}
+
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shadows}
+\usetikzlibrary{arrows}
+\usetikzlibrary{chains}
+\usetikzlibrary{scopes}
+\usetikzlibrary{patterns}
+\usetikzlibrary{fit}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{decorations}
+\usetikzlibrary{shapes}
+
+% Use preview.sty to crop the page
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0cm}%
+
+\begin{document}
+  \begin{tikzpicture}[every node/.style={font=\LARGE}]
+    \node at (0,1) ()  {CPU};
+    
+    \node at (+0,-2.3) () {GPUs};
+    \node at (-2,-2.25) () {0};
+    \node at (+2,-2.25) () {1};
+
+    \node[minimum height=.75cm, minimum width=1.5cm] at (-0.75,0) (host0) {};
+    \node[minimum height=.75cm, minimum width=1.5cm] at (+0.75,0) (host1) {};
+    \draw[dashed] (host1.north west) -- (host1.south west);
+    \node[draw, minimum height=.75cm, minimum width=3cm] at (0,0) (host) {};
+    
+    \node[draw, minimum height=.75cm, minimum width=1.7cm] at (-2.75,-1.5) (dev0) {};
+    \node[pattern=north west lines,minimum height=.75cm, minimum width=0.4cm] at (-2.1, -1.5) (dev01) {};
+    \draw[dashed] (dev01.north west) -- (dev01.south west);
+
+    \node[draw, minimum height=.75cm, minimum width=1.7cm] at (+2.75,-1.5) (dev1) {};
+    \node[pattern=north east lines,minimum height=.75cm, minimum width=0.4cm] at (+2.1, -1.5) (dev11) {};
+    \draw[dashed] (dev11.north east) -- (dev11.south east);
+
+    \draw[->, >=open triangle 45] (host0.south) -- (dev0.north);
+    \draw[->, >=open triangle 45] (host1.south) -- (dev1.north);
+
+    % \node at (0,1) ()  {Host};
+    
+    % \node at (3,1) () {GPUs};
+    % \node at (1.5,0.25) () {0};
+    % \node at (2.5,0.25) () {1};
+    % \node at (3.5,0.25) () {2};
+    % \node at (4.5,0.25) () {3};
+    
+    % \node[minimum height=.75cm, minimum width=.75cm] at (0,-1) (host0) {};
+    % \node[minimum height=.75cm, minimum width=.75cm] at (0,-1.75) (host1) {};
+    % \node[minimum height=.75cm, minimum width=.75cm] at (0,-2.5) (host2) {};
+    % \node[minimum height=.75cm, minimum width=.75cm] at (0,-3.25) (host3) {};
+    % \node[draw, minimum height=3cm, minimum width=.75cm] at (0,-2) () {};
+    
+    % \draw[dashed] (host1.135) -- (host1.45);
+    % \draw[dashed] (host2.135) -- (host2.45);
+    % \draw[dashed] (host3.135) -- (host3.45);
+    
+    % \node[draw, minimum height=.75cm, minimum width=.75cm] at (1.5,-1) (dev0) {};
+    % \node[draw, minimum height=.75cm, minimum width=.75cm] at (2.5,-1.75) (dev1) {};
+    % \node[draw, minimum height=.75cm, minimum width=.75cm] at (3.5,-2.5) (dev2) {};
+    % \node[draw, minimum height=.75cm, minimum width=.75cm] at (4.5,-3.25) (dev3) {};
+    
+    % \draw[->, >=open triangle 45] (host0.0) -- (dev0.180);
+    % \draw[->, >=open triangle 45] (host1.0) -- (dev1.180);
+    % \draw[->, >=open triangle 45] (host2.0) -- (dev2.180);
+    % \draw[->, >=open triangle 45] (host3.0) -- (dev3.180);
+  \end{tikzpicture}
+\end{document}

@@ -1,0 +1,49 @@
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 encoding
+
+\documentclass{llncs}
+
+\usepackage[utf8x]{inputenc}
+\usepackage[english]{babel}
+\usepackage{xcolor}
+
+\definecolor{darkgray}{rgb}{0.3, 0.3, 0.3}
+\definecolor{lightgray}{rgb}{0.95, 0.95, 0.95}
+\definecolor{verydarkgray}{rgb}{0.2, 0.2, 0.2}
+
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shadows}
+\usetikzlibrary{arrows}
+\usetikzlibrary{chains}
+\usetikzlibrary{scopes}
+\usetikzlibrary{patterns}
+\usetikzlibrary{fit}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{decorations}
+\usetikzlibrary{shapes}
+
+% Use preview.sty to crop the page
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0cm}%
+
+\begin{document}
+  \begin{tikzpicture}[every node/.style={font=\LARGE}]
+    \node at (0,1) ()  {Host};
+    
+    \node at (+0,-2.3) () {Devices};
+    \node at (-2,-2.25) () {0};
+    \node at (+2,-2.25) () {1};
+    
+    \node[draw, minimum height=.75cm, minimum width=3cm] at (0,0) (host) {};
+    
+    \node[draw, minimum height=.75cm, minimum width=3cm] at (-2,-1.5) (dev) {};
+    
+    \draw[->, >=open triangle 45] (host.south) -- (dev.north);
+
+    \node[minimum height=.75cm, minimum width=3cm] at (+2,-1.5) (transparent_dev) {};
+  \end{tikzpicture}
+\end{document}

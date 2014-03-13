@@ -1,0 +1,79 @@
+% Chapter 8: Conclusion
+
+\chapter{Conclusion}
+
+\label{ch:eighth} % For referencing the chapter elsewhere, use \autoref{ch:name} 
+
+\section{Conclusion}
+
+\from{HIPS begin}
+\subsection{HIPS}
+We developed and implemented SkelCL -- an OpenCL-based skeleton library for high-level GPU programming, based on an abstract data type and algorithmic skeletons.
+Currently, it provides a vector data type and four basic skeletons (\texttt{Map}, \texttt{Zip}, \texttt{Reduce}, \texttt{Scan}).
+SkelCL shields the user from the low-level details of GPU programming.
+Data transfer and synchronization are performed implicitly.
+
+Our application examples show that SkelCL provides competitive performance and scalability on real-world applications as compared with CUDA and OpenCL.
+While SkelCL adds a minor performance overhead, it significantly reduces the programming effort, since much of the boilerplate code required in CUDA or OpenCL is replaced by shorter and more intuitive high-level constructs.
+\from{HIPS end}
+
+\from{ASHES begin}
+\subsection{ASHES}
+In this paper, we presented SkelCL -- a high-level multi-GPU programming library.
+The novel contributions of SkelCL are two-fold:
+1)~using the vector data type and the built-in mechanism of data distributions, it considerably simplifies memory management in multi-GPU programs;
+2)~the high-level algorithmic skeletons are used for programming multi-GPU systems, resulting in shorter, better structured programs as compared to OpenCL and CUDA.
+Moreover, SkelCL extends the flexibility of skeletons with its additional arguments feature, as demonstrated on a real-world, medical imaging application.
+
+Our case study showed that SkelCL significantly reduces programming effort in terms of lines of code, and greatly improves program structure and maintainability, while it causes less than 5\% performance decrease as compared to the low-level OpenCL-implementation.
+We obtained similar results about the programming effort and performance for the Mandelbrot benchmark application~\cite{StKG-11}.
+\from{ASHES end}
+
+\from{Paraphrase begin}
+\subsection{Paraphrase}
+In this paper we showed how the SkelCL library can be extended for developing applications on two-dimensional data.
+We used an image processing application as a case study.
+Using SkelCL, such applications can easily benefit from the performance of GPUs.
+Application developers do not have to be GPU computing experts to achieve good performance, since SkelCL's skeletons exploit the GPU memory hierarchy transparently for the user.
+The two-dimensional data type significantly simplifies memory management.
+The SkelCL library is available as open-source software at \texttt{http://skelcl.uni-muenster.de}.
+\from{Paraphrase end}
+
+\from{ICCS begin}
+\subsection{ICCS}
+This paper presented the SkelCL high-level programming model for multi-GPU systems and its implementation as a library.
+We focused on programming methodology and, therefore, deliberately restricted ourselves to a single sample real-world application as motivation example and benchmark for experiments.
+Additional application examples can be found on the SkelCL website \url{http://skelcl.uni-muenster.de}, including LU decomposition, computation of the Mandelbrot set, matrix multiplication, Jacobi stencil computations, B+ tree traversal, the Mersenne Twister, etc. SkelCL is freely available as open source software.
+
+The SkelCL programming model significantly raises the level of abstraction: it combines parallel patterns to express computations, parallel container data types for simplified memory management and a data (re)distribution mechanism to improve scalability in systems with multiple GPUs.
+Our SkelCL library significantly reduces the amount of source code necessary to implement the sample imaging application (by 50\%) and frees the application developer from low-level memory management and other tedious programming tasks.
+The performance experiments show that SkelCL introduces a moderate overhead of less than 5\% as compared to the arguably more complicated and error-prone OpenCL implementation.
+\from{ICCS end}
+
+\from{PaCT begin}
+\subsection{PaCT}
+This paper presents the SkelCL high-level programming model for multi-GPU systems and its implementation as a library.  
+The SkelCL programming model significantly raises the level of abstraction: it combines parallel patterns to express computations, parallel container data types for simplified memory management and a data (re)distribution mechanism to improve scalability in systems with multiple GPUs.
+The SkelCL library is available as open source software from \url{http://skelcl.uni-muenster.de}.
+\from{PaCT end}
+
+\from{HiStencils begin}
+\subsection{HiStencils}
+In the paper, we describe how stencil computations are programmed in our SkelCL approach that combines high level of programming abstraction with competitive performance on multi-GPU systems.
+We introduce two SkelCL skeletons for stencil computations -- MapOverlap and Stencil -- and we discuss their efficient parallel implementation, and report experimental results.
+We demonstrate that when executing a single stencil shape once, the MapOverlap skeleton should be used;
+in all other cases, the Stencil skeleton is the better choice regarding both user comfort and performance.
+Both skeletons meet SkelCL's requirements of offering high levels of programming abstraction together with a competitive performance on multiple devices, and yield much shorter and simpler codes than when using OpenCL.
+\from{HiStencils end}
+
+\from{PACT begin}
+\subsection{PACT}
+In this paper, we have presented a set of rewrite rules that automatically transform high-level algorithmic expressions into compositions of low-level hardware patterns. 
+Our rules allow us to express existing optimization strategies, found in hand-optimized code, as well as discover new ones with superior performance.
+As we automatically explore the space of possible implementations with our rules, as opposed to hard-coded optimization strategies, we are able to provide performance portability.
+
+We have demonstrated that our approach achieves performance on par with highly tuned platform specific BLAS libraries.
+For benchmarks such as matrix vector multiplication we even reach speedup of up to 4.5$\times$.
+We also show that our technique achieves portable performance for more complex applications such as the BlackScholes benchmark or for molecular dynamics simulation.
+\from{PACT end}
+

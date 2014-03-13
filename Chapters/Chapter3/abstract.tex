@@ -1,0 +1,93 @@
+\section{Abstract}
+
+\from{HIPS begin}
+\subsection{HIPS}
+While CUDA and OpenCL made general-purpose programming for Graphics Processing Units (GPU) popular,
+using these programming approaches remains complex and error-prone because they lack high-level abstractions.
+The especially challenging systems with multiple GPU are not addressed at all by these low-level programming models.
+We propose SkelCL -- a library providing so-called algorithmic skeletons that capture recurring patterns of parallel computation and communication,
+together with an abstract vector data type and constructs for specifying data distribution.
+We demonstrate that SkelCL greatly simplifies programming GPU systems.
+We report the competitive performance results of SkelCL using both a simple Mandelbrot set
+computation and an industrial-strength medical imaging application.
+Because the library is implemented using OpenCL, it is portable across GPU hardware of different vendors.
+\from{HIPS end}
+
+
+\from{ASHES begin}
+\subsection{ASHES}
+Application programming for GPUs (Graphics Processing Units) is complex and error-prone, because the popular approaches --- CUDA and OpenCL --- are intrinsically low-level and offer no special support for systems consisting of multiple GPUs.
+The SkelCL library presented in this paper is built on top of the OpenCL standard and offers pre-implemented recurring computation and communication patterns (skeletons) which greatly simplify programming for multi-GPU systems.
+The library also provides an abstract vector data type and a high-level data (re)distribution mechanism to shield the programmer from the low-level data transfers between the system's main memory and multiple GPUs.
+In this paper, we focus on the specific support in SkelCL for systems with multiple GPUs and use a real-world application study from the area of medical imaging to demonstrate the reduced programming effort and competitive performance of SkelCL as compared to OpenCL and CUDA.
+Besides, we illustrate how SkelCL adapts to large-scale, distributed heterogeneous systems in order to simplify their programming.
+\from{ASHES end}
+
+
+\from{Paraphrase begin}
+\subsection{Paraphrase}
+Application programming for GPUs (Graphics Processing Units) is complex and error-prone, because the popular approaches --- CUDA and OpenCL --- are intrinsically low-level and offer no special support for systems consisting of multiple GPUs.
+The SkelCL library offers pre-implemented recurring computation and communication patterns (skeletons) which greatly simplify programming for single- and multi-GPU systems.
+In this paper, we focus on applications that work on two-dimensional data.
+We extend SkelCL by the matrix data type and the MapOverlap skeleton which specifies computations that depend on neighboring elements in a matrix.
+The abstract data types and a high-level data (re)distribution mechanism of SkelCL shield the programmer from the low-level data transfers between the system's main memory and multiple GPUs.
+We demonstrate how the extended SkelCL is used to implement real-world image processing applications on two-dimensional data.
+We show that both from a productivity and a performance point of view it is beneficial to use the high-level abstractions of SkelCL.
+\from{Paraphrase end}
+
+
+\from{ICCS begin}
+\subsection{ICCS}
+Application development for modern high-performance systems with Graphics Processing Units (GPUs) relies on low-level programming approaches like CUDA and OpenCL, which leads to complex, lengthy and error-prone programs.
+
+In this paper, we present SkelCL -- a high-level programming model for systems with multiple GPUs and its implementation as a library on top of OpenCL.
+SkelCL provides three main enhancements to the OpenCL standard:
+1) computations are conveniently expressed using \emph{parallel patterns (skeletons)};
+2) memory management is simplified using \emph{parallel container data types};
+3) an automatic \emph{data (re)distribution} mechanism allows for scalability when using multi-GPU systems.
+
+We use a real-world example from the field of medical imaging to motivate the design of our programming model and we show how application development using SkelCL is simplified without sacrificing performance:
+we were able to reduce the code size in our imaging example application by 50\% while introducing only a moderate runtime overhead of less than 5\%.
+\from{ICCS end}
+
+
+\from{HLPP start}
+\subsection{HLPP}
+  Algorithmic skeletons simplify software development: they abstract typical patterns of parallelism and provide their efficient implementations, allowing the application developer to focus on the structure of algorithms, rather than on implementation details.
+  This becomes especially important for modern parallel systems with multiple Graphics Processing Units (GPUs) whose programming is complex and error-prone, because state-of-the-art programming approaches like CUDA and OpenCL lack high-level abstractions.
+
+  We define a new algorithmic skeleton for \emph{allpairs computations} which occur in real-world applications, ranging from bioinformatics to physics.
+  We develop the skeleton's generic parallel implementation for multi-GPU Systems in OpenCL.
+  To enable the automatic use of the fast GPU memory, we identify and implement an optimized version of the allpairs skeleton with a customizing function that follows a certain memory access pattern.
+  
+  We use matrix multiplication as an application study for the allpairs skeleton and its two implementations and demonstrate that the skeleton greatly simplifies programming, saving up to 90\% of lines of code as compared to OpenCL.
+  The performance of our optimized implementation is up to 6.8 times higher as compared with the generic implementation and is competitive to the performance of a manually written optimized OpenCL code.
+\from{HLPP end}
+
+
+\from{PaCT begin}
+\subsection{PaCT}
+Application development for modern high-performance systems with Graphics Processing Units (GPUs) currently relies on low-level programming approaches like CUDA and OpenCL, which leads to complex, lengthy and error-prone programs.
+
+In this paper, we present SkelCL -- a high-level programming approach for systems with multiple GPUs and its implementation as a library on top of OpenCL.
+SkelCL provides three main enhancements to the OpenCL standard:
+1) computations are conveniently expressed using parallel algorithmic patterns (\emph{skeletons});
+2) memory management is simplified using parallel \emph{container data types} (vectors and matrices);
+3) an automatic \emph{data (re)distribution mechanism} allows for implicit data movements between GPUs and ensures scalability when using multiple GPUs.
+We demonstrate how SkelCL is used to implement parallel applications on one- and two-dimensional data.
+We report experimental results to evaluate our approach in terms of programming effort and performance.
+\from{PaCT end}
+
+
+\from{HiStencils begin}
+\subsection{HiStencils}
+The implementation of stencil computations on modern, massively parallel systems with GPUs and other accelerators currently relies on manually-tuned coding using low-level approaches like OpenCL and CUDA, which makes it a complex, time-consuming, and error-prone task.
+We describe how stencil computations can be programmed in our SkelCL approach that combines high level of programming abstraction with competitive performance on multi-GPU systems.
+SkelCL extends the OpenCL standard by three high-level features:
+1) pre-implemented parallel patterns (a.k.a.\ skeletons);
+2) container data types for vectors and matrices; 
+3) automatic data (re)distribution mechanism.
+We introduce two new SkelCL skeletons which specifically target stencil computations -- MapOverlap and Stencil -- and we describe their use for particular application examples, discuss their efficient parallel implementation, and report experimental results on manycore systems with multiple GPUs.
+\from{HiStencils end}
+
+\pagebreak

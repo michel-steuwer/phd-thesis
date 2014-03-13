@@ -19,7 +19,7 @@
                       ,dottedtoc
                       ,pdfspacing
                       ,listings
-                      ,subfig
+                      %,subfig
                       ,drafting
                      }{classicthesis}
 % Available options: drafting parts nochapters linedheaders eulerchapternumbers beramono eulermath pdfspacing minionprospacing tocaligned dottedtoc manychapters listings floatperchapter subfig
@@ -39,7 +39,7 @@
 \newcommand{\myTime}{2014\xspace}
 
 % color settings
-\usepackage[dvipsnames]{xcolor}
+\usepackage[usenames,dvipsnames,table]{xcolor}
 \definecolor{PantoneBlack7}{cmyk}{0, 0, 0.1, 0.9}
 \definecolor{Pantone877}{cmyk}{0.38, 0.27, 0.26, 0.09}
 \definecolor{titleGray}{gray}{0.3}
@@ -144,7 +144,7 @@
 \newcommand{\myfloatalign}{\centering} % To be used with each float for alignment
 \usepackage{caption}
 \captionsetup{format=hang,font=small}
-\usepackage{subfig}  
+%\usepackage{subfig}  
 
 %----------------------------------------------------------------------------------------
 %	CODE LISTINGS SETUP
@@ -252,7 +252,7 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \renewcommand*{\equationautorefname}{Gleichung}
 \renewcommand*{\itemautorefname}{Punkt}
 }
-\providecommand{\subfigureautorefname}{\figureautorefname} % Fix to getting autorefs for subfigures right
+%\providecommand{\subfigureautorefname}{\figureautorefname} % Fix to getting autorefs for subfigures right
 }{\relax}
 \makeatother
 
@@ -281,3 +281,58 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 %\usepackage{lmodern} % <-- no osf support :-(
 %\usepackage[urw-garamond]{mathdesign} %<-- no osf support :-(
 \usepackage{longtable}
+
+\newcommand{\from}[1]{\marginpar{\fcolorbox{Maroon}{Maroon}{\color{white}#1}}}
+
+% included for HLPP
+\usepackage{tikz}
+\usepackage{multirow}
+\usepackage{enumitem}
+\newcommand{\eqdef}{\stackrel{\textrm{\scriptsize def}}{=}}
+\newcommand{\MN}{\mathbb{N}}
+\newcommand{\MR}{\mathbb{R}}
+\newcommand{\DottedMatrix}[4]{\left[ \begin{array}{ccc}%
+	#1 & \cdots & #2\\%
+	\vdots & & \vdots\\%
+	#3 & \cdots & #4%
+	\end{array}\right]}
+\newcommand{\DottedVector}[2]{\left[#1\ \cdots\ #2\right]}
+
+\newcommand{\ManDist}{\mbox{\emph{ManDist}}}
+\newcommand{\PMD}{\mbox{\emph{PMD}}}
+\newcommand{\dotProduct}{\mbox{\emph{dotProduct}}}
+\newcommand{\allpairs}{\mbox{\emph{allpairs}}}
+\newcommand{\zip}{\mbox{\emph{zip}}}
+\newcommand{\reduce}{\mbox{\emph{reduce}}}
+\newcommand{\zipReduce}{\mbox{\emph{zipReduce}}}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
+
+\newtheorem{definition}{Definition}
+
+% included for HiStencils
+\newcommand{\code}[1]{\texttt{#1}}
+
+% included for PACT
+%\newcommand{\ie}{\emph{i.e.},\xspace}
+%\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\etal}{et al.\xspace}
+\newcommand{\TODO}[1]{\textbf{\hl{TODO: #1}}}
+%\newcommand{\pat}[1]{\texttt{#1}}
+\newcommand{\pat}[1]{\textit{#1}}
+\newcommand{\bench}[1]{\textit{#1}}
+
+\usepackage[backgroundcolor=rulesbgcolor,linecolor=ruleslncolor,innerleftmargin=0pt,innerbottommargin=0pt, innertopmargin=1pt]{mdframed}
+\usepackage{subcaption}
+
+\usepackage{booktabs}
+\newcommand{\tabhead}[1]{ \textbf{#1} }
+%\usepackage[table]{xcolor}
+\definecolor{oddcolor}{HTML}{FFFFFF}
+\definecolor{evencolor}{HTML}{CCD0FF}
+\definecolor{rulesbgcolor}{HTML}{F8FFCC}
+\definecolor{ruleslncolor}{HTML}{555555}
+
+\definecolor{refColor}{HTML}{A63603}
+\definecolor{citeColor}{HTML}{006D2C}
+\definecolor{urlColor}{HTML}{08519C}
