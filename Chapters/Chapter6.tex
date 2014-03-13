@@ -147,7 +147,7 @@ We also analyze the expression found automatically for one of our benchmarks.
 \subsection{Comparison vs. Portable Implementation}
 
 \begin{figure}[t]
-  %\includegraphics[width=\linewidth]{plots/application\string_results\string_vs\string_clBLAS} 
+  \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_clBLAS} 
   \caption{Performance of our approach relative to a portable OpenCL reference implementation.
            We outperform the clBLAS implementation on most benchmarks and platforms.}
   \label{fig:clblas}
@@ -172,23 +172,22 @@ For \bench{MD}, we are actually on par with the OpenCL implementation on all pla
 \begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.315\linewidth}
-    %\includegraphics[width=\linewidth]{plots/application\string_results\string_vs\string_BEST\string_nv}
+    \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_BEST\string_nv}
     \caption{Nvidia GPU}
     \label{fig:results-nv}
   \end{subfigure}
-  \hspace{0.015\linewidth}
+  \hfill
   \begin{subfigure}[b]{0.315\linewidth}
-    %\includegraphics[width=\linewidth]{plots/application\string_results\string_vs\string_BEST\string_amd} 
+    \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_BEST\string_amd} 
     \caption{AMD GPU}
     \label{fig:results-amd}
   \end{subfigure}
-  \hspace{0.015\linewidth}
+  \hfill
   \begin{subfigure}[b]{0.315\linewidth}
-    %\includegraphics[width=\linewidth]{plots/application\string_results\string_vs\string_BEST\string_intel} 
+    \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_BEST\string_intel} 
     \caption{Intel CPU}
     \label{fig:results-cpu}
   \end{subfigure}
-  \vspace{-1.5em}
   \caption{Performance comparison of our approach relative to a highly-tuned platform-specific library; CUBLAS for Nvidia, clBLAS for AMD and ATLAS for the CPU.	  
            Our approach matches the performance of CUBLAS, outperforms clBLAS on some routines and outperforms ATALS on most routines.}
    \label{fig:results}  
