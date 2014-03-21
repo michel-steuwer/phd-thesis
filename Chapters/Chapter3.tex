@@ -1,11 +1,40 @@
-% Chapter 3: A high-level library for multi-GPU programming
+% Chapter 3:
 
-\chapter{A High-Level Library for Multi-GPU Programming}
+\chapter{High-Level Programming for Multi-GPU Systems}
 
-\label{ch:third} % For referencing the chapter elsewhere, use \autoref{ch:name} 
+\label{chapter:skelcl}
+
+This chapter describes how structured parallel programming simplifies the task of programming for parallel systems.
+As throughout the thesis, we will focus on programming of single- and multi-\GPU systems.
+We will first motivate the need for high-level abstractions using an real-world \OpenCL application.
+Then we introduce the \emph{\SkelCL} programming model and its implementation as a \Cpp library which addresses the lack of high-level abstractions in state of the art \GPU programming models.
+The following \autoref{chapter:skelcl-evaluation} will provide several application studies to thoroughly evaluate the usefulness and performance of the abstractions and implementation presented in this chapter.
+
+\section{The need for high-level abstractions}
+
+\subsection{Requirements to a High-Level Programming Mode}
+The described implementation of the example application reveals the main problems and difficulties that the application developer has to overcome when using \OpenCL.
+Our analysis show that to simplify programming for a system with multiple \GPUs, at least the following three high-level abstraction are desirable:
+
+\paragraph{Parallel container data types}
+Compute intensive applications typically operate on a (possibly big) set of data items.
+As shown in Listing~\ref{lst:upload}, managing memory is error-prone because low-level details, like offset calculations, have to be programmed manually.
+
+A high-level programming model should be able to make collections of data automatically accessible to all processors in a system and it should provide an easy-to-use interface for the application developer.
+
+\paragraph{Recurring patterns of parallelism}
+While each application (of course) performs different concrete operations, the general structure of parallelization resembles parallel patterns that are commonly used in many applications.
+% In step 1, for computing the error image $c_l$, the same sequence of operations is performed for every event from the input subset, which is the well-known \emph{map} pattern of data-parallel programming~\cite{gc11}.
+% In step 2, two images (the current image estimate $f_l$ and the error image $c_l$) are combined element-wise into the output image ($f_{l+1}$), see line 5 of Listing~\ref{lst:step_2}, which is again the common \emph{zip} pattern of parallelism.
+It would be, therefore, desirable to express the high-level structure of an application using pre-defined common patterns, rather than describing the parallelism manually in much detail.
+
+\paragraph{Distribution and redistribution mechanisms}
+To achieve scalability of applications on systems comprising multiple \GPUs, it is crucial to decide how the application's data are distributed across all available \GPUs.
+Distributing and re-distributing data in \OpenCL is cumbersome because data transfers have to be managed manually and performed via the \CPU, as shown in Listing~\ref{lst:redistribution}.
+Therefore, it is important for a high-level programming model to allow both for describing the data distribution and for changing the distribution at runtime.
 
 % include abstracts
-\input{Chapters/Chapter3/abstract.tex}
+%\input{Chapters/Chapter3/abstract.tex}
 
 \from{HIPS begin}
 \section{SkelCL: An OpenCL-based skeleton library (HIPS)}
@@ -637,29 +666,6 @@ this results in a lot of low-level code which is completely hidden when using Sk
 
 
 \from{ICCS begin}
-\section{Requirements to a High-Level Programming Model (ICCS)}
-The described implementation of the LM OSEM algorithm reveals the main problems and difficulties that the application developer has to overcome when using OpenCL.
-Our analysis show that to simplify programming for a system with multiple GPUs, the following high-level abstraction are desirable:
-
-\paragraph{Parallel container data types}
-Compute intensive applications, like the LM OSEM algorithm, typically operate on a (possibly big) set of data items.
-The LM OSEM algorithm operates on lists (of events) and three-dimensional images (the reconstruction image $f_l$ and the error image $c_l$).
-As shown in Listing~\ref{lst:upload}, managing memory is error-prone because low-level details, like offset calculations, have to be programmed manually.
-
-A high-level programming model should be able to make collections of data automatically accessible to all processors in a system and it should provide an easy-to-use interface for the application developer.
-
-\paragraph{Recurring patterns of parallelism}
-While the concrete operations performed in the LM OSEM algorithm are (of course) application-specific, the general structure of parallelization resembles parallel patterns that are commonly used in many applications.
-In step 1, for computing the error image $c_l$, the same sequence of operations is performed for every event from the input subset, which is the well-known \emph{map} pattern of data-parallel programming~\cite{gc11}.
-In step 2, two images (the current image estimate $f_l$ and the error image $c_l$) are combined element-wise into the output image ($f_{l+1}$), see line 5 of Listing~\ref{lst:step_2}, which is again the common \emph{zip} pattern of parallelism.
-It would be, therefore, desirable to express the high-level structure of an application using pre-defined common patterns, rather than describing the parallelism manually in much detail.
-
-\paragraph{Distribution and redistribution mechanisms}
-To achieve scalability of applications on systems comprising multiple GPUs, it is crucial to decide how the application's data are distributed across all available GPUs.
-As shown in Fig.~\ref{fig:em_distribution}, the LM OSEM algorithm requires two different distributions for its two computational steps.
-Distributing and re-distributing data in OpenCL is cumbersome because data transfers have to be managed manually and performed via the CPU, as shown in Listing~\ref{lst:redistribution}.
-Therefore, it is important for a high-level programming model to allow both for describing the data distribution and for changing the distribution at runtime.
-
 \section{The SkelCL Programming Model and the SkelCL Library (ICCS)}
 
 We develop our SkelCL~\cite{StKG-11} programming model as an extension of the standard OpenCL programming model~\cite{OpenCL-10}, which adds to OpenCL the three features that we identified as desirable in Section~\ref{sec:requirements}:

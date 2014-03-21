@@ -56,7 +56,7 @@
 \usepackage{makeidx}
 \makeindex
 
-\usepackage{textcomp}
+\usepackage[full]{textcomp}
 
 %----------------------------------------------------------------------------------------
 %	USEFUL COMMANDS
@@ -273,13 +273,15 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 %	USING DIFFERENT FONTS
 %----------------------------------------------------------------------------------------
 
-%\usepackage[oldstylenums]{kpfonts} % oldstyle notextcomp
+%\usepackage[oldstylenums,onlyrm]{kpfonts} % oldstyle notextcomp
+
 %\usepackage[osf]{libertine}
 %\usepackage{hfoldsty} % Computer Modern with osf
 %\usepackage[light,condensed,math]{iwona}
 %\renewcommand{\sfdefault}{iwona}
 %\usepackage{lmodern} % <-- no osf support :-(
 %\usepackage[urw-garamond]{mathdesign} %<-- no osf support :-(
+
 \usepackage{longtable}
 
 \newcommand{\from}[1]{\marginpar{\fcolorbox{Maroon}{Maroon}{\color{white}#1}}}
@@ -336,3 +338,14 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \definecolor{refColor}{HTML}{A63603}
 \definecolor{citeColor}{HTML}{006D2C}
 \definecolor{urlColor}{HTML}{08519C}
+
+%
+\newcommand{\Cpp}{C\textls[-40]{++}\xspace}
+\newcommand{\OpenCL}{Open{\small CL}\xspace}
+\newcommand{\CUDA}{{\small CUDA}\xspace}
+\newcommand{\CPU}{{\small CPU}\xspace}
+\newcommand{\CPUs}{{\CPU}s\xspace}
+\newcommand{\GPU}{{\small GPU}\xspace}
+\newcommand{\GPUs}{{\GPU}s\xspace}
+\newcommand{\SkelCL}{Skel{\small CL}\xspace}
+
