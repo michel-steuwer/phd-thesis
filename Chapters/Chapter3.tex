@@ -4,15 +4,20 @@
 
 \label{chapter:skelcl}
 
-This chapter describes how structured parallel programming simplifies the task of programming for parallel systems.
+In this chapter we address the first main challenge identified in \autoref{chapter:background}: Programmability.
+We will see how structured parallel programming simplifies the task of programming for parallel systems.
 As throughout the thesis, we will focus on programming of single- and multi-\GPU systems.
 We will first motivate the need for high-level abstractions using an real-world \OpenCL application.
 Then we introduce the \emph{\SkelCL} programming model and its implementation as a \Cpp library which addresses the lack of high-level abstractions in state of the art \GPU programming models.
 The following \autoref{chapter:skelcl-evaluation} will provide several application studies to thoroughly evaluate the usefulness and performance of the abstractions and implementation presented in this chapter.
 
+
+% ============================================================================ %
 \section{The need for high-level abstractions}
+\label{section:opencl-example}
 
 \subsection{Requirements to a High-Level Programming Mode}
+\label{section:requirements}
 The described implementation of the example application reveals the main problems and difficulties that the application developer has to overcome when using \OpenCL.
 Our analysis show that to simplify programming for a system with multiple \GPUs, at least the following three high-level abstraction are desirable:
 
@@ -33,16 +38,399 @@ To achieve scalability of applications on systems comprising multiple \GPUs, it 
 Distributing and re-distributing data in \OpenCL is cumbersome because data transfers have to be managed manually and performed via the \CPU, as shown in Listing~\ref{lst:redistribution}.
 Therefore, it is important for a high-level programming model to allow both for describing the data distribution and for changing the distribution at runtime.
 
-% include abstracts
-%\input{Chapters/Chapter3/abstract.tex}
+
+% ============================================================================ %
+\section{The SkelCL Programming Model}
+\label{section:skelcl-programming-model}
+We develop our \SkelCL programming model as an extension of the standard \OpenCL programming model~\cite{OpenCL}.
+\SkelCL adds to \OpenCL three features that we identified as desirable in~\autoref{section:requirements}:
+
+\begin{itemize}
+  \item \emph{parallel container data types} for unified memory management between host and devices;
+  \item \emph{algorithmic skeletons} for easily expressing parallel computation patterns;
+  \item \emph{data distribution} and \emph{redistribution} mechanisms for programming multi-device systems.
+\end{itemize}
+
+\noindent
+\SkelCL inherits all properties of \OpenCL, including its portability across different heterogeneous parallel systems.
+\SkelCL is designed to be fully compatible with \OpenCL: arbitrary parts of a \SkelCL code can be written or rewritten in \OpenCL, without influencing program's correctness.
+
+
+\subsection{Parallel Container Data Types}
+\label{section:skelcl-programming-model:container}
+\SkelCL offers the application developer two container classes -- vector and matrix -- which are transparently accessible by both, host and devices.
+The \emph{vector} abstracts a one-dimensional contiguous memory area while the \emph{matrix} provides an interface to a two-dimensional memory area.
+When a container is created on the host, memory is allocated on the devices automatically;
+when a container on the host is deleted, the memory allocated on the devices is freed automatically.
+
+The main advantage of the container data types in \SkelCL as compared with \OpenCL is that the necessary data transfers between the host and devices are performed implicitly.
+Before performing a computation on container types, the \SkelCL system ensures that all input containers' data is available on all participating devices.
+This may result in implicit (automatic) data transfers from the host to device memory, which in \OpenCL would require explicit programming, as we saw in~\autoref{section:opencl-example}.
+Similarly, before any data is accessed on the host, the implementation of \SkelCL ensures that this data on the host is up-to-date by performing necessary data transfers implicitly and automatically.
+Thus, the container classes shield the programmer from low-level operations like memory allocation (on the devices) and data transfers between host and device.
+
+Developing applications on two-dimensional data for modern parallel architectures is cumbersome and challenging, since efficient memory handling is essential for achieving good performance.
+In case of \GPUs, exploiting the memory hierarchy by using the fast but small on-chip memory is key for high performance.
+Therefore, in addition to the vector as a one-dimensional abstract data structure, \SkelCL offers a specific abstract data type for handling two-dimensional data, the matrix.
+
+The implementations of the algorithmic skeletons included in \SkelCL differentiate for their input container between vector and matrix, thus, offering optimized implementations for each case.
+
+
+\subsection{Algorithmic Skeletons}
+\label{section:skelcl-programming-model:skeletons}
+In original \OpenCL, computations are expressed as \emph{kernels} which are executed in a parallel manner on an \OpenCL device:
+the application developer must explicitly the parallelism by specifying how many instances of a kernel are launched in parallel.
+In addition, kernels take pointers to device memory as input and contain program code for reading/writing single data items from/to it.
+These pointers have to be used carefully, because no boundary checks are performed by \OpenCL.
+
+To shield the application developer from these low-level programming issues, \SkelCL extends \OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{Cole1991}.
+Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner, thus hiding the details of parallelism and communication from the user~\cite{GorlatchCo2011}.
+
+\SkelCL provides four basic data-parallel skeletons: \map, \zip, \reduce, and \scan;
+as well as three more specialized skeletons: \mapOverlap, \stencil, and \allpairs.
+In this section we will look at the basic skeletons, the specialized skeletons will be discussed later on in this chapter.
+The four basic skeletons have been selected, because they are useful for a broad range of applications.
+Moreover, these skeletons can be efficiently implemented on \GPUs as their computation patterns match the data-parallel \SIMD (Singe Instruction, Multiple Data) execution model used by \GPUs.
+
+% We define the four basic skeletons using the following notations:
+% we use an arrow over lowercase letters to denote vectors, \eg, $\vec{v}$ for a vector of size $n$ with corresponding elements $v_i$ where $0 < i \leq n$.
+% We use uppercase letters to denote matrices, \eg, $M$ for an $n\times m$ matrix with corresponding elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
+
+
+\paragraph{The \map skeleton}
+The \map skeleton is a well known basic algorithmic skeleton, applying a given function to each element of a container.
+This skeleton originates from the functional world, where the \code{map} function is recognized as an important primitive for writing high-level code.
+In many programming languages an equivalent sequential function exists, either known by the same name, like in Haskell or Python, or by other names, like \code{transform} in \Cpp, or \code{Select} in \Csharp.
+
+In \SkelCL the \map skeleton can operate on vectors as well as matrices.
+We start by formally define the skeleton on vectors:
+\begin{definition}
+  \label{definition:map}
+  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $f$ be a unary customizing function.
+  The algorithmic skeleton \map is defined as follows:
+  \begin{equation}
+    map \big(\ f,\ [x_1, x_2, \dots, x_n]\ \big) = [f(x_1), f(x_2), \dots, f(x_n)]
+  \end{equation}
+\end{definition}
+\noindent
+The definition for matrices is similar:
+\begin{definition}
+  \label{definition:map:matrix}
+  Let $M$ be an $n\times m$ matrix with elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
+  Let $f$ be a unary customizing function.
+  The algorithmic skeleton \map is defined as follows:
+  \begin{equation}
+    map\big(\ f,\ \DottedMatrix{M_{0,0}}{M_{0,m}}{M_{n,0}}{M_{n,m}} \big)
+      = \DottedMatrix{f(M_{0,0})}{f(M_{0,m})}{f(M_{n,0})}{f(M_{n,m})}
+  \end{equation}
+\end{definition}
+\noindent
+The output container, either vector or matrix, can be computed in parallel, because the computation of each single element is independent of each other.
+
+A simple possible application of the \map skeleton is negating all the values in a vector:
+\begin{align*}
+  neg(\vec{x}) &= map(\ -, \vec{x}\ )
+\end{align*}
+
+
+\paragraph{The \zip skeleton}
+The \zip skeleton operates on two containers and combines them in one.
+As the \map skeleton it is defined for vectors and matrices as well.
+\begin{definition}
+  \label{definition:zip}
+  Let $\vec{x}$ and $\vec{y}$ be vectors of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
+  Let $\oplus$ be a binary customizing operator.
+  The algorithmic skeleton \zip is defined as follows:
+  \begin{equation}
+    \begin{split}
+    zip \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ [y_1, y_2, \dots, y_n]\ \big)\\
+      = [x_1 \oplus y_1, x_2 \oplus y_2, \dots, x_n \oplus y_n]
+    \end{split}
+  \end{equation}
+\end{definition}
+\noindent
+Again the definition for matrices is similar:
+\begin{definition}
+  \label{definition:zip:matrix}
+  Let $A$ and $B$ be $n\times m$ matrices with elements $A_{i,j}$ and $B_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
+  Let $\oplus$ be a binary customizing operator.
+  The algorithmic skeleton \zip is defined as follows:
+  \begin{equation}
+    \begin{split}
+    zip\big( f,\ {\DottedMatrix{A_{0,0}}{A_{0,m}}{A_{n,0}}{A_{n,m}}},\
+                 {\DottedMatrix{B_{0,0}}{B_{0,m}}{B_{n,0}}{B_{n,m}}}\big) \\
+      = \DottedMatrix{A_{0,0} \oplus B_{0,0}}{A_{0,m} \oplus B_{0,m}}{A_{n,0} \oplus B_{n,0}}{A_{n,m} \oplus B_{n,m}}
+    \end{split}
+  \end{equation}
+\end{definition}
+\noindent
+This definitions require the two input containers to be of exactly the same size.
+The \zip skeleton is parallelizeable in the same manner as \map, as each element of the output container can be computed in parallel.
+
+A possible application of the \zip skeleton is adding two vectors:
+\begin{align*}
+  add(\vec{x},\ \vec{y}) = zip(\ +, \vec{x},\ \vec{y}\ )
+\end{align*}
+
+
+\paragraph{The \reduce skeleton}
+The \reduce skeleton computes a single value from a vector by successively applying the customizing function.
+In \SkelCL the \reduce skeleton is only defined on vectors:
+\begin{definition}
+  \label{definition:reduce}
+  Let $\vec{x}$ be vectors of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\oplus$ be a associative and commutative, binary customizing operator with the corresponding identity value $id$.
+  The algorithmic skeleton \reduce is defined as follows:
+  \begin{equation}
+    reduce \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ id\ \big)
+      = x_1 \oplus x_2 \oplus \dots \oplus x_n
+  \end{equation}
+\end{definition}
+\noindent
+Requiring the operator to be associative and commutative enables efficient parallel implementations.
+The identity value $id$ can be used by the implementation, \eg, to initialize intermediate buffers. % TODO: think harder
+
+A possible application of the \reduce skeleton is to find the maximum value of a vector:
+\begin{align*}
+  sumUp(\vec{x}) &= reduce(\ max, \vec{x},\ 0\ )\\
+  \text{where: } max(a, b) &=
+    \left\{
+      \begin{array}{l l}
+      a & \text{if } a \geq b\\
+      b & \text{if } a < b
+      \end{array}
+    \right.
+\end{align*}
+
+
+\paragraph{The \scan skeleton}
+The \scan skeleton (\aka prefix-sum) yields an output vector with each element obtained by applying the customizing function to the elements of the input vector up to the current element's index.
+In \SkelCL the \scan skeleton is only defined on vectors:
+\begin{definition}
+  \label{definition:scan}
+  Let $\vec{x}$ be vectors of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\oplus$ be a associative binary customizing operator with the corresponding identity value $id$.
+  The algorithmic skeleton \scan is defined as follows:
+  \begin{equation}
+    \begin{split}
+    scan \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ id\ \big) \\
+      = [id, x_1 \oplus x_2,\ \dots,x_1 \oplus x_2 \oplus \cdots \oplus x_n]
+    \end{split}
+  \end{equation}
+\end{definition}
+\noindent
+Even though, the \scan pattern seems inherently sequential, because each individual results contains the results of its predecessor, efficient parallel implementations does exist for this problem.
+Blelloch~\cite{Blelloch1991} studies this parallel pattern in great details and efficient implementations for \GPUs exists~\cite{HarrisSeOw2007} following his algorithmic ideas.
+
+
+\paragraph{Parallel Programming with Algorithmic Skeletons}
+In \SkelCL, rather than writing low-level kernels, the application developer customizes suitable skeletons by providing application-specific functions which are often much simpler than kernels as they specify an operation on basic data items rather than containers.
+Skeletons can be executed on both single- and multi-device systems.
+In case of a multi-device system, the calculation specified by a skeleton is performed automatically on all devices available in the system.
+
+Skeletons can be customized and composed to express more complex algorithms.
+To demonstrate how to express computations with algorithmic skeletons let us consider three linear algebra applications:
+scaling a vector with a constant, computing the sum of absolute values of a vector, and computing the dot product (\aka inner product) of two vectors.
+These three applications are all part of the well known \emph{Basic Linear Algebra Subprograms (\BLAS)}~\cite{Dongarra2002,Dongarra2002a}.
+
+For scaling a vector with a constant $\alpha$ we use the \map skeleton:
+\begin{align*}
+  scal(\vec{x}) &= map(\ f_{\alpha}, \vec{x}\ )\\
+  \text{where: } f_{\alpha}(x_i) &= \alpha \cdot x_i
+\end{align*}
+
+\noindent
+For computing the sum of absolute values we compose a \map and \reduce skeleton.
+We use the $\circ$ to denote the sequential composition of two functions, \ie\ $f \circ g(x) = f(g(x))$.
+\begin{align*}
+  asum(\vec{x}) &= reduce(\ +\ ) \circ map(\ abs, \vec{x}\ )\\
+  \text{where: } abs(a) &=
+    \left\{
+      \begin{array}{r l}
+      a & \text{if } a \geq 0\\
+      -a & \text{if } a < 0
+      \end{array}
+    \right.
+\end{align*}
+
+\noindent
+To compute the dot product of two vectors we compose a \zip skeleton customized with multiplication and a \reduce skeleton customized with addition:
+\begin{align*}
+  dot(\vec{x}, \vec{y}) &= reduce(\ +\ ) \circ zip(\ *, \vec{x}, \vec{y}\ )
+\end{align*}
+
+\section{Data distribution and redistribution}
+
+
+
+
+
+
+
+
+
+
+% ============================================================================ %
+\section{The SkelCL Library}
+\label{section:skelcl-library}
+In this section we discuss the \SkelCL Library, our implementation of the \SkelCL programming model.
+It provides to the user a \Cpp~\API that implements the features of the \SkelCL programming model, and thus liberates the application developer from writing low-level boilerplate code.
+In addition, the library provides some commonly used utility functions, \eg, for program initialization.
+The \SkelCL Library is open source software and available at: \url{http://skelcl.uni-muenster.de}.
+
+\subsection{Memory Management Implementation}
+\label{section:skelcl-library:memory-management}
+In the \SkelCL programming model the user managed its memory using \emph{container data types}.
+The two container data types -- vector and matrix -- are implemented as template classes in the \SkelCL Library.
+This generic implementation allows for storing data items of any primitive C/\Cpp data type (\eg, \code{int}), as well as user-defined data structures (\code{struct}s).
+
+\paragraph{The SkelCL Vector}
+The \SkelCL vector replicates the interface of the vector from the Standard Template Library (\STL), \ie, it can be used as a drop-in replacement of the standard vector.
+Internally, a vector comprises pointers to corresponding areas of main memory (accessible by the host) and device memory.
+The vector holds one pointer for the host and one pointer for each device available.
+Memory on the devices is allocated automatically, according to the distribution of the vector:
+while for a single distributed vector only memory on a single device is allocated, for a vector distributed with the copy, block, or overlap distribution memory on all devices is allocated.
+The selected distribution obviously also influences how big the buffer allocated on the devices are.
+
+Before the execution of a skeleton, the input vector's implementation ensures that all of its data is available on the devices.
+This might result in implicit data transfers from the host memory to device memory.
+The data of the output vector is not copied back to the host memory but rather resides in the device memory.
+Before every data transfer, the vector implementation checks whether the data transfer is necessary;
+only then the data is actually transferred.
+Hence, if an output vector is used as the input to another skeleton, no further data transfer is performed.
+This \emph{lazy copying} defers data transfers as long as possible or avoids them completely and, thus, minimizes the costly data transfers between host and device.
+While all data transfers are performed implicitly by \SkelCL we understand that advanced application developers want fine grained control over the data transfers between host and devices.
+For that purpose \SkelCL offers a set of \APIs developers can use to explicitly initiate and control the data transfer to and from the devices.
+
+%In a SkelCL program, a vector object can be created and filled with data like this:
+%\vspace{.5em}
+%\centerline{\lstinline!Vector<int> vec(size);!}
+%\centerline{\lstinline!for (int i = 0; i < vec.size(); ++i) \{ vec[i] = i; \}!}
+%\vspace{.5em}
+
+\paragraph{The SkelCL Matrix}
+The \SkelCL matrix offers an easy to use interface similar to the interface of the vector.
+Data is stored in row-major order and iterators are provided to iterate first over rows and then inside of a single row to access a particular element.
+For the copy, block, and overlap distribution the matrix is divided across rows.
+A single row is never split across multiple devices, which simplifies the memory management.
+Besides offering an interface to access elements on the host, the matrix also offers an interface for accessing elements on the device by using two-dimensional indices.
+This frees the application developer from performing cumbersome index calculations manually.
+
+\subsection{Algorithmic Skeletons Implementation}
+\label{section:skelcl-library:skeletons}
+
+
+% TODO: ...
+
+
+%\begin{itemize}
+%  \item 
+%    In a SkelCL program, a map skeleton is created as an object for a unary function $f$, e.\,g. negation, like this:
+%
+%    \vspace{.5em}
+%    \centerline{\lstinline!Map<float(float)> neg("float func(float x) \{ return -x;\}");!}
+%    \vspace{.5em}
+%
+%    This map object can then be called as a function with a vector as argument:
+%
+%    \vspace{.5em}
+%    \centerline{\lstinline!resultVector = neg( inputVector );!}
+%    \vspace{.5em}
+%  \item The zip skeleton operates on two vectors $cl$ and $cr$, applying a binary customizing operator $\oplus$ pairwise:
+%    \vspace{-.5em}
+%    \[ zip\ (\oplus)\ [cl_1, cl_2, \dots, cl_n]\ [cr_1, cr_2, \dots, cr_n] = [cl_1\oplus cr_1, cl_2\oplus cr_2, \dots, cl_n\oplus cr_n] \]
+%
+%    \vspace{-.5em}
+%    In SkelCL, a zip skeleton object for adding two vectors is created like as:
+%
+%    \vspace{.5em}
+%    \centerline{\lstinline!Zip<float(float, float)> add("float func(float x,float y) \{return x+y;\}");!}
+%    \vspace{.5em}
+%
+%    and can then be called as a function with a pair of vectors as arguments:
+%
+%    \vspace{.5em}
+%    \centerline{\lstinline!resultVector = add( leftVector, rightVector );!}
+%    \vspace{.5em}
+%    
+%  \item The reduce skeleton computes a scalar value from a vector using a binary associative operator $\oplus$, i.\,e.
+%    \vspace{-.5em}
+%    \[ red\ (\oplus)\ [v_1, v_2, \dots, v_n] = v_1 \oplus v_2 \oplus \dots \oplus v_n \]
+%
+%    \vspace{-.5em}
+%    For example, to sum up all elements of a vector, the reduce skeleton is created with addition as customizing function, and called as follows:
+%
+%    \vspace{.5em}
+%    \centerline{\lstinline!Reduce<float(float)> sumUp("float func(float x,float y) \{ return x+y;\}");!}
+%    \vspace{.5em}
+%    \centerline{\lstinline! result = sumUp( inputVector );!}
+%    \vspace{.5em}
+%
+% 
+%  \item The scan skeleton (a.\,k.\,a. prefix-sum) yields an output vector with each element obtained by applying a binary associative operator $\oplus$ to the elements of the input vector up to the current element's index, i.\,e.
+%    \vspace{-.5em}
+%    \[ scan\ (\oplus)\ [v_1, v_2, \dots, v_n] = [v_1, v_1\oplus v_2, \dots, v_1\oplus v_2\oplus \dots \oplus v_n] \]
+%
+%    \vspace{-.5em}
+%    The prefix sums customized with addition is specified and called in SkelCL as follows:
+%
+%    \vspace{.5em}
+%    \centerline{\lstinline!Scan<float(float)> prefixSum("float func(float x,float y) \{return x+y;\}");!}
+%    \vspace{.5em}
+%    \centerline{\lstinline! result = prefixSum( inputVector );!}
+%    \vspace{.5em}
+%
+%\end{itemize}
+
+
+% HIPS
+The parallelization approach for \texttt{Reduce} depends on whether the binary operator is commutative and/or associative.
+SkelCL requires the operator to be associative, such that it can be applied to arbitrarily sized subranges of the input vector in parallel.
+The final result is obtained by recursively combining the intermediate results for the subranges.
+To improve the performance, SkelCL saves the intermediate results in the device's fast local memory.
+
+
+% additional arguments
+For flexibility, \SkelCL skeletons can accept additional arguments if the customizing function works not only on a skeleton's input containers, but needs access to additional data~\cite{StKG-11};
+containers passed as additional arguments to a skeleton are automatically transfered to the GPUs.
+
+% opencl interop
+SkelCL can also be used in combination with existing OpenCL codes, as SkelCL is designed as an extension of OpenCL, rather than a replacement for it.
+
+% front end compiler
+
+% skeleton implementation
+In OpenCL, kernels are compiled at runtime of the host program in order to be executable on different GPUs.
+Therefore, in the SkelCL library implementation, the customizing functions are provided as strings to their skeletons.
+SkelCL implementation merges the customizing function with the pre-implemented skeleton-specific program code to build a valid OpenCL kernel automatically.
+The generated kernel fetches one or more data items from its input containers (vectors or matrices), passes them to the customizing function, and yields the function's result, e.\,g., by writing it to the output container.
+Rather than working with pointers to GPU memory (like kernels do), customizing functions in SkelCL take a single data item as input and return a single result.
+The SkelCL implementation of the vector container resembles the interface of the vector from the C++ Standard Template Library (STL), i.\,e., it can be used as a replacement for the standard vector.
+Internally, the containers manage pointers to the corresponding areas of the main memory (accessible by the CPU) and GPU memory.
+For possible optimizations of the kernel's source code, we rely on the optimization capabilities of the OpenCL compiler.
+
+% data transfers
+In some situations, our SkelCL implementation can optimize data transfers:
+\eg, after executing a skeleton, the output data remains in the GPU memory;
+this has the advantage that if the output container is used as the input to another skeleton, no data transfer has to be performed.
+Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers between the CPU and GPUs.
+
+
+
+
+
+% BREAK
+\newpage
+
+
+
+
+
+
 
 \from{HIPS begin}
 \section{SkelCL: An OpenCL-based skeleton library (HIPS)}
-
-SkelCL is based on data-parallel algorithmic skeletons~\cite{RaG-03}.
-A skeleton can be formally viewed as a higher-order function:
-apart from plain values it also takes one or more user-defined functions as arguments.
-These functions customize a skeleton to perform a particular calculation in parallel.
 
 SkelCL provides a set of basic skeletons.
 Two well-known examples are the \texttt{Zip} skeleton combining two vectors element-wise, and the \texttt{Reduce} skeleton combining all elements of a vector using a binary operation (see Section~\ref{sec:skeletons}).
@@ -90,25 +478,6 @@ int main (int argc, char const* argv[]) {
 }
 \end{lstlisting}
 
-\subsubsection{Abstract vector class and memory management}
-
-SkelCL offers the \texttt{Vector} class providing a unified abstraction for a contiguous memory area that is accessible by both, CPU and GPU.
-Internally, a vector comprises pointers to corresponding areas of main memory (accessible by the CPU) and GPU memory.
-Upon creation of a vector on the host system, memory is also allocated on the GPU accordingly.
-Data transfer between these corresponding memory areas is performed implicitly if the CPU accesses the vector that previously has been modified by the GPU or vice versa.
-Thus, the \texttt{Vector} class shields the user from low-level memory operations like allocation (on the GPU) and data transfer between CPU and GPU memory.
-In SkelCL, \texttt{Vector} is a class template.
-It implements a generic container class that is capable of storing data items of any primitive C/C++ data type (e.\,g., \texttt{int}), as well as user-defined data structures (\emph{structs}).
-
-All skeletons accept vectors as their input and output.
-Before execution, a skeleton's implementation ensures that all input vectors' data is available on the GPU.
-This might result in implicit data transfers from the main memory to GPU memory.
-The data of the output vector is not copied back to the main memory but rather resides in the GPU memory.
-Before every data transfer, the vector implementation checks whether the data transfer is necessary;
-only then the data is actually transferred.
-Hence, if an output vector is used as the input to another skeleton, no further data transfer is performed.
-This \emph{lazy copying} minimizes costly data transfers between host and device.
-
 
 \subsubsection{Skeletons in SkelCL}
 
@@ -126,57 +495,6 @@ SkelCL currently provides four basic skeletons: \texttt{Map}, \texttt{Zip}, \tex
 Each skeleton consumes vectors as input and produces vectors as output.
 A skeleton is called by using the name of the skeleton as a function and passing the appropriate number of arguments to it.
 This behavior is implemented using the C++ operator overloading feature.
-
-The \texttt{Map} skeleton takes a unary function and applies it to all elements of a given input vector.
-The result is a vector of the same length as the input vector.
-For a given function $f$ and vector $v = [x_0, \ldots, x_{n-1}]$ of length $n$, the mathematical definition of \texttt{Map} is given by
-\begin{equation}
-map\:f\:[x_0, \ldots, x_{n-1}] = [f(x_0), \ldots, f(x_{n-1})]
-\end{equation}
-
-The customizing function $f$ takes each element of the input vector and returns the corresponding element of the output vector.
-The output vector can be computed in parallel, because the calculations are independent of each other.
-
-The \texttt{Zip} skeleton takes a customizing binary operator and applies it to corresponding elements of two equally sized input vectors;
-the result is a vector of the same size.
-For a given operator $\oplus$ and two vectors $v_{0} = [x_0, \ldots, x_{n-1}]$ and $v_{1} = [y_0, \ldots, y_{n-1}]$ of length $n$, \texttt{Zip} is defined as
-\begin{equation}
-\begin{split}
-zip	& \oplus [x_0, \ldots, x_{n-1}], [y_0, \ldots, y_{n-1}]\\
-	& = [x_0 \oplus y_0, \ldots, x_{n-1} \oplus y_{n-1}]
-\end{split}
-\end{equation}
-
-Thus, it is a generalized dyadic form of \texttt{Map}.
-By chaining \texttt{Zip} skeletons, variadic forms of \texttt{Map} can be implemented.
-\texttt{Zip} is parallelizable in the same manner as \texttt{Map}.
-
-The \texttt{Reduce} skeleton uses a binary operator to combine all elements of the input vector and returns a scalar result.
-For a given operator $\oplus$ and a vector $v = [x_0, \ldots, x_{n-1}]$ of length $n$, \texttt{Reduce} is defined as
-\begin{equation}
-reduce \oplus [x_0, \ldots, x_{n-1}] = x_0 \oplus \ldots \oplus x_{n-1}
-\end{equation}
-
-The parallelization approach for \texttt{Reduce} depends on whether the binary operator is commutative and/or associative.
-SkelCL requires the operator to be associative, such that it can be applied to arbitrarily sized subranges of the input vector in parallel.
-The final result is obtained by recursively combining the intermediate results for the subranges.
-To improve the performance, SkelCL saves the intermediate results in the device's fast local memory.
-
-The \texttt{Scan} skeleton applies a customizing binary operator $\oplus$ to the elements of an input vector.
-It returns a vector of the same size as the input vector, such that element $i$ is calculated by combining elements from 0 to $i-1$ of the input vector using $\oplus$.
-For a given binary operator $\oplus$ and a vector $v = [x_0, \ldots, x_{n-1}]$ of length $n$ \texttt{Scan} is defined as
-\begin{equation}
-\begin{split}
-scan	& \oplus [x_0, \ldots, x_{n-1}]\\
-	& = [id, x_0, x_0 \oplus x_1, \ldots, x_0 \oplus \ldots \oplus x_{n-2}]
-\end{split}
-\end{equation}
-where $id$ is the identity element of the operator $\oplus$.
-
-The implementation of \texttt{Scan} provided in SkelCL is a modified version of~\cite{HaSO-07}.
-It is highly optimized and makes heavy use of local memory, as well as it tries to avoid memory bank conflicts which can occur when multiple work-items access the same memory location.
-Possible applications of the \texttt{Scan} skeleton are stream compaction or a radix sort implementation~\cite{HaSO-07}.
-
 
 \subsubsection{Passing Additional Arguments to Skeletons}
 
@@ -210,22 +528,6 @@ Arbitrary types can be passed as arguments; a pointer and the size of the type h
 It is particularly easy to pass vectors as arguments because no information about the size has to be provided.
 The arguments will be passed to the skeleton in the same order in which they are added to the \texttt{Arguments} object.
 Hence, their order has to resemble the order of parameters in the function definition.
-
-\subsubsection{Towards multiple GPUs}
-
-Using multiple GPUs introduces additional challenges in the programming process.
-Neither CUDA nor OpenCL offer any particular support to program multiple devices.
-Basically, every GPU is available to OpenCL as a separate device.
-To support multi-GPU systems, SkelCL can distribute a \texttt{Vector} to all available devices:
-the \texttt{Vector} is either completely copied to every device, or evenly divided into one part per device.
-When a \texttt{Vector} that is split across multiple devices is passed as an input to a skeleton, it is executed in cooperation by multiple devices:
-each device processes a different part of the input vector's data in parallel.
-This requires a skeleton to synchronize computations and exchange data between multiple devices.
-
-The user may either rely on a skeleton-specific default distribution, or can control a \texttt{Vector}'s distribution explicitly.
-It is also possible to redistribute a \texttt{Vector}, i.\,e., change its distribution;
-data exchange between multiple devices is performed automatically by SkelCL.
-We will provide more detail on multi-GPU programming using SkelCL in our next papers.
 \from{HIPS end}
 
 
@@ -241,38 +543,14 @@ In the next two subsections, we describe particular problems of application prog
 
 \subsection{Algorithmic Skeletons}
 
+% STATE OF THE ART
 In OpenCL, special functions (\emph{kernels}) are executed in parallel on a device.
 Kernels are compiled at runtime to allow for portability across different devices.
 The programmer must specify in the host program how many instances of a kernel are executed.
 Kernels usually take pointers to GPU memory as input and contain program code for reading/writing data items.
 Pointers have to be used carefully, because no boundary checks are performed by OpenCL.
 
-To shield the programmer from these low-level programming issues, SkelCL extends OpenCL by means of \emph{algorithmic skeletons}.
-A skeleton is, formally, a higher-order function that executes one or more user-defined functions in a pre-defined parallel manner, hiding the details of parallelism and communication from the user~\cite{RaG-03}.
-The current version of SkelCL provides four skeletons: \emph{map}, \emph{zip}, \emph{reduce}, and \emph{scan}.
-We describe these skeletons semi-formally, with $[x_1, \dots, x_n]$ denoting a vector of size $n$:
-
-\begin{itemize}
-  \item The map skeleton applies a unary function ($f$) to each element of an input vector
-        ([$x_1, \dots, x_n$]), i.\,e. $map(f)([x_1, \dots, x_n])=\ [f(x_1), \dots, f(x_n)]$.
-
-  \item The zip skeleton operates on two input vectors ($[x_1, \dots, x_n], [y_1, \dots, y_n]$),
-        applying an associative binary operator ($\oplus$) to all pairs of elements, i.\,e.\\
-        $zip(\oplus)([x_1, \dots, x_n], [y_1, \dots, y_n]) =$\\\strut\hspace{1em}$[(x_1\oplus y_1), \dots, (x_n\oplus y_n)]$.
-
-  \item The reduce skeleton computes a scalar value from an input vector using a binary operator ($\oplus$), i.\,e.
-        $reduce(\oplus)([x_1, \dots, x_n]) = x_1\oplus x_2 \oplus \cdots \oplus x_n$.\\
-        For the result to be correct the operator has to be associative but may be non-commutative.
-
-  \item The scan skeleton computes a vector of prefix-sums by applying an associative binary operator ($\oplus$), i.\,e.\\
-        $scan(\oplus)([x_1, \dots, x_n]) =$\\\strut\hspace{1em}$[x_1, x_1\oplus x_2, \dots, x_1\oplus x_2\oplus \cdots \oplus x_{n}]$.
-\end{itemize}
-
-The aforementioned skeletons have been selected, because they are useful for a broad range of applications.
-Moreover, the computation patterns of these skeletons match the data-parallel SIMD (Singe Instruction, Multiple Data) execution model used by GPUs.
-In SkelCL, rather than writing low-level kernels, the programmer customizes a suitable skeleton with a user-defined function which takes a single data item as input and returns a single result instead of working with pointers (like traditional OpenCL kernels do).
-Input vectors are provided as arguments on skeleton execution.
-
+% IMPLEMENTATION
 To customize a skeleton, the application developer passes the source code of the user-defined function as a plain string to the skeleton.
 SkelCL merges the user-defined function's source code with pre-implemented skeleton-specific program code, thus creating a valid OpenCL kernel automatically.
 The created kernel is then compiled by the underlying OpenCL implementation before execution.
@@ -284,6 +562,7 @@ The novelty of SkelCL skeletons is that they can accept additional arguments whi
 Since SkelCL's skeletons rely on pre-defined OpenCL code, they are by default not compatible with additional arguments.
 Therefore, the SkelCL implementation at runtime adapts this code to the function it uses, such that the skeleton passes its additional arguments to the user-defined function.
 
+% EXAMPLE
 Listing~\ref{lst:saxpy} shows an example implementation of the \emph{single-precision real-alpha x plus y} (SAXPY) computation -- a commonly used BLAS routine -- in SkelCL.
 \begin{lstlisting}[%
   caption={The BLAS $saxpy$ computation using a zip skeleton with additional arguments},%
@@ -339,22 +618,11 @@ This feature is implemented in SkelCL using variadic templates from the new C++ 
 \subsection{Data type \texttt{Vector}}
 \label{sec:skelcl_vector}
 
+% STATE OF THE ART: OpenCL
 OpenCL considers the system's main memory, called host memory, as separated from the device memory.
 Hence, the programmer has to explicitly manage data transfers between these distinct memory spaces.
 OpenCL offers functions for allocating memory on devices and transferring data from the host to the device (\emph{upload}) or vice versa (\emph{download}).
 
-SkelCL hides low-level memory management and data transfers by means of its abstract \emph{vector} data type.
-A vector defines a contiguous memory range where data is accessible by both CPU and GPU, such that the application developer does not have to program data transfers between host memory and a GPU.
-
-Internally, a vector holds pointers to ranges of host memory and GPU memory.
-These memory ranges are kept in a consistent state automatically:
-when a vector is accessed by the CPU, its data is downloaded from the GPU to the host memory implicitly.
-Likewise, the data is uploaded to GPU memory before it can be accessed by this GPU.
-
-Since GPU-based applications often perform consecutive computations on data that is accessed only by the GPU, SkelCL tries to optimize data transfers between the host memory and GPU by performing them \emph{lazily}:
-they are deferred as long as possible or avoided completely if possible.
-For example, when a map skeleton's output vector is passed as an input vector to a reduce skeleton, the vector's data resides on the GPU and no data transfer is performed.
-Therefore, in this case SkelCL can avoid a costly data transfer entirely.
 
 \section{Programming Multi-GPU Systems (ASHES)}
 
@@ -455,37 +723,9 @@ The output vector is block-distributed among all GPUs.
 \from{Paraphrase begin}
 \section{SkelCL (Paraphrase)}
 
-We have designed SkelCL as a library for high-level programming of multi-core CPU, GPU, and other processing units.
-SkelCL is built on top of OpenCL and provides a C++ API that shields the programmer from boilerplate code, e.\,g., for program initialization or recurring tasks such as explicit data transfers between CPU and GPU.
-Programming is simplified using algorithmic skeletons -- generic building blocks that describe commonly used parallel computation and communication patterns.
-For flexibility, SkelCL can also be used in combination with low-level OpenCL code.
-The SkelCL library is available as open-source software and can be downloaded from: \texttt{http://skelcl.uni-muenster.de}.
-
 \subsection{Algorithmic Skeletons}
 
-In standard OpenCL parallelism is specified using, special functions (\emph{kernels}) to be executed in a parallel manner on a device.
-It is programmer's  task to specify in the  host program how many instances of a kernel are launched.
-In addition, kernels usually take pointers to device memory as input and contain program code for reading/writing single data items from/to it.
-These pointers have to be used carefully, because no boundary checks are performed by OpenCL.
-
-To shield the programmer from these low-level programming tasks, the SkelCL library extends OpenCL by means of high-level programming patterns, called \emph{algorithmic skeletons}.
-Formally, a skeleton is a higher-order function that executes one or more user-defined functions in a pre-defined parallel manner, while hiding the details of parallelism and communication from the user~\cite{RaG-03}.
-
-Four basic skeletons are provided by SkelCL: \emph{Map}, \emph{Zip}, \emph{Reduce}, and \emph{Scan}.
-We describe these skeletons semi-formally, with $v_{in}, v_{inl}, v_{inr}$, and $v_{out}$ denoting vectors of size $n$, with $0\leq i<n$:
-
-\begin{itemize}
-  \item The \emph{Map} skeleton applies a unary function $f$ to each element of an input vector $v_{in}$, i.\,e. $v_{out}[i] = f(v_{in}[i])$.
-
-  \item The \emph{Zip} skeleton operates on two input vectors $v_{inl}$ and $v_{inr}$, applying a binary operator $\oplus$ to all pairs of elements, i.\,e. $v_{out}[i] = v_{inl}[i] \oplus v_{inr}[i]$.
-  
-  \item The \emph{Reduce} skeleton computes a scalar value $r$ from a vector using a binary operator $\oplus$, i.\,e. $r = v[0] \oplus v[1] \oplus \ldots \oplus v[n-1]$.
-
-  \item The \emph{Scan} skeleton (a.\,k.\,a. prefix-sum) yields an output vector with each element obtained by applying a binary operator $\oplus$ to the elements of the input vector up to the current element's index, i.\,e. $v_{out}[i] = \bigoplus_{j=0}^{i-1} v_{in}[j]$.
-\end{itemize}
-
-Rather than writing low-level kernels, in SkelCL the programmer customizes skeletons by providing user-defined (usually less complex) functions.
-
+% EXAMPLE
 Listing~\ref{lst:dotproduct} shows how a dot product of two vectors is implemented in SkelCL using two skeletons:
 the \emph{Zip} skeleton is customized by usual multiplication, and the \emph{Reduce} skeleton is customized by usual addition.
 This program comprises 8 lines of code (omitting comments and empty lines).
@@ -593,41 +833,6 @@ SkelCL avoids all these low-level details.
 Neither additional parameter, nor index calculations or manual boundary checks are necessary.
 In SkelCL, the application developer only provides the source code implementing the steps required by the algorithm.
 
-\subsection{Abstract data types and memory management}
-The extended SkelCL offers two \emph{containers}: the vector and the matrix.
-While the vector offers support for one-dimensional data, the new matrix data type handles two-dimensional data.
-
-\paragraph{Vector data type}
-\label{sec:skelcl:abstract_vector}
-The \emph{vector} class provides an abstraction for a contiguous memory area that is accessible by both, the host and the device.
-The SkelCL vector replicates the interface of the vector from the Standard Template Library (STL), i.\,e., it can be used as a replacement of the standard vector.
-Upon creation of a vector on the host system, memory is allocated on the device accordingly.
-
-The vector class shields the user from low-level memory operations like allocation (on the device) and data transfer between host and device memory, as follows.
-Data transfers between the memory areas on the host and device are performed implicitly:
-before any data is accessed on the host, SkelCL ensures that the data on the host is up-to-date.
-This may lead to implicit data transfers from the device which are performed automatically.
-All skeletons can accept vectors as their input and output.
-Before execution, a skeleton's implementation ensures that all input vectors' data is available on all participating devices.
-This may result in implicit (automatic) data transfers from the host memory to device memory.
-The data of the output vector is not copied back to the host memory but rather resides in the device memory.
-Hence, if an output vector is used as the input to another skeleton, no further data transfer is performed.
-This \emph{lazy copying} in SkelCL minimizes costly data transfers between the host and device.
-
-\paragraph{Matrix data type}
-\label{sec:skelcl:matrix}
-In addition to the vector as a one-dimensional abstract data structure, we introduce in SkelCL a two-dimensional abstract data type, the \emph{matrix}.
-Developing applications on 2D data for modern parallel architectures is cumbersome, since efficient memory handling is required for achieving good performance.
-In case of GPUs, exploiting the memory hierarchy by using the fast but small on-chip memory is mandatory for high performance.
-Simple and obvious solutions taken directly from a textbook will most certainly result in sub-optimal performance.
-
-The matrix data type in SkelCL automatically manages all data transfers between the host's memory and the devices' memory.
-Necessary data transfers are performed implicitly:
-when a matrix is used by a skeleton, SkelCL copies the matrix's data to the devices, and vice versa.
-That means that when the data of the matrix is accessed on the host, SkelCL copies the modified data back to the host.
-Like the vector type, the matrix shields the user from dealing with low-level details like data transfers between different memories.
-The Map, Zip and MapOverlap skeleton can take matrices as input and output.
-
 \subsection{Data distribution on multiple devices}
 \label{sec:data_distribution}
 The key feature of SkelCL for multi-device systems is that SkelCL's data types abstract from memory ranges on multiple devices, i.\,e. the data is accessible by each device.
@@ -667,112 +872,6 @@ this results in a lot of low-level code which is completely hidden when using Sk
 
 \from{ICCS begin}
 \section{The SkelCL Programming Model and the SkelCL Library (ICCS)}
-
-We develop our SkelCL~\cite{StKG-11} programming model as an extension of the standard OpenCL programming model~\cite{OpenCL-10}, which adds to OpenCL the three features that we identified as desirable in Section~\ref{sec:requirements}:
-\begin{itemize}
-  \item parallel container data types for unified memory management between CPU and GPUs;
-  \item algorithmic skeletons for expressing parallel computation patterns on GPUs;
-  \item data distribution and re-distribution mechanisms for programming multi-GPU systems.
-\end{itemize}
-
-SkelCL inherits all properties of OpenCL, including its support for heterogeneous parallel systems.
-While the main OpenCL program is executed sequentially on the CPU -- called the \emph{host} -- computations are offloaded to parallel processors -- called \emph{devices}.
-In this paper, we focus on systems comprising multiple GPUs, therefore, we use the terms CPU and GPU, rather than more general terms host and device.
-
-\subsection{Parallel Container Data Types}
-\label{sec:skelcl:abstract_vector}
-SkelCL offers two container classes -- vector and matrix -- which are transparently accessible by both, the CPU and the GPUs.
-The \emph{vector} abstracts a one-dimensional contiguous memory area while the \emph{matrix} provides an interface to a two-dimensional memory area.
-Upon creation of a container on the CPU, memory is allocated on the GPUs automatically;
-when a container on the CPU is deleted, the memory allocated on the GPUs is freed automatically.
-In a SkelCL program, a vector object can be created and filled with data like this:
-
-\vspace{.5em}
-\centerline{\lstinline!Vector<int> vec(size);!}
-\centerline{\lstinline!for (int i = 0; i < vec.size(); ++i) \{ vec[i] = i; \}!}
-\vspace{.5em}
-
-The advantage of the container data types in SkelCL as compared with OpenCL is that data transfers between the memories of the CPU and GPUs are performed implicitly.
-All computations in SkelCL accept containers as their input and output.
-Before execution, the SkelCL implementation ensures that all input containers' data is available on all participating GPUs.
-This may result in implicit (automatic) data transfers from the CPU memory to GPU memory, which in OpenCL would require explicit programming.
-Similarly, before any data is accessed on the CPU, the implementation of SkelCL ensures that this data on the CPU is up-to-date.
-This may result in implicit data transfers from the GPU which are performed automatically too.
-Thus, the container classes frefree the programmer from low-level memory operations like allocation (on GPU) and data transfers between CPU and GPU, such as those shown in Listing~\ref{lst:upload}.
-
-
-\subsection{Patterns of Parallelism (Algorithmic Skeletons)}
-\label{sec:skelcl:skeletons}
-In original OpenCL, computations are expressed as \emph{kernels} which are executed in a parallel manner on a GPU.
-As shown in Listing~\ref{lst:step_2}, the application developer must specify in the OpenCL program how many instances of a kernel are launched.
-In addition, kernels usually take pointers to GPU memory as input and contain program code for reading/writing single data items from/to it.
-These pointers have to be used carefully, because no boundary checks are performed by OpenCL.
-
-To free the application developer from these low-level programming issues, SkelCL extends OpenCL by means of high-level programming patterns, called \emph{algorithmic skeletons}~\cite{gc11}.
-Formally, a skeleton is a higher-order function that is parameterized by one or more application-specific \emph{customizing functions} and is executable in a pre-defined parallel manner, while hiding the details of parallelism and communication from the user~\cite{gc11}.
-
-The current version of SkelCL provides six skeletons: \emph{map}, \emph{zip}, \emph{reduce}, \emph{scan}, \emph{mapOverlap}, and \emph{allpairs}.
-Due to lack of space, we only describe the first three skeletons for vectors, with $v, vl$ and $vr$ denoting vectors with elements $v_i, vl_i$ and $vr_i$ where $0 < i \leq n$.
-For a more extensive and formal discussion of skeletons see~\cite{gc11}.
-
-\begin{itemize}
-  \item The map skeleton applies a unary function $f$ to each element of an input vector $v$, i.\,e.
-    \vspace{-.5em}
-    \[ map\ f\ [v_1, v_2, \dots, v_n] = [f(v_1), f(v_2), \dots, f(v_n)] \]
-
-    \vspace{-.5em}
-    In a SkelCL program, a map skeleton is created as an object for a unary function $f$, e.\,g. negation, like this:
-
-    \vspace{.5em}
-    \centerline{\lstinline!Map<float(float)> neg( "float func(float x) { return -x; }" );!}
-    \vspace{.5em}
-
-    The map object can then be called as a function with a vector as argument:
-
-    \vspace{.5em}
-    \centerline{\lstinline!resultVector = neg( inputVector );!}
-    \vspace{.5em}
-
-    The map skeleton is defined accordingly for matrices.
-    \vspace{.5em}
-  \item The zip skeleton operates on two vectors $vl$ and $vr$, applying a binary operator $\oplus$ pairwise:
-    \vspace{-.5em}
-    \[ zip\ (\oplus)\ [vl_1, vl_2, \dots, vl_n]\ [vr_1, vr_2, \dots, vr_n] = [vl_1\oplus vr_1, vl_2\oplus vr_2, \dots, vl_n\oplus vr_n] \]
-
-    \vspace{-.5em}
-    In SkelCL, a zip skeleton object for adding two vectors is created like this:
-
-    \vspace{.5em}
-    \centerline{\lstinline!Zip<float(float, float)> add( "float func(float x, float y) { return x+y; }" );!}
-    \vspace{.5em}
-
-    and can then be called as a function with a pair of vectors as arguments:
-
-    \vspace{.5em}
-    \centerline{\lstinline!resultVector = add( leftVector, rightVector );!}
-    \vspace{.5em}
-    
-    The zip skeleton is defined accordingly for matrices.
-    \vspace{.5em}
-
-  \item The reduce skeleton computes a scalar value from a vector using an associative binary operator $\oplus$, i.\,e.
-    \vspace{-.5em}
-    \[ red\ (\oplus)\ [v_1, v_2, \dots, v_n] = v_1 \oplus v_2 \oplus \dots \oplus v_n \]
-
-    \vspace{-.5em}
-    For example, to sum up all elements of a vector, the reduce skeleton is created and called as follows:
-
-    \vspace{.5em}
-    \centerline{\lstinline!Reduce<float(float)> sum_up( "float func(float x, float y) { return x+y; }" );!}
-    \vspace{.5em}
-    \centerline{\lstinline! result = sum_up( inputVector );!}
-    \vspace{.5em}
-
-\end{itemize}
-
-In SkelCL, rather than writing low-level kernels, the application developer customizes suitable skeletons by application-specific functions which work on basic data types and, therefore, are often much simpler than kernels that work with pointers.
-Skeletons can be executed on both single- and multi-GPU systems.
-On a multi-GPU system, the calculation specified by a skeleton is performed automatically on all GPUs of the system.
 
 
 \subsection{Data Distributions}
@@ -824,27 +923,6 @@ As shown in Listing~\ref{lst:redistribution}, implementing such data transfers i
 data has to be downloaded to the CPU before it can be uploaded to other GPUs, including the corresponding length and offset calculations;
 this results in a lot of low-level code which is completely hidden when using SkelCL.
 
-\subsection{The SkelCL Library}
-The SkelCL Library is our current implementation of the SkelCL programming model.
-It provides to the user a C++ API that implements the features of the SkelCL programming model, and thus liberates the application developer from writing low-level boilerplate code.
-In addition, the library provides some commonly used utility functions, e.\,g., for program initialization.
-For flexibility, SkelCL skeletons can accept additional arguments if the customizing function works not only on a skeleton's input containers, but needs access to additional data~\cite{StKG-11};
-containers passed as additional arguments to a skeleton are automatically transfered to the GPUs.
-SkelCL can also be used in combination with existing OpenCL codes, as SkelCL is designed as an extension of OpenCL, rather than a replacement for it.
-
-In OpenCL, kernels are compiled at runtime of the host program in order to be executable on different GPUs.
-Therefore, in the SkelCL library implementation, the customizing functions are provided as strings to their skeletons.
-SkelCL implementation merges the customizing function with the pre-implemented skeleton-specific program code to build a valid OpenCL kernel automatically.
-The generated kernel fetches one or more data items from its input containers (vectors or matrices), passes them to the customizing function, and yields the function's result, e.\,g., by writing it to the output container.
-Rather than working with pointers to GPU memory (like kernels do), customizing functions in SkelCL take a single data item as input and return a single result.
-The SkelCL implementation of the vector container resembles the interface of the vector from the C++ Standard Template Library (STL), i.\,e., it can be used as a replacement for the standard vector.
-Internally, the containers manage pointers to the corresponding areas of the main memory (accessible by the CPU) and GPU memory.
-For possible optimizations of the kernel's source code, we rely on the optimization capabilities of the OpenCL compiler.
-
-In some situations, our SkelCL implementation can optimize data transfers:
-e.\,g., after executing a skeleton, the output data remains in the GPU memory;
-this has the advantage that if the output container is used as the input to another skeleton, no data transfer has to be performed.
-Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers between the CPU and GPUs.
 \from{ICCS end}
 
 
@@ -1048,13 +1126,13 @@ It is possible to sequentially compose these two customized skeletons.
 For two functions $f: X \to Y$ and $g: Y\to Z$, the \emph{sequential composition} denoted by $g \circ f: X \to Z$ means that $f$ is applied first and then $g$ is applied to the return value of $f$ as input: $(g\circ f)(x) = g(f(x))$.
 Our customized skeletons are functions with types that allow their composition as follows:
 \begin{eqnarray*}
-  (\reduce\ (\oplus) \circ \zip\ (\odot) ) \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n} &=& \\
-  \reduce\ (\oplus) \left( \zip\ (\odot) \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n} \right) &=& (a_1 \odot b_1) \oplus \cdots \oplus (a_n \odot b_n)
+  (reduce\ (\oplus) \circ zip\ (\odot) ) \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n} &=& \\
+  reduce\ (\oplus) \left( zip\ (\odot) \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n} \right) &=& (a_1 \odot b_1) \oplus \cdots \oplus (a_n \odot b_n)
 \end{eqnarray*}
 This composition of the two customized skeletons yields a function which takes two input vectors and produces a single scalar value:
 \begin{equation}
-  \zipReduce\ (\oplus, \odot)\ a\ b = 
-  \left( \reduce\ (\oplus) \circ \zip\ (\odot) \right)\ a\ b
+  zipReduce\ (\oplus, \odot)\ a\ b = 
+  \left( reduce\ (\oplus) \circ zip\ (\odot) \right)\ a\ b
 \end{equation}
 
 Following the definition of {\zipReduce}, we can express the customizing function of the Manhattan distance as follows.
@@ -1062,13 +1140,13 @@ We use the binary operator $a \ominus b = |a - b|$ as customizing function for z
 \begin{eqnarray*}
     ManDist(a, b) = \sum_{i=1}^{n} | a_i - b_i | &=&
     (a_1 \ominus b_1) + \cdots + (a_n \ominus b_n) \\
-    &=& \zipReduce(+, \ominus)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}
+    &=& zipReduce(+, \ominus)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}
 \end{eqnarray*}
 
 Similarly, we can express the dot product (which is the customizing function of matrix multiplication) as a zip-reduce composition, by using multiplication for customizing zip and addition for customizing the reduce skeleton:
 \begin{eqnarray*}
   \dotProduct(a, b) = \sum_{i = 1}^{n} a_i \cdot b_i &=& (a_1 \cdot b_1) + \cdots + (a_n \cdot b_n) \\
-  &=& \zipReduce(+, \cdot)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}
+  &=& zipReduce(+, \cdot)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}
 \end{eqnarray*}
 
 We can now specialize the generic Definition~\ref{def:allpairs} by employing the sequential composition of the customized reduce and zip skeletons for customizing the allpairs skeleton.
@@ -1158,36 +1236,8 @@ The allpairs skeleton automatically selects these distributions; therefore, no c
 \from{HLPP end}
 
 
-
-
 \from{PaCT begin}
-\section{SkelCL: Programming Model and Library (PaCT)}
-\label{sec:skelcl}
 
-We develop our SkelCL~\cite{StKG-11} programming model as an extension of the standard OpenCL programming model~\cite{OpenCL-10}, which is an emerging de-facto standard for programming heterogenous systems with various accelerators.
-SkelCL adds to OpenCL three features that we identified as desirable in Section~\ref{sec:requirements}.
-SkelCL inherits all properties of OpenCL, including its portability across different heterogeneous parallel systems.
-SkelCL is designed to be fully compatible with OpenCL: arbitrary parts of a SkelCL code can be written or rewritten in OpenCL, without influencing program's correctness.
-While the main OpenCL program is executed sequentially on the CPU -- called the \emph{host} -- computations are offloaded to parallel processors -- called \emph{devices}.
-In this paper, we focus on systems comprising multiple GPUs, therefore, we use the terms CPU and GPU, rather than more general OpenCL terms host and device.
-
-\subsection{Parallel Container Data Types}
-SkelCL offers the application developer two container classes -- vector and matrix -- which are transparently accessible by both, host and devices, i.\,e. the CPU and the GPUs.
-The \emph{vector} abstracts a one-dimensional contiguous memory area while the \emph{matrix} provides an interface to a two-dimensional memory area.
-When a container is created on the CPU, memory is allocated on the GPUs automatically;
-when a container on the CPU is deleted, the memory allocated on the GPUs is freed automatically.
-In a SkelCL program, a vector object can be created and filled with data as in the following example:
-
-\vspace{.5em}
-\centerline{\lstinline!Vector<int> vec(size);!}
-\centerline{\lstinline!for (int i = 0; i < vec.size(); ++i) \{ vec[i] = i; \}!}
-\vspace{.5em}
-
-The main advantage of the container data types in SkelCL as compared with OpenCL is that the necessary data transfers between the CPU and GPUs are performed implicitly.
-Before performing a computation on container types, the SkelCL system ensures that all input containers' data is available on all participating GPUs.
-This may result in implicit (automatic) data transfers from the CPU to GPU memory, which in OpenCL would require explicit programming.
-Similarly, before any data is accessed on the CPU, the implementation of SkelCL ensures that this data on the CPU is up-to-date by performing necessary data transfers implicitly and automatically.
-Thus, the container classes shield the programmer from low-level operations like memory allocation (on GPU) and data transfers between CPU and GPU.
 
 \subsection{Data Distribution on Multiple GPUs}
 In applications working on container data types (vectors, matrices, etc.) GPU's often access disjoint parts of input data, such that copying only a part of the container to a GPU would be more efficient than copying the whole data to each GPU. To simplify the specification of partitionings of containers in programs for multi-GPU systems, SkelCL implements the \emph{distribution} mechanism that describes how a container is distributed among the available GPUs.
@@ -1275,88 +1325,7 @@ Implementing such data transfers in the standard OpenCL is a cumbersome task:
 data has to be downloaded to the CPU before it is uploaded to the GPUs, including the corresponding length and offset calculations;
 this results in a lot of low-level code which becomes completely hidden when using SkelCL.
 
-
-\subsection{Basic Patterns of Parallelism (Skeletons)}
-\label{sec:skelcl:skeletons}
-In original OpenCL, computations are expressed as \emph{kernels} which are executed in a parallel manner on a GPU: the application developer must explicitly specify how many instances of a kernel are launched.
-In addition, kernels usually take pointers to GPU memory as input and contain program code for reading/writing single data items from/to it.
-These pointers have to be used carefully, because no boundary checks are performed by OpenCL.
-
-To shield the application developer from these low-level programming issues, SkelCL extends OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{gc11}.
-Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner, while hiding the details of parallelism and communication from the user~\cite{gc11}.
-
-The current version of SkelCL provides six skeletons: \emph{map}, \emph{zip}, \emph{reduce}, \emph{scan}, \emph{mapOverlap} and \emph{allpairs}.
-We define first the four basic skeletons. We do this semi-formally, with $c, cl$ and $cr$ denoting vectors with elements $c_i, cl_i$ and $cr_i$ where $0 < i \leq n$:
-
-\begin{itemize}
-  \item The map skeleton applies a unary customizing function $f$ to each element of an input vector $c$, i.\,e.
-    \vspace{-.5em}
-    \[ map\ f\ [c_1, c_2, \dots, c_n] = [f(c_1), f(c_2), \dots, f(c_n)] \]
-
-    \vspace{-.5em}
-    In a SkelCL program, a map skeleton is created as an object for a unary function $f$, e.\,g. negation, like this:
-
-    \vspace{.5em}
-    \centerline{\lstinline!Map<float(float)> neg("float func(float x) \{ return -x;\}");!}
-    \vspace{.5em}
-
-    This map object can then be called as a function with a vector as argument:
-
-    \vspace{.5em}
-    \centerline{\lstinline!resultVector = neg( inputVector );!}
-    \vspace{.5em}
-  \item The zip skeleton operates on two vectors $cl$ and $cr$, applying a binary customizing operator $\oplus$ pairwise:
-    \vspace{-.5em}
-    \[ zip\ (\oplus)\ [cl_1, cl_2, \dots, cl_n]\ [cr_1, cr_2, \dots, cr_n] = [cl_1\oplus cr_1, cl_2\oplus cr_2, \dots, cl_n\oplus cr_n] \]
-
-    \vspace{-.5em}
-    In SkelCL, a zip skeleton object for adding two vectors is created like as:
-
-    \vspace{.5em}
-    \centerline{\lstinline!Zip<float(float, float)> add("float func(float x,float y) \{return x+y;\}");!}
-    \vspace{.5em}
-
-    and can then be called as a function with a pair of vectors as arguments:
-
-    \vspace{.5em}
-    \centerline{\lstinline!resultVector = add( leftVector, rightVector );!}
-    \vspace{.5em}
-    
-  \item The reduce skeleton computes a scalar value from a vector using a binary associative operator $\oplus$, i.\,e.
-    \vspace{-.5em}
-    \[ red\ (\oplus)\ [v_1, v_2, \dots, v_n] = v_1 \oplus v_2 \oplus \dots \oplus v_n \]
-
-    \vspace{-.5em}
-    For example, to sum up all elements of a vector, the reduce skeleton is created with addition as customizing function, and called as follows:
-
-    \vspace{.5em}
-    \centerline{\lstinline!Reduce<float(float)> sumUp("float func(float x,float y) \{ return x+y;\}");!}
-    \vspace{.5em}
-    \centerline{\lstinline! result = sumUp( inputVector );!}
-    \vspace{.5em}
-
- 
-  \item The scan skeleton (a.\,k.\,a. prefix-sum) yields an output vector with each element obtained by applying a binary associative operator $\oplus$ to the elements of the input vector up to the current element's index, i.\,e.
-    \vspace{-.5em}
-    \[ scan\ (\oplus)\ [v_1, v_2, \dots, v_n] = [v_1, v_1\oplus v_2, \dots, v_1\oplus v_2\oplus \dots \oplus v_n] \]
-
-    \vspace{-.5em}
-    The prefix sums customized with addition is specified and called in SkelCL as follows:
-
-    \vspace{.5em}
-    \centerline{\lstinline!Scan<float(float)> prefixSum("float func(float x,float y) \{return x+y;\}");!}
-    \vspace{.5em}
-    \centerline{\lstinline! result = prefixSum( inputVector );!}
-    \vspace{.5em}
-
-\end{itemize}
-
-
-In SkelCL, rather than writing low-level kernels, the application developer customizes suitable skeletons by providing application-specific functions which are often much simpler than kernels as they specify an operation on basic data items rather than containers.
-Skeletons can be executed on both single- and multi-GPU systems.
-In case of a multi-GPU system, the calculation specified by a skeleton is performed automatically on all GPUs available in the system.
-\bigskip
-
+% EXAMPLE
 \begin{lstlisting}[%
 breakindent=1.5em,%
 caption={SkelCL program computing the dot product of two vectors. Arrays \texttt{a\_ptr} and \texttt{b\_ptr} initialize the vectors.},%
@@ -1385,6 +1354,8 @@ int main (int argc, char const* argv[]) {
 Listing~\ref{lst:dotproduct} shows how a dot product of two vectors is implemented in SkelCL using two of the basic skeletons.
 Here, the \texttt{Zip} skeleton is customized by multiplication, and the \texttt{Reduce} skeleton is customized by usual addition.  
 For comparison, an OpenCL-based implementation of the dot product computation provided by NVIDIA requires approximately 68 lines of code (kernel function: 9~lines, host program: 59~lines)~\cite{CUDASDK-10}.
+
+
 
 \subsection{The MapOverlap Skeleton}
 \label{sec:skelcl:mapoverlap}
@@ -1530,52 +1501,11 @@ where $B^T$ is the transpose of matrix $B$.
 
 
 
+
+
 \from{HiStencils begin}
 \section{The SkelCL Skeleton Library (HiStencils)}
 \label{sec:skelcl}
-We develop SkelCL~\cite{StG-13b} -- a skeleton library for programming systems with Graphics Processing Units (GPUs).
-By providing skeletons on container data types, SkelCL alleviates programming of systems with GPUs:
-parallelism is expressed implicitly, using skeletons, and memory management is performed automatically by the SkelCL implementation built on top of OpenCL.
-The especially tricky programming of multi-GPU systems is greatly simplified by SkelCL's data distribution mechanism which automatically moves data between multiple GPUs.
-
-\paragraph{Algorithmic Skeletons}
-In original OpenCL, computations are expressed as \emph{kernels}, e.g., as in Listing~\ref{lst:sobel_opencl},  which are executed in a parallel manner on a GPU; the application developer must explicitly specify how many instances of a kernel are launched.
-In addition, kernels usually take pointers to GPU memory as input and contain program code for reading/writing single data items from/to it.
-These pointers have to be used carefully, because no boundary checks are performed by OpenCL.
-
-To shield the application developer from these low-level programming issues, SkelCL extends OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{GoC-11}.
-Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner, while hiding the details of parallelism and communication from the user~\cite{GoC-11}.
-
-The current version of SkelCL provides four basic skeletons (\emph{Map}, \emph{Reduce}, \emph{Zip}, and \emph{Scan}) and three more advanced skeletons (\emph{Allpairs}, \emph{MapOverlap}, and \emph{Stencil}).
-Due to lack of space, we only describe the first two basic skeletons here;
-the other basic skeletons are described in detail in~\cite{StG-13b}.
-
-The Map skeleton applies a unary function $f$ to each element of an input vector $[v_1, v_2, \dots, v_n]$, i\,e.:
-    \[ map\ f\ [v_1, v_2, \dots, v_n] = [f(v_1), f(v_2), \dots, f(v_n)] \]
-
-The Reduce skeleton computes a scalar value from a vector using an associative binary operator $\oplus$, i.\,e.
-    \[ red\ \oplus\ [v_1, v_2, \dots, v_n] = v_1 \oplus v_2 \oplus \dots \oplus v_n \]
-
-In SkelCL, rather than writing low-level kernels, the application developer
-customizes suitable skeletons by application-specific functions which work
-on basic data types and, therefore, they are often much simpler than kernels that work with pointers.
-Skeletons can be executed on both single- and multi-GPU systems;
-on a multi-GPU system, the calculation specified by a skeleton is performed automatically on all GPUs of the system.
-
-\paragraph{Container Data Types}
-SkelCL offers two container classes -- vector and matrix -- which are transparently accessible by both the CPU and the GPUs.
-The \emph{vector} abstracts a one-dimensional contiguous memory area while the \emph{matrix} provides an interface to a two-dimensional memory area.
-
-The advantage of the container data types in SkelCL as compared with OpenCL is that data transfers between the memories of the CPU and GPUs are performed implicitly.
-All computations in SkelCL accept containers as their input and output.
-Before execution, the SkelCL implementation ensures that all input containers' data is available on all participating GPUs.
-This may result in implicit (automatic) data transfers from the CPU memory to GPU memory, which in OpenCL would require explicit programming.
-Similarly, before any data is accessed on the CPU, the implementation of SkelCL ensures that this data on the CPU is up-to-date.
-This may result in implicit data transfers from the GPU which are performed automatically too.
-Thus, the container classes free the programmer from low-level operations like memory allocation (on GPU) and data transfers between CPU and GPU.
-
-While all data transfers are performed implicitly by SkelCL we understand that advanced application developers want fine grained control over the data transfers between CPU and GPU.
-For that purpose SkelCL offers a set of APIs developers can use to explicitly initiate and control the data transfer to and from the GPU.
 
 \begin{figure}[tb]
   \centering
@@ -1607,7 +1537,6 @@ For that purpose SkelCL offers a set of APIs developers can use to explicitly in
   \bigskip
 \end{figure}
 
-\pagebreak
 \paragraph{(Re)Distribution Mechanism}
 For multi-GPU systems, SkelCL's parallel container data types (vector and matrix) abstract from the separate memory areas on multiple GPUs, i.\,e., container's data is accessible by each GPU.
 To simplify the partitioning of a container on multiple GPUs, SkelCL supports the concept of \emph{distribution} that specifies how a container is distributed among the GPUs.

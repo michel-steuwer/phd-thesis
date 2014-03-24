@@ -66,6 +66,7 @@
 \newcommand{\Ie}{I.\,e.}
 \newcommand{\eg}{e.\,g.}
 \newcommand{\Eg}{E.\,g.} 
+\newcommand{\aka}{a.\,k.\,a.}
 
 \newcounter{dummy} % Necessary for correct hyperlinks (to index, bib, etc.)
 \providecommand{\mLyX}{L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
@@ -293,23 +294,21 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \newcommand{\eqdef}{\stackrel{\textrm{\scriptsize def}}{=}}
 \newcommand{\MN}{\mathbb{N}}
 \newcommand{\MR}{\mathbb{R}}
-\newcommand{\DottedMatrix}[4]{\left[ \begin{array}{ccc}%
-	#1 & \cdots & #2\\%
-	\vdots & & \vdots\\%
-	#3 & \cdots & #4%
-	\end{array}\right]}
+\newcommand{\DottedMatrix}[4]{\left[\begin{array}{ccc}%
+  \hspace{-.5em}#1     & \hspace{-.5em}\cdots & \hspace{-.5em}#2\vspace{-.25em}\\%
+	\hspace{-.5em}\vdots & \hspace{-.5em}       & \hspace{-.5em}\vdots\vspace{-.25em}\\%
+	\hspace{-.5em}#3     & \hspace{-.5em}\cdots & \hspace{-.5em}#4%
+	\end{array}\right]\ignorespaces}
 \newcommand{\DottedVector}[2]{\left[#1\ \cdots\ #2\right]}
 
 \newcommand{\ManDist}{\mbox{\emph{ManDist}}}
 \newcommand{\PMD}{\mbox{\emph{PMD}}}
 \newcommand{\dotProduct}{\mbox{\emph{dotProduct}}}
-\newcommand{\allpairs}{\mbox{\emph{allpairs}}}
-\newcommand{\zip}{\mbox{\emph{zip}}}
-\newcommand{\reduce}{\mbox{\emph{reduce}}}
-\newcommand{\zipReduce}{\mbox{\emph{zipReduce}}}
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
             \node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
 
+\usepackage{amsthm}
+%\theoremstyle{remark}
 \newtheorem{definition}{Definition}
 
 % included for HiStencils
@@ -341,6 +340,7 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 
 %
 \newcommand{\Cpp}{C\textls[-40]{++}\xspace}
+\newcommand{\Csharp}{C\#\xspace}
 \newcommand{\OpenCL}{Open{\small CL}\xspace}
 \newcommand{\CUDA}{{\small CUDA}\xspace}
 \newcommand{\CPU}{{\small CPU}\xspace}
@@ -348,4 +348,18 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \newcommand{\GPU}{{\small GPU}\xspace}
 \newcommand{\GPUs}{{\GPU}s\xspace}
 \newcommand{\SkelCL}{Skel{\small CL}\xspace}
+\newcommand{\API}{{\small API}\xspace}
+\newcommand{\APIs}{{\small APIs}\xspace}
+\newcommand{\STL}{{\small STL}\xspace}
+\newcommand{\SIMD}{{\small SIMD}\xspace}
+\newcommand{\BLAS}{{\small BLAS}\xspace}
+
+\newcommand{\map}{$map$\xspace}
+\newcommand{\zip}{$zip$\xspace}
+\newcommand{\reduce}{$reduce$\xspace}
+\newcommand{\scan}{$scan$\xspace}
+\newcommand{\zipReduce}{$zipReduce$\xspace}
+\newcommand{\allpairs}{$allpairs$\xspace}
+\newcommand{\mapOverlap}{$mapOverlap$\xspace}
+\newcommand{\stencil}{$stencil$\xspace}
 
