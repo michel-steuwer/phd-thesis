@@ -91,9 +91,17 @@
 
 %------------------------------------------------			
 
-\PassOptionsToPackage{square,numbers}{natbib}
- \usepackage{natbib}
- 
+%\PassOptionsToPackage{square,numbers}{natbib}
+%\usepackage{natbib}
+\usepackage[hyperref=true,
+            url=false,
+            isbn=false,
+            backref=true,
+            style=numeric-comp,
+            defernumbers,maxbibnames=50]{biblatex}
+
+\bibliography{Bibliography}
+
  %------------------------------------------------
 
 \PassOptionsToPackage{fleqn}{amsmath} % Math environments and more by the AMS 
@@ -124,7 +132,7 @@
 %------------------------------------------------
 
 %\renewcommand*{\acsfont}[1]{\textssc{#1}} % For MinionPro
-\renewcommand{\bflabel}[1]{{#1}\hfill} % Fix the list of acronyms
+%\renewcommand{\bflabel}[1]{{#1}\hfill} % Fix the list of acronyms
 
 %------------------------------------------------
 
@@ -203,7 +211,7 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 
 \usepackage{ifthen} % Allows the user of the \ifthenelse command
 \newboolean{enable-backrefs} % Variable to enable backrefs in the bibliography
-\setboolean{enable-backrefs}{true} % Variable value: true or false
+\setboolean{enable-backrefs}{false} % Variable value: true or false
 
 \newcommand{\backrefnotcitedstring}{\relax} % (Not cited.)
 \newcommand{\backrefcitedsinglestring}[1]{(Cited on page~#1.)}
