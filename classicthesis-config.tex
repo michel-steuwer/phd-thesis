@@ -96,11 +96,29 @@
 \usepackage[hyperref=true,
             url=false,
             isbn=false,
+            doi=false,
             backref=true,
             style=numeric-comp,
-            defernumbers,maxbibnames=50]{biblatex}
+            defernumbers,
+            maxbibnames=8]{biblatex}
 
-\bibliography{Bibliography}
+\DeclareSourcemap{
+  \maps[datatype=bibtex]{
+    \map{
+      \step[fieldsource=author,
+            match=Steuwer,
+            final]
+      \step[fieldset=keywords, fieldvalue=steuwer]
+    }
+  }
+}
+
+\DefineBibliographyStrings{english}{%
+  techreport = {Technical Report},
+  byeditor = {edited by}
+}
+
+\addbibresource{Bibliography.bib}
 
  %------------------------------------------------
 

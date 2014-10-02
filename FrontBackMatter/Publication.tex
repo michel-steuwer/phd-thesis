@@ -4,8 +4,36 @@
 
 \chapter*{Publications} % Publications page text
 
-Some ideas and figures have appeared previously in the following publications:
+This thesis is based on ideas which have been described in the following publications:
 
 \bigskip
 
-\noindent Put your publications from the thesis here. The packages \texttt{multibib} or \texttt{bibtopic} etc. can be used to handle multiple different bibliographies in your document.
+% TODO: debug, remove this
+\nocite{*} % cite everything ...
+
+% Highlight my Name in bold
+\DeclareNameFormat{author}{%
+\ifthenelse{\equal{#1}{Steuwer}}%
+    {{\bfseries\ifblank{#4}{}{#4\space}#1}}%
+    {\ifblank{#4}{}{#4\space}#1}%
+\ifthenelse{\value{listcount}<\value{liststop}}%
+    {\addcomma\space}
+    {}}
+
+\defbibenvironment{nonumbers}
+  {\list{}
+    {\setlength{\leftmargin}{\bibhang}%
+     \setlength{\itemindent}{-\leftmargin}%
+     \setlength{\itemsep}{\bibitemsep}%
+     \setlength{\parsep}{\bibparsep}}}
+  {\endlist}
+  {\item}
+
+\printbibliography[env=nonumbers,heading=none,sorting=ynt,omitnumbers=true,keyword=steuwer]
+
+% No longer highlight my Name in bold
+\DeclareNameFormat{author}{%
+    \ifblank{#4}{}{#4\space}#1%
+\ifthenelse{\value{listcount}<\value{liststop}}%
+    {\addcomma\space}
+    {}}
