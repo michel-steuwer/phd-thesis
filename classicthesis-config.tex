@@ -62,11 +62,11 @@
 %	USEFUL COMMANDS
 %----------------------------------------------------------------------------------------
 
-\newcommand{\ie}{i.\,e.}
-\newcommand{\Ie}{I.\,e.}
-\newcommand{\eg}{e.\,g.}
-\newcommand{\Eg}{E.\,g.} 
-\newcommand{\aka}{a.\,k.\,a.}
+\newcommand{\ie}{i.\,e.\xspace}
+\newcommand{\Ie}{I.\,e.\xspace}
+\newcommand{\eg}{e.\,g.\xspace}
+\newcommand{\Eg}{E.\,g.\xspace} 
+\newcommand{\aka}{a.\,k.\,a.\xspace}
 
 \newcounter{dummy} % Necessary for correct hyperlinks (to index, bib, etc.)
 \providecommand{\mLyX}{L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
@@ -182,16 +182,19 @@
   keywordstyle=\bfseries, % Add \bfseries for bold
   basicstyle=\normalsize\ttfamily, % Makes listings a smaller font size and a different font
   commentstyle=\itshape, % Color of comments
-  stringstyle=\rmfamily, % Font type to use for strings
+  stringstyle=\itshape, % Font type to use for strings
   numbers=left, % Change left to none to remove line numbers
   numberstyle=\scriptsize, % Font size of the line numbers
-  stepnumber=5, % Increment of line numbers
+  stepnumber=1, % Increment of line numbers
   numbersep=8pt, % Distance of line numbers from code listing
   showstringspaces=false, % Sets whether spaces in strings should appear underlined
   breaklines=true, % Force the code to stay in the confines of the listing box
   %frameround=ftff, % Uncomment for rounded frame
   frame=single, % Frame border - none/leftline/topline/bottomline/lines/single/shadowbox/L
-  belowcaptionskip=.75\baselineskip % Space after the "Listing #: Desciption" text and the listing box
+  abovecaptionskip=.5\baselineskip, % Space after the "Listing #: Desciption" text and the listing box
+  aboveskip=\baselineskip,
+  captionpos=b,
+  mathescape=true,
 }
 
 %----------------------------------------------------------------------------------------
@@ -311,7 +314,8 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 
 \usepackage{longtable}
 
-\newcommand{\from}[1]{\marginpar{\fcolorbox{Maroon}{Maroon}{\color{white}#1}}}
+\newcommand{\from}[1]{\marginpar{\colorbox{Maroon}{\parbox{\marginparwidth}{\color{white}#1}}}}
+\newcommand{\todo}[1]{\marginpar{\colorbox{MidnightBlue}{\parbox{\marginparwidth}{\color{white}TODO:\newline #1}}}}
 
 % included for HLPP
 \usepackage{tikz}
