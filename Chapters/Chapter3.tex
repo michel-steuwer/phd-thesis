@@ -16,625 +16,67 @@ The following \autoref{chapter:skelcl-evaluation} will provide several applicati
 
 % ============================================================================ %
 % ============================================================================ %
-\section{The need for high-level abstractions}
-We start the discussion of programming for parallel systems and in particular for \GPU systems by locking thoroughly at an application example.
-By doing so we will identify challenges opposed upon application developers which arise from the parallel target hardware architecture.
-We will then derive from these challenges requirements to a potential high-level programming model.
-
+\input{Chapters/Chapter3/need_for_high-level.tex}
 
 % ============================================================================ %
-\subsection{Challenges of \GPU programming}
-\label{section:opencl-example}
-We choose to investigate a real-world application rather than a simple benchmark to identify not only fundamental challenges every application developer targeting \GPU systems faces, but also practical programming challenges which become only visible for more complex applications, \eg, managing the execution of multiple compute kernels.
-
-Our example application is the LM OSEM algorithm~\cite{ReaderErFlOt1998, SchellmannGoMeKoScWuBu2009} for image reconstruction used in Positron Emission Tomography (PET).
-In PET, a radioactive substance is injected into a human or animal body, which is then placed inside a PET scanner that contains several arrays of detectors.
-As the particles of the applied substance decay, positrons are emitted (hence the name PET) and annihilate with nearby electrons, such that two photons are emitted in the opposite directions (see Fig.~\ref{fig:scanner and detector}).
-These ``decay events'' are registered by two opposite detectors of the scanner which records these events in a list.
-Data collected by the PET scanner are then processed by a reconstruction algorithm to obtain a resulting image.
-
-\begin{figure}
-  \centering
-  \includegraphics[scale=0.50]{ICCS/ringscanner}
-  \caption{Two detectors register an event in a PET-scanner}
-  \label{fig:scanner and detector}
-\end{figure}
-
-\subsubsection{The LM OSEM Algorithm}
-List-Mode Ordered Subset Expectation Maximization \cite{ReaderErFlOt1998} (called LM OSEM in the sequel) is a block-iterative algorithm for 3D image reconstruction.
-LM OSEM takes a set of events from a PET scanner and splits them into $s$ equally sized subsets.
-Then, for each subset $S_l, l \in {0, \ldots, s-1}$, the following computation is performed:
-\begin{equation}
-  f_{l+1}=f_{l}c_{l};\quad c_{l}=\dfrac{1}{A_N^T \textbf{1}} \sum_{i \in S_{l}} (A_i)^T \dfrac{1}{A_{i} f_{l}}.
-\label{equ:lm_osem}
-\end{equation}
-
-Here $f \in \mathbb{R}^n$ is a 3D image in vector form with dimensions $n = (X \times Y \times Z)$, $A$ -- the so called system matrix, element $a_{ik}$ of row $A_i$ is the length of intersection of the line between the two detectors of event $i$ with voxel $k$ of the reconstruction image, computed with Siddon's algorithm \cite{Siddon1985}.
-$\dfrac{1}{A_N^T \textbf{1}}$ is the so-called normalization vector; since it can be precomputed, we will omit it in the following.
-The multiplication $f_{l}c_{l}$ is performed element-wise.
-Each subset's computation takes its predecessor's output image as input and produces a new, more precise image.
-
-The structure of a sequential LM OSEM implementation is shown in Listing~\ref{lst:lmosem:seq_code}.
-The outermost loop iterates over the subsets.
-The first inner loop (step 1) iterates over subset's events to compute $c_l$, which requires three sub-steps:
-row $A_i$ is computed from the current event using Siddon's algorithm;
-the local error for row $A_i$ is computed and, finally, added to $c_l$.
-The second inner loop (step 2) iterates over all elements of $f_l$ and $c_l$ to compute $f_{l+1}$.
-\begin{figure}
-\begin{lstlisting}[
-  caption={Sequential code for LM OSEM comprises one outer loop with two nested inner loops.},
-  label={lst:lmosem:seq_code}]
-for (int l = 0; l < subsets; l++) {
-  // read subset
-
-  // step 1: compute error image $c_l$
-  for (int i = 0; i < subset_size; i++) {
-    // compute $A_i$
-    // compute local error
-    // add local error to $c_l$
-  }
-
-  // step 2: update image estimate $f$
-  for (int k = 0 ; k < image_size; k++) {
-    if (c_l[k] > 0.0) { f[k] = f[k] * c_l[k]; }
-  }
-}
-\end{lstlisting}
-\end{figure}
-
-\subsubsection{Parallelization of LM OSEM in OpenCL}
-\label{sec:parallel_implementation}
-LM OSEM is a rather time-consuming algorithm that needs parallelization:
-a typical 3D image reconstruction processing $6 \cdot 10^7$ input events for a $150 \times 150 \times 280$ PET image takes more than two hours on a modern PC.
-
-Although the iterations of the outer loop in Listing~\ref{lst:lmosem:seq_code} are inherently sequential, we can parallelize the two calculation steps within one iteration as shown in Fig.~\ref{fig:lmosem:em_distribution} for a system comprising one CPU and two GPUs.
-Note that these steps require different data distribution patterns:
-\begin{itemize}
-  \item[] \emph{Step 1:} Subset's events are copied from the CPU to all GPUs (\emph{upload}) to compute the summation part of $c_l$ concurrently. This step requires that the complete image estimate $f_l$ is available to all GPUs.
-  \item[] \emph{Step 2:} For computing the next image estimate $f_{l+1}$ in parallel, the current image estimate $f_l$ and the error image $c_l$ computed in step 1 have to be distributed in disjoint parts (blocks) among all GPUs.
-\end{itemize}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=0.6\textwidth]{ICCS/em_distribution}
-  \caption{Parallelization schema of the LM OSEM algorithm.}
-  \label{fig:lmosem:em_distribution}
-\end{figure}
-Thus, the parallelization schema in Fig.~\ref{fig:lmosem:em_distribution} requires a data \emph{redistribution} phase between the two computation steps.
-During step 1, each GPU computes a partial sum of $c_l$.
-After step 1, all partial results are summed up and redistributed disjointly to all GPUs.
-Note that for step 1, each GPU requires a full copy of the image estimate, while in step 2 all GPUs update disjoint parts of it.
-After step 2, the disjoint parts of the image estimate are copied from all GPUs back to the CPU (\emph{download}).
-
-\bigskip\noindent
-In the following, we describe how the parallelization schema phases in Fig.~\ref{fig:lmosem:em_distribution} are implemented using OpenCL.
-
-\paragraph{Upload}
-The simplified OpenCL implementation of the upload phase is shown in Listing~\ref{lst:lmosem:upload}.
-Uploading of the event vector $S$ is performed in lines \ref{lst:lmosem:upload:1:start}--\ref{lst:lmosem:upload:1:end}, while lines \ref{lst:lmosem:upload:2:start}--\ref{lst:lmosem:upload:2:end} show the upload of the image estimate $f_l$.
-In OpenCL, we have to manage each GPU explicitly, therefore, for each GPU, we create a set of buffers (\texttt{s\_gpu} and \texttt{f\_gpu}) and we use a loop (line \ref{lst:lmosem:upload:loop}) to repeat all memory operations for each GPU.
-For performance reasons, we use asynchronous copy operations, specified using the \texttt{CL\_FALSE} flag (line \ref{lst:lmosem:upload:1:cl_false} and \ref{lst:lmosem:upload:2:cl_false}): this allows data transfers to multiple GPUs to overlap.
-We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (copy to each GPU), therefore, there are differences when specifying the amount of bytes to copy (lines \ref{lst:lmosem:upload:1:amount} and \ref{lst:lmosem:upload:2:amount}) and the offsets in the CPU memory (lines \ref{lst:lmosem:upload:1:offset} and \ref{lst:lmosem:upload:2:offset}).
-Altogether eleven such memory operations -- each with different amounts and offsets -- appear in the OpenCL source code.
-
-\begin{lstlisting}[
-  caption={Implementation of the upload phase in OpenCL (ommitting error checks for brevity)},
-  label={lst:lmosem:upload}]
-for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
-  // upload $S$
-  clEnqueueWriteBuffer($\label{lst:lmosem:upload:1:start}$
-        command_queue[gpu], s_gpu[gpu],CL_FALSE, 0,$\label{lst:lmosem:upload:1:cl_false}$
-        sizeof(float) * size_of_s / gpu_count,$\label{lst:lmosem:upload:1:amount}$
-        (void*)&s_cpu[ gpu * size_of_s / gpu_count ],$\label{lst:lmosem:upload:1:offset}$
-        0, NULL, NULL );$\label{lst:lmosem:upload:1:end}$
-
-  // upload $f_l$
-  clEnqueueWriteBuffer($\label{lst:lmosem:upload:2:start}$
-        command_queue[gpu], f_gpu[gpu], CL_FALSE, 0,$\label{lst:lmosem:upload:2:cl_false}$
-        sizeof(float) * size_of_f,$\label{lst:lmosem:upload:2:amount}$
-        (void*)&f_cpu[0],$\label{lst:lmosem:upload:2:offset}$
-        0, NULL, NULL );$\label{lst:lmosem:upload:2:end}$
-}
-\end{lstlisting}
-
-\paragraph{Step 1}
-The implementation of step 1 performs the operations shown in Listing~\ref{lst:lmosem:seq_code}: first computing $A_i$, then the local error for $A_i$ and finally adding the local error to $c_l$.
-Because of GPU memory restrictions, the OpenCL implementation is not straightforward, such that, for the sake of brevity, we will not discuss it in more detail here.
-\todo{Do discuss it in a bit more detail here ...}
-
-\paragraph{Redistribution}
-Listing~\ref{lst:lmosem:redistribution} shows an OpenCL pseudocode for the redistribution phase.
-To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
-For such synchronization, OpenCL uses \emph{events}, associated with an operation (line \ref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \ref{lst:lmosem:redistribution:wait}).
-After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (line \ref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
-Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in OpenCL.
-
-\begin{lstlisting}[
-  caption={OpenCL pseudocode for the redistribution phase},
-  label={lst:lmosem:redistribution}]
-// download all c_l values from the GPUs to the CPU
-cl_event events[gpu_count];
-for (int gpu = 0; gpu < gpu_count; gpu++) {
-  clEnqueueReadBuffer( ..., &events[gpu] );$\label{lst:lmosem:redistribution:operation}$
-}
-clWaitForEvents(gpu_count, events);$\label{lst:lmosem:redistribution:wait}$
-
-// combine data on CPU
-combine( ... );$\label{lst:lmosem:redistribution:combine}$
-
-// upload block of the new c_l version to each GPU
-for (int gpu = 0; gpu < gpu_count; gpu++) {
-  clEnqueueWriteBuffer( ... );
-}
-\end{lstlisting}
-
-\paragraph{Step 2}
-Listing~\ref{lst:lmosem:step_2} shows the implementation of step 2.
-In OpenCL, computations are specified as \emph{kernels} which are created from the source code specifying the computation.
-The computation in step 2 is, therefore, described as a string in lines \ref{lst:lmosem:step_2:string:start}--\ref{lst:lmosem:step_2:string:stop}.
-The operations used here are the same as in the sequential code in Listing~\ref{lst:lmosem:seq_code}.
-
-For executing the computations of step 2, we have to perform the following steps for each GPU:
-\begin{itemize}
-  \item create an OpenCL kernel from the source code (requires 50 lines of code in OpenCL);
-  \item compile the kernel specifically for the GPU (requires 13 lines of code in OpenCL);
-  \item specify kernel arguments one-by-one using the \texttt{clSetKernelArg} function (line \ref{lst:lmosem:step_2:args:start} -- \ref{lst:lmosem:step_2:args:stop});
-  \item specify execution environment, i.\,e., how many instances of the kernel to start (line \ref{lst:lmosem:step_2:env:start} -- \ref{lst:lmosem:step_2:env:stop});
-  \item launch the kernel (line \ref{lst:lmosem:step_2:kernel:start} -- \ref{lst:lmosem:step_2:kernel:stop}).
-\end{itemize}
-\begin{lstlisting}[
-  caption={Implementation of step 2 in OpenCL (omitting error checks for brevity)},
-  label={lst:lmosem:step_2}]
-// step 2 (in Fig. $\ref{fig:lmosem:em_distribution}$)
-source_code_step_2 =
-  "kernel void step2(global float* f, global float* c_l,$\label{lst:lmosem:step_2:string:start}$
-                     int offset, int size) {
-    int id = get_global_id(0) + offset;
-    if (id < size && c_l[id] > 0.0){ f[id] = f[id]*c_l[id];}$\label{lst:lmosem:step_2:zip}$
-   }";$\label{lst:lmosem:step_2:string:stop}$
-
-for (int gpu = 0; gpu < gpu_count; gpu++) {
- // create kernel (50 lines of code)
- // compile kernel (13 lines of code)
-
- // specifying kernel arguments:
-  clSetKernelArg(kernel_step2[gpu], 0, sizeof(cl_mem),$\label{lst:lmosem:step_2:args:start}$
-                 (void*)&f_buffer[gpu]);
-  clSetKernelArg(kernel_step2[gpu], 1, sizeof(cl_mem),
-                 (void*)&c_l_buffer[gpu]);
-  int offset = gpu * (size_of_f / gpu_count);
-  clSetKernelArg(kernel_step2[gpu], 2, sizeof(int),
-                 (void*)&offset);
-  int size   = MIN( (gpu + 1) * (size_of_f / gpu_count),
-                    size_of_f );
-  clSetKernelArg(kernel_step2[gpu], 3, sizeof(int),
-                 (void*)&size);$\label{lst:lmosem:step_2:args:stop}$
-
- // specify execution environment
-  int local_work_size[1]  = { 32 };$\label{lst:lmosem:step_2:env:start}$
-  int global_work_size[1] =
-        { roundUp(32, size_of_f / gpu_count) };$\label{lst:lmosem:step_2:env:stop}$
- // launch the kernel
-  clEnqueueNDRangeKernel($\label{lst:lmosem:step_2:kernel:start}$
-        command_queue[gpu], kernel_step2[gpu],
-        1, NULL, &global_work_size, &local_work_size, 0,
-        NULL, NULL); }$\label{lst:lmosem:step_2:kernel:stop}$
-\end{lstlisting}
-
-
-\paragraph{Download}
-The implementation of the download phase is similar to the upload phase as shown in Listing~\ref{lst:lmosem:upload}.
-
-
 % ============================================================================ %
-\subsection{Requirements to a High-Level Programming Mode}
-\label{section:requirements}
-The described implementation of the example application reveals the main problems and challenges that the application developer has to overcome when targeting \GPU systems.
-Our analysis show that to simplify programming for a system with multiple \GPUs, at least the following three high-level abstraction are desirable:
-
-\paragraph{Parallel container data types}
-Compute intensive applications typically operate on a (possibly big) set of data items.
-As shown in Listing~\ref{lst:lmosem:upload}, managing memory is error-prone because low-level details, like offset calculations, have to be programmed manually.
-
-A high-level programming model should be able to make collections of data automatically accessible to all processors in a system and it should provide an easy-to-use interface for the application developer.
-
-\paragraph{Recurring patterns of parallelism}
-While each application (of course) performs different concrete operations, the general structure of parallelization resembles parallel patterns that are commonly used in many applications.
-In step~1, for computing the error image~$c_l$, the same sequence of operations is performed for every event from the input subset, which is the well-known \emph{map} pattern of data-parallel programming~\cite{GorlatchCo2011}.
-In step~2, two images (the current image estimate~$f_l$ and the error image~$c_l$) are combined element-wise into the output image~($f_{l+1}$), see line~\ref{lst:lmosem:step_2:zip} of Listing~\ref{lst:lmosem:step_2}, which is again the common \emph{zip} pattern of parallelism.
-
-It would be, therefore, desirable to express the high-level structure of an application using pre-defined common patterns, rather than describing the parallelism manually in much detail.
-
-\paragraph{Distribution and redistribution mechanisms}
-To achieve scalability of applications on systems comprising multiple \GPUs, it is crucial to decide how the application's data are distributed across all available \GPUs.
-Distributing and re-distributing data in \OpenCL is cumbersome because data transfers have to be managed manually and performed via the \CPU, as shown in Listing~\ref{lst:lmosem:redistribution}.
-
-Therefore, it is important for a high-level programming model to allow both for describing the data distribution and for changing the distribution at runtime.
+\input{Chapters/Chapter3/skelcl_programming_model.tex}
 
 
 % ============================================================================ %
 % ============================================================================ %
-\section{The SkelCL Programming Model}
-\label{section:skelcl-programming-model}
-\SkelCL (Skeleton Computing Language) is a high-level programming model targeting multi-\GPU system.
-It is developed as an extension of the standard \OpenCL programming model~\cite{OpenCL}.
-\SkelCL adds three main high-level features to \OpenCL which we identified as desirable in~\autoref{section:requirements}:
-
-\begin{itemize}
-  \item \emph{parallel container data types} for unified memory management between host and devices;
-  \item \emph{recurring patterns of parallelism} (\aka \emph{algorithmic skeletons}) for easily expressing parallel computation patterns;
-  \item \emph{data distribution} and \emph{redistribution} mechanisms for programming multi-device systems.
-\end{itemize}
-
-\noindent
-\SkelCL inherits all properties of \OpenCL, including its portability across different heterogeneous parallel systems.
-\SkelCL is designed to be fully compatible with \OpenCL: arbitrary parts of a \SkelCL code can be written or rewritten in \OpenCL, without influencing program's correctness.
-
-In the rest of the section we discuss the design of the \SkelCL programming model in more detail.
-The implementation as a \Cpp library will be discussed in the next section.
-
-% ============================================================================ %
-\subsection{Parallel Container Data Types}
-\label{section:skelcl-programming-model:container}
-\SkelCL offers the application developer two container classes -- vector and matrix -- which are transparently accessible by both, host and devices.
-The \emph{vector} abstracts a one-dimensional contiguous memory area while the \emph{matrix} provides an interface to a two-dimensional memory area.
-When a container is created on the host, memory is allocated on the devices automatically;
-when a container on the host is deleted, the memory allocated on the devices is freed automatically.
-
-The main advantage of the container data types in \SkelCL as compared with \OpenCL is that the necessary data transfers between the host and devices are performed automatically and implicitly.
-Before performing a computation on container types, the \SkelCL system ensures that all input containers' data is available on all participating devices.
-This may result in implicit data transfers from the host to device memory, which in \OpenCL would require explicit programming, as we saw in~\autoref{section:opencl-example}.
-Similarly, before any data is accessed on the host, the implementation of \SkelCL implicitly ensures that this data on the host is up-to-date by performing necessary data transfers automatically.
-Thus, the container classes shield the programmer from low-level operations like memory allocation (on the devices) and data transfers between host and device.
-
-Developing applications on two-dimensional data for modern parallel architectures is cumbersome and challenging, since efficient memory handling is essential for achieving good performance.
-In case of \GPUs, exploiting the memory hierarchy by using the fast but small on-chip memory is key for high performance.
-Therefore, in addition to the vector as a one-dimensional abstract data structure, \SkelCL offers a specific abstract data type for handling two-dimensional data, the matrix.
-
-% The implementations of the algorithmic skeletons included in \SkelCL differentiate for their input container between vector and matrix, thus, offering optimized implementations for each case.
-
-
-\subsection{Algorithmic Skeletons}
-\label{section:skelcl-programming-model:skeletons}
-In original \OpenCL, computations are expressed as compute \emph{kernels} which are executed in a parallel manner on an \OpenCL device:
-the application developer must explicitly specify the parallelism by indicating how many instances of a kernel (called \emph{work items}) should be launched in parallel.
-Communication between work items have to be implemented carefully to avoid race conditions and deadlocks.
-In addition, kernels take pointers to device memory as input and contain program code for reading/writing single data items from/to it.
-These pointers have to be used carefully, because no boundary checks are performed by \OpenCL.
-
-To shield the application developer from these low-level programming issues, \SkelCL extends \OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{Cole1991}.
-Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner, thus hiding the details of parallelism and communication from the user~\cite{GorlatchCo2011}.
-
-\SkelCL provides four basic data-parallel skeletons: \map, \zip, \reduce, and \scan;
-as well as three more specialized skeletons: \mapOverlap, \stencil, and \allpairs.
-In this section we will look at the basic skeletons, the specialized skeletons will be discussed later on in this chapter.
-The four basic skeletons have been selected, because they have been proven to be useful for a broad range of applications.
-Moreover, these skeletons can be efficiently implemented on \GPUs as their computation patterns match the data-parallel \SIMD (Singe Instruction, Multiple Data) execution model used by \GPUs.
-
-% We define the four basic skeletons using the following notations:
-% we use an arrow over lowercase letters to denote vectors, \eg, $\vec{v}$ for a vector of size $n$ with corresponding elements $v_i$ where $0 < i \leq n$.
-% We use uppercase letters to denote matrices, \eg, $M$ for an $n\times m$ matrix with corresponding elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
-
-
-\paragraph{The \map skeleton}
-The \map skeleton is a well known basic algorithmic skeleton, applying the customizing function to each element of a container.
-This skeleton originates from the functional world, where the \code{map} function is recognized as an important primitive for writing high-level code.
-In many programming languages an equivalent sequential function exists, either known by the same name, like in Haskell or Python, or by other names, like \code{transform} in \Cpp, or \code{Select} in \Csharp.
-
-In \SkelCL the \map skeleton can operate on vectors as well as matrices.
-We start by formally define the skeleton on vectors:
-\begin{definition}
-  \label{definition:map}
-  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $f$ be a unary customizing function.
-  The algorithmic skeleton \map is defined as follows:
-  \begin{equation}
-    map \big(\ f,\ [x_1, x_2, \dots, x_n]\ \big) = [f(x_1), f(x_2), \dots, f(x_n)]
-  \end{equation}
-\end{definition}
-\noindent
-The definition for matrices is similar:
-\begin{definition}
-  \label{definition:map:matrix}
-  Let $M$ be an $n\times m$ matrix with elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
-  Let $f$ be a unary customizing function.
-  The algorithmic skeleton \map is defined as follows:
-  \begin{equation}
-    map\big(\ f,\ \DottedMatrix{M_{0,0}}{M_{0,m}}{M_{n,0}}{M_{n,m}} \big)
-      = \DottedMatrix{f(M_{0,0})}{f(M_{0,m})}{f(M_{n,0})}{f(M_{n,m})}
-  \end{equation}
-\end{definition}
-\noindent
-The output container, either vector or matrix, can be computed in parallel, because the computation of each single element is independent of each other.
-
-A simple possible application of the \map skeleton is negating all the values in a vector:
-\begin{align*}
-  neg(\vec{x}) &= map(\ -, \vec{x}\ )
-\end{align*}
-
-
-\paragraph{The \zip skeleton}
-The \zip skeleton operates on two containers and combines them into one.
-As the \map skeleton it is defined for vectors and matrices as well.
-\begin{definition}
-  \label{definition:zip}
-  Let $\vec{x}$ and $\vec{y}$ be vectors of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
-  Let $\oplus$ be a binary customizing operator.
-  The algorithmic skeleton \zip is defined as follows:
-  \begin{equation}
-    \begin{split}
-    zip \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ [y_1, y_2, \dots, y_n]\ \big)\\
-      = [x_1 \oplus y_1, x_2 \oplus y_2, \dots, x_n \oplus y_n]
-    \end{split}
-  \end{equation}
-\end{definition}
-\noindent
-Again the definition for matrices is similar:
-\begin{definition}
-  \label{definition:zip:matrix}
-  Let $A$ and $B$ be $n\times m$ matrices with elements $A_{i,j}$ and $B_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
-  Let $\oplus$ be a binary customizing operator.
-  The algorithmic skeleton \zip is defined as follows:
-  \begin{equation}
-    \begin{split}
-    zip\big( f,\ {\DottedMatrix{A_{0,0}}{A_{0,m}}{A_{n,0}}{A_{n,m}}},\
-                 {\DottedMatrix{B_{0,0}}{B_{0,m}}{B_{n,0}}{B_{n,m}}}\big) \\
-      = \DottedMatrix{A_{0,0} \oplus B_{0,0}}{A_{0,m} \oplus B_{0,m}}{A_{n,0} \oplus B_{n,0}}{A_{n,m} \oplus B_{n,m}}
-    \end{split}
-  \end{equation}
-\end{definition}
-\noindent
-This definitions require the two input containers to be of exactly the same size.
-The \zip skeleton is parallelizeable in the same manner as \map, as each element of the output container can be computed in parallel.
-
-A possible application of the \zip skeleton is adding two vectors:
-\begin{align*}
-  add(\vec{x},\ \vec{y}) = zip(\ +, \vec{x},\ \vec{y}\ )
-\end{align*}
-
-
-\paragraph{The \reduce skeleton}
-The \reduce skeleton computes a single value from a vector by successively applying the customizing function.
-In \SkelCL the \reduce skeleton is only defined on vectors:
-\begin{definition}
-  \label{definition:reduce}
-  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be an associative and commutative, binary customizing operator with the corresponding identity element $id$.
-  The algorithmic skeleton \reduce is defined as follows:
-  \begin{equation}
-    reduce \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ id\ \big)
-      = x_1 \oplus x_2 \oplus \dots \oplus x_n
-  \end{equation}
-\end{definition}
-\noindent
-Requiring the operator to be associative and commutative enables efficient parallel implementations.
-The identity element $id$ can be used by the implementation, \eg, to initialize intermediate buffers. % TODO: think harder
-
-A possible application of the \reduce skeleton is to find the maximum value of a vector:
-\begin{align*}
-  sumUp(\vec{x}) &= reduce(\ max, \vec{x},\ 0\ )\\
-  \text{where: } max(a, b) &=
-    \left\{
-      \begin{array}{l l}
-      a & \text{if } a \geq b\\
-      b & \text{if } a < b
-      \end{array}
-    \right.
-\end{align*}
-
-
-\paragraph{The \scan skeleton}
-The \scan skeleton (\aka prefix-sum) yields an output vector with each element obtained by applying the customizing function to the elements of the input vector up to the current element's index.
-In \SkelCL the \scan skeleton is only defined on vectors:
-\begin{definition}
-  \label{definition:scan}
-  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be an associative binary customizing operator with the corresponding identity element $id$.
-  The algorithmic skeleton \scan is defined as follows:
-  \begin{equation}
-    \begin{split}
-    scan \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ id\ \big) \\
-      = [id, x_1 \oplus x_2,\ \dots,x_1 \oplus x_2 \oplus \cdots \oplus x_n]
-    \end{split}
-  \end{equation}
-\end{definition}
-\noindent
-Even though, the \scan pattern seems inherently sequential, because each individual results contains the results of its predecessor, efficient parallel implementations does exist for this problem.
-Blelloch~\cite{Blelloch1991} studies this parallel pattern in great details and efficient implementations for \GPUs exists~\cite{HarrisSeOw2007} following his algorithmic ideas.
-
-
-\paragraph{Parallel Programming with Algorithmic Skeletons}
-In \SkelCL, rather than writing low-level kernels, the application developer customizes suitable skeletons by providing application-specific functions which are often much simpler than kernels as they specify an operation on basic data items rather than containers.
-Skeletons can be executed on both single- and multi-device systems.
-In case of a multi-device system, the calculation specified by a skeleton is performed automatically on all devices available in the system.
-
-Skeletons can be customized and composed to express more complex algorithms.
-To demonstrate how to express computations with algorithmic skeletons let us consider three linear algebra applications:
-scaling a vector with a constant, computing the sum of absolute values of a vector, and computing the dot product (\aka inner product) of two vectors.
-These three applications are all part of the well known \emph{Basic Linear Algebra Subprograms (\BLAS)}~\cite{Dongarra2002,Dongarra2002a}.
-
-For scaling a vector with a constant $\alpha$ we use the \map skeleton:
-\begin{align*}
-  scal(\vec{x}) &= map(\ f_{\alpha}, \vec{x}\ )\\
-  \text{where: } f_{\alpha}(x_i) &= \alpha \cdot x_i
-\end{align*}
-
-\noindent
-For computing the sum of absolute values we compose a \map and \reduce skeleton.
-We use the $\circ$ to denote the sequential composition of two functions, \ie\ $f \circ g(x) = f(g(x))$.
-\begin{align*}
-  asum(\vec{x}) &= reduce(\ +\ ) \circ map(\ abs, \vec{x}\ )\\
-  \text{where: } abs(a) &=
-    \left\{
-      \begin{array}{r l}
-      a & \text{if } a \geq 0\\
-      -a & \text{if } a < 0
-      \end{array}
-    \right.
-\end{align*}
-
-\noindent
-To compute the dot product of two vectors we compose a \zip skeleton customized with multiplication and a \reduce skeleton customized with addition:
-\begin{align*}
-  dot(\vec{x}, \vec{y}) &= reduce(\ +\ ) \circ zip(\ *, \vec{x}, \vec{y}\ )
-\end{align*}
-
-\noindent
-Algorithmic skeletons are not just limited to linear algebra applications, but a board range of application types can be implemented with algorithmic skeletons as we will discuss in \autoref{chapter:skelcl-evaluation}.
-Among other, we will see an implementation with algorithmic skeletons of the real-world medial imaging application example discussed at the beginning of this chapter.
-
-\section{Data distribution and redistribution}
-\todo{continue here}
-
-
-\section{More Complex Algorithmic Skeletons}
+\input{Chapters/Chapter3/skelcl_library.tex}
 
 
 
-% ============================================================================ %
-\section{The SkelCL Library}
-\label{section:skelcl-library}
-In this section we discuss the \SkelCL Library, our implementation of the \SkelCL programming model.
-It provides to the user a \Cpp~\API that implements the features of the \SkelCL programming model, and thus liberates the application developer from writing low-level boilerplate code.
-In addition, the library provides some commonly used utility functions, \eg, for program initialization.
-The \SkelCL Library is open source software and available at: \url{http://skelcl.uni-muenster.de}.
-
-\subsection{Memory Management Implementation}
-\label{section:skelcl-library:memory-management}
-In the \SkelCL programming model the user managed its memory using \emph{container data types}.
-The two container data types -- vector and matrix -- are implemented as template classes in the \SkelCL Library.
-This generic implementation allows for storing data items of any primitive C/\Cpp data type (\eg, \code{int}), as well as user-defined data structures (\code{struct}s).
-
-\paragraph{The SkelCL Vector}
-The \SkelCL vector replicates the interface of the vector from the Standard Template Library (\STL), \ie, it can be used as a drop-in replacement of the standard vector.
-Internally, a vector comprises pointers to corresponding areas of main memory (accessible by the host) and device memory.
-The vector holds one pointer for the host and one pointer for each device available.
-Memory on the devices is allocated automatically, according to the distribution of the vector:
-while for a single distributed vector only memory on a single device is allocated, for a vector distributed with the copy, block, or overlap distribution memory on all devices is allocated.
-The selected distribution obviously also influences how big the buffer allocated on the devices are.
-
-Before the execution of a skeleton, the input vector's implementation ensures that all of its data is available on the devices.
-This might result in implicit data transfers from the host memory to device memory.
-The data of the output vector is not copied back to the host memory but rather resides in the device memory.
-Before every data transfer, the vector implementation checks whether the data transfer is necessary;
-only then the data is actually transferred.
-Hence, if an output vector is used as the input to another skeleton, no further data transfer is performed.
-This \emph{lazy copying} defers data transfers as long as possible or avoids them completely and, thus, minimizes the costly data transfers between host and device.
-While all data transfers are performed implicitly by \SkelCL we understand that advanced application developers want fine grained control over the data transfers between host and devices.
-For that purpose \SkelCL offers a set of \APIs developers can use to explicitly initiate and control the data transfer to and from the devices.
-
-%In a SkelCL program, a vector object can be created and filled with data like this:
-%\vspace{.5em}
-%\centerline{\lstinline!Vector<int> vec(size);!}
-%\centerline{\lstinline!for (int i = 0; i < vec.size(); ++i) \{ vec[i] = i; \}!}
-%\vspace{.5em}
-
-\paragraph{The SkelCL Matrix}
-The \SkelCL matrix offers an easy to use interface similar to the interface of the vector.
-Data is stored in row-major order and iterators are provided to iterate first over rows and then inside of a single row to access a particular element.
-For the copy, block, and overlap distribution the matrix is divided across rows.
-A single row is never split across multiple devices, which simplifies the memory management.
-Besides offering an interface to access elements on the host, the matrix also offers an interface for accessing elements on the device by using two-dimensional indices.
-This frees the application developer from performing cumbersome index calculations manually.
-
-\subsection{Algorithmic Skeletons Implementation}
-\label{section:skelcl-library:skeletons}
 
 
-% TODO: ...
 
 
-%\begin{itemize}
-%  \item 
-%    In a SkelCL program, a map skeleton is created as an object for a unary function $f$, e.\,g. negation, like this:
-%
-%    \vspace{.5em}
-%    \centerline{\lstinline!Map<float(float)> neg("float func(float x) \{ return -x;\}");!}
-%    \vspace{.5em}
-%
-%    This map object can then be called as a function with a vector as argument:
-%
-%    \vspace{.5em}
-%    \centerline{\lstinline!resultVector = neg( inputVector );!}
-%    \vspace{.5em}
-%  \item The zip skeleton operates on two vectors $cl$ and $cr$, applying a binary customizing operator $\oplus$ pairwise:
-%    \vspace{-.5em}
-%    \[ zip\ (\oplus)\ [cl_1, cl_2, \dots, cl_n]\ [cr_1, cr_2, \dots, cr_n] = [cl_1\oplus cr_1, cl_2\oplus cr_2, \dots, cl_n\oplus cr_n] \]
-%
-%    \vspace{-.5em}
-%    In SkelCL, a zip skeleton object for adding two vectors is created like as:
-%
-%    \vspace{.5em}
-%    \centerline{\lstinline!Zip<float(float, float)> add("float func(float x,float y) \{return x+y;\}");!}
-%    \vspace{.5em}
-%
-%    and can then be called as a function with a pair of vectors as arguments:
-%
-%    \vspace{.5em}
-%    \centerline{\lstinline!resultVector = add( leftVector, rightVector );!}
-%    \vspace{.5em}
-%    
-%  \item The reduce skeleton computes a scalar value from a vector using a binary associative operator $\oplus$, i.\,e.
-%    \vspace{-.5em}
-%    \[ red\ (\oplus)\ [v_1, v_2, \dots, v_n] = v_1 \oplus v_2 \oplus \dots \oplus v_n \]
-%
-%    \vspace{-.5em}
-%    For example, to sum up all elements of a vector, the reduce skeleton is created with addition as customizing function, and called as follows:
-%
-%    \vspace{.5em}
-%    \centerline{\lstinline!Reduce<float(float)> sumUp("float func(float x,float y) \{ return x+y;\}");!}
-%    \vspace{.5em}
-%    \centerline{\lstinline! result = sumUp( inputVector );!}
-%    \vspace{.5em}
-%
-% 
-%  \item The scan skeleton (a.\,k.\,a. prefix-sum) yields an output vector with each element obtained by applying a binary associative operator $\oplus$ to the elements of the input vector up to the current element's index, i.\,e.
-%    \vspace{-.5em}
-%    \[ scan\ (\oplus)\ [v_1, v_2, \dots, v_n] = [v_1, v_1\oplus v_2, \dots, v_1\oplus v_2\oplus \dots \oplus v_n] \]
-%
-%    \vspace{-.5em}
-%    The prefix sums customized with addition is specified and called in SkelCL as follows:
-%
-%    \vspace{.5em}
-%    \centerline{\lstinline!Scan<float(float)> prefixSum("float func(float x,float y) \{return x+y;\}");!}
-%    \vspace{.5em}
-%    \centerline{\lstinline! result = prefixSum( inputVector );!}
-%    \vspace{.5em}
-%
-%\end{itemize}
 
 
-% HIPS
-The parallelization approach for \texttt{Reduce} depends on whether the binary operator is commutative and/or associative.
-SkelCL requires the operator to be associative, such that it can be applied to arbitrarily sized subranges of the input vector in parallel.
-The final result is obtained by recursively combining the intermediate results for the subranges.
-To improve the performance, SkelCL saves the intermediate results in the device's fast local memory.
 
 
-% additional arguments
-For flexibility, \SkelCL skeletons can accept additional arguments if the customizing function works not only on a skeleton's input containers, but needs access to additional data~\cite{StKG-11};
-containers passed as additional arguments to a skeleton are automatically transfered to the GPUs.
 
-% opencl interop
-SkelCL can also be used in combination with existing OpenCL codes, as SkelCL is designed as an extension of OpenCL, rather than a replacement for it.
 
-% front end compiler
 
-% skeleton implementation
-In OpenCL, kernels are compiled at runtime of the host program in order to be executable on different GPUs.
-Therefore, in the SkelCL library implementation, the customizing functions are provided as strings to their skeletons.
-SkelCL implementation merges the customizing function with the pre-implemented skeleton-specific program code to build a valid OpenCL kernel automatically.
-The generated kernel fetches one or more data items from its input containers (vectors or matrices), passes them to the customizing function, and yields the function's result, e.\,g., by writing it to the output container.
-Rather than working with pointers to GPU memory (like kernels do), customizing functions in SkelCL take a single data item as input and return a single result.
-The SkelCL implementation of the vector container resembles the interface of the vector from the C++ Standard Template Library (STL), i.\,e., it can be used as a replacement for the standard vector.
-Internally, the containers manage pointers to the corresponding areas of the main memory (accessible by the CPU) and GPU memory.
-For possible optimizations of the kernel's source code, we rely on the optimization capabilities of the OpenCL compiler.
 
-% data transfers
-In some situations, our SkelCL implementation can optimize data transfers:
-\eg, after executing a skeleton, the output data remains in the GPU memory;
-this has the advantage that if the output container is used as the input to another skeleton, no data transfer has to be performed.
-Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers between the CPU and GPUs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -652,6 +94,7 @@ Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers b
 \from{HIPS begin}
 \section{SkelCL: An OpenCL-based skeleton library (HIPS)}
 
+\todo{use in the library section}
 SkelCL provides a set of basic skeletons.
 Two well-known examples are the \texttt{Zip} skeleton combining two vectors element-wise, and the \texttt{Reduce} skeleton combining all elements of a vector using a binary operation (see Section~\ref{sec:skeletons}).
 Listing~\ref{lst:dotproduct} shows how a dot product of two vectors is implemented in SkelCL using these two skeletons.
@@ -701,6 +144,7 @@ int main (int argc, char const* argv[]) {
 
 \subsubsection{Skeletons in SkelCL}
 
+\todo{use in the library section}
 Skeletons are higher-order functions because they take so-called \emph{customizing functions} as parametes.
 In SkelCL, skeletons expect the customizing function to be a plain string containing the function's source code.
 This is merged with the skeleton's own source code to generate source code for an OpenCL kernel.
@@ -717,6 +161,8 @@ A skeleton is called by using the name of the skeleton as a function and passing
 This behavior is implemented using the C++ operator overloading feature.
 
 \subsubsection{Passing Additional Arguments to Skeletons}
+
+\todo{use in the library section}
 
 \begin{lstlisting}[%
 caption={Passing additional arguments to a \texttt{Map} skeleton.},%
@@ -755,21 +201,9 @@ Hence, their order has to resemble the order of parameters in the function defin
 
 \from{ASHES begin}
 \section{Overview of SkelCL (ASHES)} 
-
-We build our SkelCL approach on top of the OpenCL standard~\cite{OpenCL-11}, because OpenCL is hardware- and vendor-independent.
-Thereby, we achieve that multi-core CPUs, GPUs and other accelerators --- called \emph{devices} in OpenCL --- can be employed using a uniform programming model.
-An OpenCL program is executed on a \emph{host} system which is connected to one or several OpenCL devices.
-In the next two subsections, we describe particular problems of application programming using OpenCL and demonstrate how SkelCL addresses these problems.
-
 \subsection{Algorithmic Skeletons}
 
-% STATE OF THE ART
-In OpenCL, special functions (\emph{kernels}) are executed in parallel on a device.
-Kernels are compiled at runtime to allow for portability across different devices.
-The programmer must specify in the host program how many instances of a kernel are executed.
-Kernels usually take pointers to GPU memory as input and contain program code for reading/writing data items.
-Pointers have to be used carefully, because no boundary checks are performed by OpenCL.
-
+\todo{use in the library section}
 % IMPLEMENTATION
 To customize a skeleton, the application developer passes the source code of the user-defined function as a plain string to the skeleton.
 SkelCL merges the user-defined function's source code with pre-implemented skeleton-specific program code, thus creating a valid OpenCL kernel automatically.
@@ -809,40 +243,6 @@ The additional argument is simply appended to the argument list when the skeleto
 Note that all input values of the user-defined function are scalar values rather than vectors or pointers.
 Besides scalar values, like shown in the example, vectors can also be passed as additional arguments to a skeleton.
 This feature is implemented in SkelCL using variadic templates from the new C++ standard\cite{gregor08, c++11}.
- 
-\begin{figure}[tb]
-  \centering
-  \begin{subfigure}{.30\textwidth}
-    \includegraphics[width=\textwidth]{ASHES/singleDistribution}
-    \caption{\emph{single}}
-    \label{fig:distributions:single}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.30\textwidth}
-    \includegraphics[width=\textwidth]{ASHES/copyDistribution}
-    \caption{\emph{copy}}
-    \label{fig:distributions:copy}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.30\textwidth}
-    \includegraphics[width=\textwidth]{ASHES/blockDistribution}
-    \caption{\emph{block}}
-    \label{fig:distributions:block}
-  \end{subfigure}
-  \caption{Distributions of a vector in SkelCL.}
-  \label{fig:distributions}
-  \bigskip
-\end{figure}
-
-
-\subsection{Data type \texttt{Vector}}
-\label{sec:skelcl_vector}
-
-% STATE OF THE ART: OpenCL
-OpenCL considers the system's main memory, called host memory, as separated from the device memory.
-Hence, the programmer has to explicitly manage data transfers between these distinct memory spaces.
-OpenCL offers functions for allocating memory on devices and transferring data from the host to the device (\emph{upload}) or vice versa (\emph{download}).
-
 
 \section{Programming Multi-GPU Systems (ASHES)}
 
@@ -851,44 +251,58 @@ In particular, communication and coordination between multiple GPUs and the host
 Many low-level details, like pointer arithmetics and offset calculations, are necessary when using OpenCL or CUDA for this purpose.
 In this section, we demonstrate how SkelCL helps the developer to program multi-GPU systems at a high level of abstraction.
 
-\subsection{Data distribution}
+% \subsection{Data distribution}
 
-SkelCL's vector data type abstracts from memory ranges on multiple GPUs, such that the vector's data is accessible by each GPU.
-However, each GPU may access different parts of a vector or may even not access it at all.
-For example, when implementing work-sharing on multiple GPUs, the GPUs will access disjoint parts of input data, such that copying only a part of the vector to a GPU would be more efficient than copying the whole data to each GPU.
+% SkelCL's vector data type abstracts from memory ranges on multiple GPUs, such that the vector's data is accessible by each GPU.
+% However, each GPU may access different parts of a vector or may even not access it at all.
+% For example, when implementing work-sharing on multiple GPUs, the GPUs will access disjoint parts of input data, such that copying only a part of the vector to a GPU would be more efficient than copying the whole data to each GPU.
 
-For specifying partitionings of vectors in multi-GPU systems, the concept of \emph{distribution} is introduced in SkelCL.
-A distribution describes how the vector's data is distributed among the available GPUs.
-It allows the programmer to abstract from the challenges of managing memory ranges which are shared or partitioned across multiple devices: the programmer can think of a distributed vector as of a self-contained entity.
-% By default appropriate distributions are set by SkelCL automatically such that data movement is transparent for the programmer.
+% For specifying partitionings of vectors in multi-GPU systems, the concept of \emph{distribution} is introduced in SkelCL.
+% A distribution describes how the vector's data is distributed among the available GPUs.
+% It allows the programmer to abstract from the challenges of managing memory ranges which are shared or partitioned across multiple devices: the programmer can think of a distributed vector as of a self-contained entity.
 
-Figure~\ref{fig:distributions} shows three distributions which are currently implemented in SkelCL and offered to the programmer:
-\emph{single}, \emph{block}, and \emph{copy}.
-If set to \emph{single} distribution (Figure~\ref{fig:distributions:single}), vector's whole data is stored on a single GPU (the first GPU if not specified otherwise).
-With \emph{block} distribution (Figure~\ref{fig:distributions:block}), each GPU stores a contiguous, disjoint part of the vector.
-The \emph{copy} distribution (Figure~\ref{fig:distributions:copy}) copies vector's entire data to each available device.
-A newly created vector can adopt any of these distributions.
+% Figure~\ref{fig:distributions} shows three distributions which are currently implemented in SkelCL and offered to the programmer:
+% \emph{single}, \emph{block}, and \emph{copy}.
+% If set to \emph{single} distribution (Figure~\ref{fig:distributions:single}), vector's whole data is stored on a single GPU (the first GPU if not specified otherwise).
+% With \emph{block} distribution (Figure~\ref{fig:distributions:block}), each GPU stores a contiguous, disjoint part of the vector.
+% The \emph{copy} distribution (Figure~\ref{fig:distributions:copy}) copies vector's entire data to each available device.
+% A newly created vector can adopt any of these distributions.
 
-The vector distribution can be changed at runtime either explicitly by the programmer or implicitly by the system.
-A change of distribution implies data exchanges between multiple GPUs and the host, which are performed implicitly by SkelCL.
-These implicit data exchanges are also performed lazily, i.\,e. only if really necessary, as described in Section~\ref{sec:introduction_to_skelcl}.
-Implementing such data transfers in OpenCL manually is a cumbersome task:
-data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
-this results in a lot of low-level code which is completely hidden when using SkelCL.
+% \begin{figure}[tb]
+%   \centering
+%   \begin{subfigure}{.30\textwidth}
+%     \includegraphics[width=\textwidth]{ASHES/singleDistribution}
+%     \caption{\emph{single}}
+%     \label{fig:distributions:single}
+%   \end{subfigure}
+%   \hfill
+%   \begin{subfigure}{.30\textwidth}
+%     \includegraphics[width=\textwidth]{ASHES/copyDistribution}
+%     \caption{\emph{copy}}
+%     \label{fig:distributions:copy}
+%   \end{subfigure}
+%   \hfill
+%   \begin{subfigure}{.30\textwidth}
+%     \includegraphics[width=\textwidth]{ASHES/blockDistribution}
+%     \caption{\emph{block}}
+%     \label{fig:distributions:block}
+%   \end{subfigure}
+%   \caption{Distributions of a vector in SkelCL.}
+%   \label{fig:distributions}
+%   \bigskip
+% \end{figure}
 
-A special situation arises when the distribution is changed from the \emph{copy} distribution, where each GPU holds its own full copy of the data.
-In such a case, each GPU may hold a different version of the vector as data modifications are only performed locally on the GPU.
-In order to maintain SkelCL's concept of a self-contained vector, these different versions must be combined using a user-specified function when the distribution is changed.
-If no function is specified, the copy of the first device is taken as the new version of the vector; the copies of the other devices are discarded.
+% The vector distribution can be changed at runtime either explicitly by the programmer or implicitly by the system.
+% A change of distribution implies data exchanges between multiple GPUs and the host, which are performed implicitly by SkelCL.
+% These implicit data exchanges are also performed lazily, i.\,e. only if really necessary, as described in Section~\ref{sec:introduction_to_skelcl}.
+% Implementing such data transfers in OpenCL manually is a cumbersome task:
+% data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
+% this results in a lot of low-level code which is completely hidden when using SkelCL.
 
-\begin{figure*}[tbp]
-    \centering
-    \includegraphics[width=.9\textwidth]{ASHES/scan}
-    \caption{Scan on four GPUs: (1) All GPUs scan their parts independently.
-            (2) map skeletons are created automatically and
-             executed to produce the result.}
-    \label{fig:scan}
-\end{figure*}
+% A special situation arises when the distribution is changed from the \emph{copy} distribution, where each GPU holds its own full copy of the data.
+% In such a case, each GPU may hold a different version of the vector as data modifications are only performed locally on the GPU.
+% In order to maintain SkelCL's concept of a self-contained vector, these different versions must be combined using a user-specified function when the distribution is changed.
+% If no function is specified, the copy of the first device is taken as the new version of the vector; the copies of the other devices are discarded.
 
 \subsection{Skeletons for Multiple GPUs}
 \label{sec:multi-gpu_skeletons}
@@ -927,6 +341,15 @@ The input vector $[1,\ldots,16]$ is distributed using the \emph{block} distribut
 After performing the scan algorithm on all devices (second line of the figure), map skeletons are built implicitly using the marked values and executed on all devices except the first one.
 This produces the final result, as shown in the bottom line.
 
+\begin{figure*}[tbp]
+    \centering
+    \includegraphics[width=.9\textwidth]{ASHES/scan}
+    \caption{Scan on four GPUs: (1) All GPUs scan their parts independently.
+            (2) map skeletons are created automatically and
+             executed to produce the result.}
+    \label{fig:scan}
+\end{figure*}
+
 The SkelCL implementation of the scan skeleton assumes the GPUs to have a fixed order, such that each GPU (except the first one) has a predecessor:
 \begin{enumerate}
  \item Every GPU executes a local scan algorithm for its local part of data;
@@ -942,36 +365,6 @@ The output vector is block-distributed among all GPUs.
 
 \from{Paraphrase begin}
 \section{SkelCL (Paraphrase)}
-
-\subsection{Algorithmic Skeletons}
-
-% EXAMPLE
-Listing~\ref{lst:dotproduct} shows how a dot product of two vectors is implemented in SkelCL using two skeletons:
-the \emph{Zip} skeleton is customized by usual multiplication, and the \emph{Reduce} skeleton is customized by usual addition.
-This program comprises 8 lines of code (omitting comments and empty lines).
-\begin{lstlisting}[%
-caption={SkelCL program computing the dot product of two vectors.},%
-float=tbp,%
-label={lst:dotproduct}]
-int main (int argc, char const* argv[]) {
-  SkelCL::init();                  /* initialize SkelCL */
-  Reduce<float> sum (              /* create skeletons */
-    "float func(float x,float y) { return x+y; }" );
-  Zip<float> mult (
-    "float func(float x, float y) { return x*y; }" );
-                                   /* create input vectors */
-  Vector<float> A(SIZE); fillVector(A);
-  Vector<float> B(SIZE); fillVector(B);
-                                   /* execute skeletons */
-  Vector<float> C = sum( mult( A, B ) );
-  cout << "Result: " << C.front(); /* print result */ }
-\end{lstlisting}
-For comparison, an OpenCL-based implementation of a dot product provided in the NVIDIA SDK~\cite{CUDASDK-10} requires 68 lines of code (kernel function: 9~lines, host program: 59~lines).
-Besides, additional code would be necessary for a multi-device implementation, including statements for data transfer between multiple devices and for splitting input data and merging output data on the host.
-
-In SkelCL, skeletons can be executed on single- and multi-device systems.
-In case of a multi-device system, the calculation specified by a skeleton is performed automatically on all devices available to the system.
-The SkelCL program in Listing~\ref{lst:dotproduct} can thus be executed on a multi-device system without any change.
 
 \subsection{The MapOverlap Skeleton}
 Many applications dealing with two-dimensional data perform calculations for every data element taking neighboring data elements into account.
@@ -1086,65 +479,6 @@ Implementing such data transfers in the standard OpenCL is a cumbersome task:
 data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
 this results in a lot of low-level code which is completely hidden when using SkelCL.
 \from{Paraphrase end}
-
-
-
-
-\from{ICCS begin}
-\section{The SkelCL Programming Model and the SkelCL Library (ICCS)}
-
-
-\subsection{Data Distributions}
-\label{sec:data_distribution}
-For multi-GPU systems, SkelCL's parallel container data types (vector and matrix) abstract from the separate memory areas on multiple GPUs, i.\,e., container's data is accessible by each GPU.
-To simplify the partitioning of a container on multiple GPUs, SkelCL supports the concept of \emph{distribution} that specifies how a container is distributed among the GPUs.
-It allows the application developer to abstract from managing memory ranges which are shared or partitioned across multiple GPUs.
-
-\begin{figure}[tb]
-  \centering
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{ICCS/singleDistribution}
-    \caption{\emph{single}}
-    \label{fig:distributions:single}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{ICCS/copyDistribution}
-    \caption{\emph{copy}}
-    \label{fig:distributions:copy}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{ICCS/blockDistribution}
-    \caption{\emph{block}}
-    \label{fig:distributions:block}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{ICCS/overlapDistribution}
-    \caption{\emph{overlap}}
-    \label{fig:distributions:overlap}
-  \end{subfigure}
-  \caption{Distributions of a vector in SkelCL.}
-  \label{fig:distributions}
-\end{figure}
-
-Four kinds of distribution are currently available to the application developer in SkelCL:
-\emph{single}, \emph{copy}, \emph{block}, and \emph{overlap} (see Fig.~\ref{fig:distributions} for illustration on a system with two GPUs).
-If set to the \emph{single} distribution (Fig.~\ref{fig:distributions:single}), container's whole data is stored on a single GPU (the first GPU if not specified otherwise).
-The \emph{copy} distribution (Fig.~\ref{fig:distributions:copy}) copies container's entire data to each available GPU.
-With the \emph{block} distribution (Fig.~\ref{fig:distributions:block}), each GPU stores a contiguous, disjoint block of the container.
-The \emph{overlap} distribution (Fig.~\ref{fig:distributions:overlap}) is used for the mapOverlap skeleton:
-it stores on both GPUs a common block of data from the border between the GPUs.
-The application developer can set the distribution of containers explicitly or every skeleton selects a default distribution for its input and output containers otherwise.
-The distribution of a container can be changed at runtime:
-this implies data exchanges between multiple GPUs and the CPU, which are performed by the SkelCL implementation implicitly.
-As shown in Listing~\ref{lst:redistribution}, implementing such data transfers in the standard OpenCL is a cumbersome task:
-data has to be downloaded to the CPU before it can be uploaded to other GPUs, including the corresponding length and offset calculations;
-this results in a lot of low-level code which is completely hidden when using SkelCL.
-
-\from{ICCS end}
-
 
 
 
@@ -1459,123 +793,6 @@ The allpairs skeleton automatically selects these distributions; therefore, no c
 \from{PaCT begin}
 
 
-\subsection{Data Distribution on Multiple GPUs}
-In applications working on container data types (vectors, matrices, etc.) GPU's often access disjoint parts of input data, such that copying only a part of the container to a GPU would be more efficient than copying the whole data to each GPU. To simplify the specification of partitionings of containers in programs for multi-GPU systems, SkelCL implements the \emph{distribution} mechanism that describes how a container is distributed among the available GPUs.
-It allows the programmer to abstract from managing memory ranges which are shared or spread across multiple GPUs:
-the programmer can think of a distributed container as of a self-contained entity.
-
-\begin{figure}[tb]
-  \centering
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/singleDistribution_vector}
-    \caption{\emph{single}}
-    \label{fig:distributions:single}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/copyDistribution_vector}
-    \caption{\emph{copy}}
-    \label{fig:distributions:copy}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/blockDistribution_vector}
-    \caption{\emph{block}}
-    \label{fig:distributions:block}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/overlapDistribution_vector}
-    \caption{\emph{overlap}}
-    \label{fig:distributions:overlap}
-  \end{subfigure}
-  \caption{Distributions of a vector in SkelCL.}
-  \label{fig:distributions}
-  \bigskip
-\end{figure}
-
-\begin{figure}[tbp]
-  \centering
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/singleDistribution_matrix}
-    \caption{\emph{single}}
-    \label{fig:Distribution_matrixs:single}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/copyDistribution_matrix}
-    \caption{\emph{copy}}
-    \label{fig:Distribution_matrixs:copy}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/blockDistribution_matrix}
-    \caption{\emph{block}}
-    \label{fig:Distribution_matrixs:block}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{PaCT/overlapDistribution_matrix}
-    \caption{\emph{overlap}}
-    \label{fig:Distribution_matrixs:overlap}
-  \end{subfigure}
-  \caption{Distributions of a matrix in SkelCL.}
-  \label{fig:distributions_matrix}
-\end{figure}
-
-
-Four kinds of distribution are currently available in SkelCL:
-\emph{single}, \emph{copy}, \emph{block}, and \emph{overlap} (see Fig.~\ref{fig:distributions} for distributing a vector on a system with two GPUs).
-If distribution is set to \emph{single} (Fig.~\ref{fig:distributions:single}), than vector's whole data is stored on a single GPU (the first GPU if not specified otherwise).
-The \emph{copy} distribution (Fig.~\ref{fig:distributions:copy}) copies vector's entire data to each available GPU.
-With the \emph{block} distribution (Fig.~\ref{fig:distributions:block}), each GPU stores a contiguous, disjoint chunk of the vector.
-The \emph{overlap} distribution (Fig.~\ref{fig:distributions:overlap}) stores on each GPU the chunk like in the block distribution, together with one or several border elements of the neighboring chunk.
-
-The same four distributions are provided also for the matrix data type (Figure~\ref{fig:distributions_matrix}). In particular the overlap distribution splits the matrix into one chunk for each GPU;
-in addition, each chunk contains a number of continuous rows from the neighboring chunks.
-A parameter -- the \emph{overlap size} -- specifies the number of rows at the borders of a chunk which are copied to the two neighboring GPUs.
-Figure~\ref{fig:Distribution_matrix:overlap} illustrates the overlap distribution:
-GPU 0 receives the top chunk ranging from the top row to the middle, while GPU 1 receives the second chunk ranging from the middle row to the bottom.
-The marked parts are called \emph{overlap region} they are the same on both GPUs.
-
-The application developer can set the distribution of containers (vectors and matrices) explicitly, otherwise every skeleton selects a default distribution for its input and output containers.
-Container's distribution can be changed at runtime:
-this implies data exchanges between multiple GPUs and the CPU, which are performed by the SkelCL implementation implicitly.
-Implementing such data transfers in the standard OpenCL is a cumbersome task:
-data has to be downloaded to the CPU before it is uploaded to the GPUs, including the corresponding length and offset calculations;
-this results in a lot of low-level code which becomes completely hidden when using SkelCL.
-
-% EXAMPLE
-\begin{lstlisting}[%
-breakindent=1.5em,%
-caption={SkelCL program computing the dot product of two vectors. Arrays \texttt{a\_ptr} and \texttt{b\_ptr} initialize the vectors.},%
-label={lst:dotproduct}]
-int main (int argc, char const* argv[]) {
-  SkelCL::init(); /* initialize SkelCL */
-/* create skeletons */
-  SkelCL::Reduce<float> sum ("float sum (float x,float y)\
-      {return x+y;}");
-  SkelCL::Zip<float>    mult("float mult(float x,float y)\
-      {return x*y;}");
-/* create input vectors */
-  SkelCL::Vector<float> A(SIZE);
-  SkelCL::Vector<float> B(SIZE);
-/* fill vectors with data */
-  fillVector(A.begin(), A.end());
-  fillVector(B.begin(), B.end());
-/* execute skeleton */
-  SkelCL::Scalar<float> C = sum( mult( A, B ) );
-/* fetch result */
-  float c = C.getValue();
-}
-\end{lstlisting}
-
-
-Listing~\ref{lst:dotproduct} shows how a dot product of two vectors is implemented in SkelCL using two of the basic skeletons.
-Here, the \texttt{Zip} skeleton is customized by multiplication, and the \texttt{Reduce} skeleton is customized by usual addition.  
-For comparison, an OpenCL-based implementation of the dot product computation provided by NVIDIA requires approximately 68 lines of code (kernel function: 9~lines, host program: 59~lines)~\cite{CUDASDK-10}.
-
-
 
 \subsection{The MapOverlap Skeleton}
 \label{sec:skelcl:mapoverlap}
@@ -1726,56 +943,6 @@ where $B^T$ is the transpose of matrix $B$.
 \from{HiStencils begin}
 \section{The SkelCL Skeleton Library (HiStencils)}
 \label{sec:skelcl}
-
-\begin{figure}[tb]
-  \centering
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{HiStencils/singleDistribution}
-    \caption{\emph{single}}
-    \label{fig:distributions:single}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{HiStencils/copyDistribution}
-    \caption{\emph{copy}}
-    \label{fig:distributions:copy}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{HiStencils/blockDistribution}
-    \caption{\emph{block}}
-    \label{fig:distributions:block}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.22\textwidth}
-    \includegraphics[width=\textwidth]{HiStencils/overlapDistribution}
-    \caption{\emph{overlap}}
-    \label{fig:distributions:overlap}
-  \end{subfigure}
-  \caption{Distributions of a vector in SkelCL.}
-  \label{fig:distributions}
-  \bigskip
-\end{figure}
-
-\paragraph{(Re)Distribution Mechanism}
-For multi-GPU systems, SkelCL's parallel container data types (vector and matrix) abstract from the separate memory areas on multiple GPUs, i.\,e., container's data is accessible by each GPU.
-To simplify the partitioning of a container on multiple GPUs, SkelCL supports the concept of \emph{distribution} that specifies how a container is distributed among the GPUs.
-It allows the application developer to abstract from explicitly managing memory ranges which are shared or partitioned across multiple GPUs.
-
-Four kinds of distributions are currently available to the application developer in SkelCL:
-\emph{single}, \emph{copy}, \emph{block}, and \emph{overlap} (see Fig.~\ref{fig:distributions} for illustration on a system with two GPUs).
-If set to the \emph{single} distribution (Fig.~\ref{fig:distributions:single}), container's whole data is stored on a single GPU (the first GPU if not specified otherwise).
-The \emph{copy} distribution (Fig.~\ref{fig:distributions:copy}) copies container's entire data to each available GPU.
-With the \emph{block} distribution (Fig.~\ref{fig:distributions:block}), each GPU stores a contiguous, disjoint block of the container.
-The \emph{overlap} distribution (Fig.~\ref{fig:distributions:overlap}) is used for the MapOverlap and Stencil skeletons:
-it stores on both GPUs a common block of data from the border between the GPUs.
-
-The application developer can set the distribution of containers explicitly or every skeleton selects a default distribution for its input and output containers otherwise.
-The distribution of a container can be changed at runtime:
-this implies data exchanges between multiple GPUs and the CPU, which are performed by the SkelCL implementation implicitly.
-Implementing such data transfers in standard OpenCL is a cumbersome task:
-data has to be downloaded to the CPU before it can be uploaded to other GPUs, including the corresponding length and offset calculations;
-this results in a lot of low-level code which is completely hidden when using SkelCL.
 
 \section{New Skeletons for Stencils (HiStencils)}
 \label{sec:stencil}
