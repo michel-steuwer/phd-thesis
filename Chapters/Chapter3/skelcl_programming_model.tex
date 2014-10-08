@@ -68,9 +68,9 @@ We start by formally define the skeleton on vectors:
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $f$ be a unary customizing function.
   The algorithmic skeleton \map is defined as follows:
-  \begin{equation}
-    map \big(\ f,\ [x_1, x_2, \dots, x_n]\ \big) = [f(x_1), f(x_2), \dots, f(x_n)]
-  \end{equation}
+  \begin{equation*}
+    map \big(\ f,\ [x_1, x_2, \dots, x_n]\ \big) \eqdef [f(x_1), f(x_2), \dots, f(x_n)]
+  \end{equation*}
 \end{definition}
 \noindent
 The definition for matrices is similar:
@@ -79,10 +79,10 @@ The definition for matrices is similar:
   Let $M$ be an $n\times m$ matrix with elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
   Let $f$ be a unary customizing function.
   The algorithmic skeleton \map is defined as follows:
-  \begin{equation}
+  \begin{equation*}
     map\big(\ f,\ \DottedMatrix{M_{0,0}}{M_{0,m}}{M_{n,0}}{M_{n,m}} \big)
-      = \DottedMatrix{f(M_{0,0})}{f(M_{0,m})}{f(M_{n,0})}{f(M_{n,m})}
-  \end{equation}
+      \eqdef \DottedMatrix{f(M_{0,0})}{f(M_{0,m})}{f(M_{n,0})}{f(M_{n,m})}
+  \end{equation*}
 \end{definition}
 \noindent
 The output container, either vector or matrix, can be computed in parallel, because the computation of each single element is independent of each other.
@@ -101,12 +101,12 @@ As the \map skeleton it is defined for vectors and matrices as well.
   Let $\vec{x}$ and $\vec{y}$ be vectors of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
   Let $\oplus$ be a binary customizing operator.
   The algorithmic skeleton \zip is defined as follows:
-  \begin{equation}
+  \begin{equation*}
     \begin{split}
     zip \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ [y_1, y_2, \dots, y_n]\ \big)\\
-      = [x_1 \oplus y_1, x_2 \oplus y_2, \dots, x_n \oplus y_n]
+      \eqdef [x_1 \oplus y_1, x_2 \oplus y_2, \dots, x_n \oplus y_n]
     \end{split}
-  \end{equation}
+  \end{equation*}
 \end{definition}
 \noindent
 Again the definition for matrices is similar:
@@ -115,13 +115,13 @@ Again the definition for matrices is similar:
   Let $A$ and $B$ be $n\times m$ matrices with elements $A_{i,j}$ and $B_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
   Let $\oplus$ be a binary customizing operator.
   The algorithmic skeleton \zip is defined as follows:
-  \begin{equation}
+  \begin{equation*}
     \begin{split}
     zip\big( f,\ {\DottedMatrix{A_{0,0}}{A_{0,m}}{A_{n,0}}{A_{n,m}}},\
                  {\DottedMatrix{B_{0,0}}{B_{0,m}}{B_{n,0}}{B_{n,m}}}\big) \\
-      = \DottedMatrix{A_{0,0} \oplus B_{0,0}}{A_{0,m} \oplus B_{0,m}}{A_{n,0} \oplus B_{n,0}}{A_{n,m} \oplus B_{n,m}}
+      \eqdef \DottedMatrix{A_{0,0} \oplus B_{0,0}}{A_{0,m} \oplus B_{0,m}}{A_{n,0} \oplus B_{n,0}}{A_{n,m} \oplus B_{n,m}}
     \end{split}
-  \end{equation}
+  \end{equation*}
 \end{definition}
 \noindent
 This definitions require the two input containers to be of exactly the same size.
@@ -141,10 +141,10 @@ In \SkelCL the \reduce skeleton is only defined on vectors:
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\oplus$ be an associative and commutative, binary customizing operator with the corresponding identity element $id$.
   The algorithmic skeleton \reduce is defined as follows:
-  \begin{equation}
+  \begin{equation*}
     reduce \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ id\ \big)
-      = x_1 \oplus x_2 \oplus \dots \oplus x_n
-  \end{equation}
+      \eqdef x_1 \oplus x_2 \oplus \dots \oplus x_n
+  \end{equation*}
 \end{definition}
 \noindent
 Requiring the operator to be associative and commutative enables efficient parallel implementations.
@@ -171,12 +171,12 @@ In \SkelCL the \scan skeleton is only defined on vectors:
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\oplus$ be an associative binary customizing operator with the corresponding identity element $id$.
   The algorithmic skeleton \scan is defined as follows:
-  \begin{equation}
+  \begin{equation*}
     \begin{split}
     scan \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ id\ \big) \\
-      = [id, x_1 \oplus x_2,\ \dots,x_1 \oplus x_2 \oplus \cdots \oplus x_n]
+      \eqdef [id, x_1 \oplus x_2,\ \dots,x_1 \oplus x_2 \oplus \cdots \oplus x_n]
     \end{split}
-  \end{equation}
+  \end{equation*}
 \end{definition}
 \noindent
 Even though, the \scan pattern seems inherently sequential, because each individual results contains the results of its predecessor, efficient parallel implementations does exist for this problem.
@@ -257,12 +257,6 @@ It allows the application developer to abstract from the challenges of managing 
     \caption{\emph{block}}
     \label{fig:distributions:block}
   \end{subfigure}
-  % \hfill
-  % \begin{subfigure}{.22\textwidth}
-  %   \includegraphics[width=\textwidth]{PaCT/overlapDistribution_vector}
-  %   \caption{\emph{overlap}}
-  %   \label{fig:distributions:overlap}
-  % \end{subfigure}
   \caption{Distributions of a vector in SkelCL.}
   \label{fig:distributions}
   \bigskip
@@ -287,12 +281,6 @@ It allows the application developer to abstract from the challenges of managing 
     \caption{\emph{block}}
     \label{fig:distributions_matrix:block}
   \end{subfigure}
-  % \hfill
-  % \begin{subfigure}{.22\textwidth}
-  %   \includegraphics[width=\textwidth]{PaCT/overlapDistribution_matrix}
-  %   \caption{\emph{overlap}}
-  %   \label{fig:Distribution_matrixs:overlap}
-  % \end{subfigure}
   \caption{Distributions of a matrix in SkelCL.}
   \label{fig:distributions_matrix}
 \end{figure}
@@ -332,23 +320,418 @@ If no function is specified, the copy of the first \GPU is taken as the new vers
 \label{section:skelcl-programming-model:specialSkeletons}
 
 The basic algorithmic skeletons presented in~\autoref{section:skelcl-programming-model:skeletons} are long known in the functional and algorithmic skeleton community.
-In this section we will introduce three new algorithmic skeletons, which are more specialized and, thus, more restrictive.
+In this section we will introduce two new algorithmic skeletons, which are more specialized and, thus, more restrictive.
 By limiting the use cases of these novel algorithmic skeleton we are able to make more assumptions of the parallelization and provide optimized implementations on modern multi-\GPU systems.
 
-Two of these new skeletons -- \mapOverlap and \stencil -- are targeted towards \emph{stencil} (\aka nearest neighbor) computations, which are computations performed for every element of a container while including neighboring elements in the computation.
-The third new skeleton (\allpairs) allows to combine two matrix containers in an all-to-all fashion, which is a pattern used in application like n-body simulations or matrix matrix multiplication.
+The first new skeletons (\stencil) is targeted towards \emph{stencil} (\aka nearest neighbor) computations, which are computations performed for every element of a container while including neighboring elements in the computation.
+The second new skeleton (\allpairs) allows to combine two matrix containers in an all-to-all fashion, which is a pattern used in application like n-body simulations or matrix matrix multiplication.
 
-For each skeleton we will first formally define it before looking at possible use cases.
+For both skeletons we will first formally define it before looking at possible use cases.
 The implementations targeting multi-\GPU systems will be described in~\autoref{section:skelcl-library}.
 
 
-\paragraph{The \mapOverlap Skeleton}
+\subsubsection{The \stencil Skeleton}
+
+Many numerical and image processing applications dealing with two-dimensional data perform calculations for a particular data element taking neighboring data elements into account.
+These type of applications are also known as \emph{stencil} or \emph{nearest neighbor} applications.
+To facilitate the development of such applications, we introduce the \stencil skeleton that can be used with both vector and matrix data type.
+
+The \stencil skeleton is customized with three parameters: a unary function $f$, an integer value $d$, and an out of bounds function $h$.
+The skeleton applies $f$ to each element of an input container while taking the neighboring elements within the range $d$ in each dimension into account.
+When neighboring elements are accesses at the boundaries of the container out of bound accesses occur.
+In these cases the function $h$ is called with the index causing the out of bound access and should return a replacement value.
+We now formally define the \stencil skeleton. We start with the definition for vectors:
+\begin{definition}
+  \label{definition:mapoverlap}
+  Let $\vec{x}$ and be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $f$ be a customizing function, $d$ be an positive integer value, and $h$ be a out of bound handling function.
+  The algorithmic skeleton \stencil is defined as follows:
+  \begin{equation*}
+    \begin{split}
+    &stencil \big(\ f,\  d,\ [x_1, x_2, \dots, x_n]\ \big) \eqdef [y_1, y_2, \dots, y_n]\\
+    &\text{where}\\[.5em]
+    &\qquad y_i = f(x_{i-d}, \ldots, x_{i+d}) \ \ \forall\ i :  0 < i \leq n\\
+    &\text{and\hfill}\\
+    &\qquad x_j = h(j) \ \ \forall\ j : -d < j \leq 0\ \vee n < j \leq n+d
+    \end{split}
+  \end{equation*}
+\end{definition}
+
+\noindent
+The definition for matrices is similar:
+\begin{definition}
+  \label{definition:mapoverlap:matrix}
+  Let $M$ be an $n\times m$ matrix with elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
+  Let $f$ be a customizing function, $d$ be an positive integer value, and $h$ be a out of bound handling function.
+  The algorithmic skeleton \stencil is defined as follows:
+  \begin{equation*}
+    \begin{split}
+    & stencil \big(\ f,\  d,\ \DottedMatrix{M_{0,0}}{M_{0,m}}{M_{n,0}}{M_{n,m}}\big)
+               \eqdef \DottedMatrix{N_{0,0}}{N_{0,m}}{N_{n,0}}{N_{n,m}}\\
+               &\text{where}\\[.5em]
+    &\qquad N[i,j] = f\left(\DottedMatrix{M_{i-d,j-d}}{M_{i-d,j+d}}{M_{i+d,j-d}}{M_{i+d,j+d}}\right)\ \ \forall\ i,j
+        \begin{array}{r} 0 < i \leq n,\\ 0 < j \leq m \end{array}\\
+        &\text{and}\\
+    &\qquad M[i,j] = h(i,j) \qquad \forall\ i,j \begin{array}{r} -d < j \leq 0\ \vee n < j \leq n+d,\\ -d < j \leq 0\ \vee m < j \leq m+d \end{array}
+    \end{split}
+  \end{equation*}
+\end{definition}
 
 
-\paragraph{The \stencil Skeleton}
+SkelCL currently support a fixed set of choices for the out of bound function $h$ motivated by common methods of of bound handling in image processing applications.
+This restriction could easily be lifted in the future.
+The \stencil skeleton can currently be configured to handle out of bound accesses in two possible ways:
+\begin{enumerate}
+  \item a specified neutral value is returned (\ie, the out of bound function $h$ is constant);
+  \item the nearest valid value inside the container is returned.
+\end{enumerate}
 
 
-\paragraph{The \allpairs Skeleton}
+\todo{application example}
+
+\subsubsection{The overlap data distribution}
+
+\begin{figure}[tb]
+  \centering
+  \begin{subfigure}[b]{.3\textwidth}
+    \includegraphics[width=\textwidth]{PaCT/overlapDistribution_vector}
+    \caption{\emph{overlap}}
+    \label{fig:overlap_distribution}
+  \end{subfigure}
+  \hspace{3em}
+  \begin{subfigure}[b]{.22\textwidth}
+    \includegraphics[width=\textwidth]{PaCT/overlapDistribution_matrix}
+    \caption{\emph{overlap}}
+    \label{fig:overlap_distribution:matrix}
+  \end{subfigure}
+  \caption{Overlap distribution of a vector and matrix in SkelCL.}
+  \label{fig:overlap_distribution}
+  \bigskip
+\end{figure}
+
+Together with the \stencil skeleton we introduce a new distribution called \emph{overlap} (Figure~\ref{fig:overlap_distribution}).
+The overlap distribution splits the container into one chunk for each device, similarly to the \emph{block} distribution.
+In addition each chunk consists of a number of continuous elements (in case of the vector) or rows (in case of the matrix) which are copied to the neighboring devices, similar to the \emph{copy} distribution.
+Therefore, the overlap distribution can be seen as a combination of the \emph{block} and \emph{copy} distribution.
+The number of elements or rows at the edges of a chunk which are copied to the neighboring devices are called the \emph{overlap size}.
+
+The \emph{overlap} distribution ensures that neighboring elements are always accessible even if the container is split across multiple devices.
+The \emph{overlap} distribution is, therefore, automatically selected as distribution by the \stencil skeleton automatically setting the overlap size to the skeleton parameter $d$, which ensures that every device has access to the necessary neighboring elements.
+
+
+
+
+
+\subsubsection{The \allpairs Skeleton}
+\label{sec:allpairs_skeleton}
+
+\emph{Allpairs computations} occur in a variety of applications, ranging from matrix multiplication and pairwise Manhattan distance computations in bioinformatics~\cite{DaDQR-09} to N-Body simulations in physics~\cite{ArSV-09}.
+These applications share a common computational pattern:
+for two sets of entities, the same computation is performed independently for all pairs in which entities from the first set are combined with entities from the second set.
+We define the \allpairs skeleton to simplify the development of such applications.
+We represent the entries of both sets as vectors of length $d$, where the cardinality of the first set is $n$ and the cardinality of the second set is $m$.
+We model the first set as a $n\times d$ matrix $A$ and the second set as a $m\times d$ matrix $B$.
+The allpairs computation yields an output matrix $C$ of size $n\times m$ as follows:
+$c_{i, j} = A_i \oplus B_j$, where $A_i$ and $B_j$ are row vectors of $A$ and $B$, correspondingly:
+$A_i = [A_{i,1}, \cdots, A_{i, d}]$, $B_j = [B_{j,1}, \cdots, B_{j,d}]$, and $\oplus$ is a binary operator defined as vectors.
+
+We formally define the \allpairs skeleton as follows:
+
+\begin{definition}
+  \label{def:allpairs}
+  Let $A$ be a $n\times d$ matrix, $B$ be a $m\times d$ matrix, and $C$ be a $n\times m$ matrix, with their elements $a_{i,j}$, $b_{i,j}$, and $c_{i,j}$ respectively.
+  The algorithmic skeleton \allpairs with customizing binary function $\oplus$ is defined as follows:
+  \begin{equation*}
+    \begin{split}
+    allpairs&(\oplus)\left(%
+      \left[ \begin{array}{ccc} a_{1,1} & \cdots & a_{1,d}\\[.25em] \vdots & & \vdots\\[.25em] a_{n,1} & \cdots & a_{n,d} \end{array}\right], %
+      \left[ \begin{array}{ccc} b_{1,1} & \cdots & b_{1,d}\\[-.25em] \cdot & & \cdot\\[-.75em] \cdot & & \cdot\\[-.25em] b_{m,1} & \cdots & b_{m,d} \end{array}\right]%
+      \right)\\
+    &\eqdef \left[ \begin{array}{ccc} c_{1,1} & \cdots & c_{1,m}\\[.25em] \vdots & & \vdots\\[.25em] c_{n,1} & \cdots & c_{n,m} \end{array} \right]
+    \end{split}
+  \end{equation*}
+  where elements $c_{i,j}$ of the $n\times m$ matrix $C$ are calculated as follows:
+  \[
+    c_{i,j} = \DottedVector{a_{i,1}}{a_{i,d}} \oplus \DottedVector{b_{j,1}}{b_{j,d}}
+  \]
+\end{definition}
+
+Figure~\ref{fig:allpairs:access} illustrates this definition:
+the element $c_{2,3}$ of matrix $C$ marked as \circled{3} is computed by combining the second row of $A$ marked as \circled{1} with the third row of $B$ marked as \circled{2} using the binary operator $\oplus$.
+Figure~\ref{fig:allpairs:access} shows the same computation with the transposed matrix $B$.
+This visualization shows how the structure of matrix $C$ is determined by the two input matrices $A$ and $B$.
+
+\begin{figure}[tb]
+  \centering
+  \begin{subfigure}[b]{.44\textwidth}
+    \includegraphics[width=\textwidth]{HLPP/allpairs_access_pattern_alternative}
+    \caption{}
+    \label{fig:allpairs:access:not_transposed}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{.44\textwidth}
+    \includegraphics[width=\textwidth]{HLPP/allpairs_access_pattern}
+    \caption{}
+    \label{fig:allpairs:access:transposed}
+  \end{subfigure}
+  \caption{The allpairs computation schema. (\subref{fig:allpairs:access:not_transposed}): element $c_{2,3}$
+    \protect\tikz[baseline=(char.base)]\protect\node[shape=circle,draw,inner sep=1pt] (char) {3};
+    is computed by combining the second row of $A$
+    \protect\tikz[baseline=(char.base)]\protect\node[shape=circle,draw,inner sep=1pt] (char) {1};
+    with the third row of $B$
+    \protect\tikz[baseline=(char.base)]\protect\node[shape=circle,draw,inner sep=1pt] (char) {2};
+    using the binary operator $\oplus$. (\subref{fig:allpairs:access:transposed}): the transpose of matrix $B$ is used.}
+  \label{fig:allpairs:access}
+\end{figure}
+
+Let us consider two example applications which can be expressed by customizing the \allpairs skeleton with a particular function $\oplus$.
+
+\paragraph{Example 1:}
+The Manhattan distance (or $L_1$ distance) is a measure of distance which is used in many applications.
+In general, it is defined for two vectors, $v$ and $w$, of equal length $d$, as follows:
+\begin{equation}
+  \label{eq:man_dist}
+  \ManDist(v, w) = \sum_{k=1}^d | v_k - w_k | 
+\end{equation}
+In~\cite{DaDQR-09}, the so-called Pairwise Manhattan Distance (\emph{PMD}) is studied as a fundamental operation in hierarchical clustering for data analysis.
+\emph{PMD} is obtained by computing the Manhattan distance for every pair of rows of a given matrix.
+This computation for arbitrary matrix $A$ can be expressed using the \allpairs skeleton customized with the Manhattan distance defined in (\ref{eq:man_dist}):
+\begin{equation}
+  \PMD(A) = \mbox{\emph{allpairs}}(\mbox{\emph{ManDist}})\left(A, A\right)
+\end{equation}
+The $n\times n$ matrix computed by the customized skeleton contains the Manhattan distance for every pair of rows of the input $n\times d$ matrix $A$.
+
+\paragraph{Example 2:}
+Matrix multiplication is a basic linear algebra operation, which is a building block of many scientific applications.
+An $n\times d$ matrix $A$ is multiplied by a $d\times m$ matrix $B$, producing a $n\times m$ matrix $C=A\times B$ whose element $c_{i,j}$ is computed as the dot product of the $i$th row of $A$ with the $j$th column of $B$.
+The dot product of two vectors $a$ and $b$ of length $d$ is computed as:
+\begin{equation}
+  \dotProduct (a,b) = \sum_{k=1}^d a_k \cdot b_k
+\end{equation}
+The matrix multiplication can be expressed using the allpairs skeleton as:
+\begin{equation}
+  A\times B = \allpairs(\dotProduct)\left(A, B^T\right)
+  \label{eq:mat_mult_allpairs}
+\end{equation}
+where $B^T$ is the transpose of matrix $B$.
+
+
+
+
+\subsubsection{The specialized \allpairs skeleton}
+\label{sec:opt_allpairs_skeleton}
+
+In this section, we first analyze the memory access pattern of the matrix multiplication and then observe that this pattern can also be found in some other allpairs computations.
+We, therefore, define a specialized version of the allpairs skeleton, which is suitable for applications having this pattern, and show how it can be implemented more efficiently than the generic skeleton.
+
+\subsection{The memory access pattern of the matrix multiplication}
+Figure~\ref{fig:single_memory_access} shows the memory access pattern of the matrix multiplication for $4\times 4$ matrices.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.4\textwidth]{HLPP/single_memory_access}
+  \caption{Memory access pattern of the matrix multiplication $A\times B = C$.}
+  \label{fig:single_memory_access}
+\end{figure}
+To compute the element \circled{R} of the result matrix $C$, the first row of matrix $A$ and the first column of matrix $B$ are needed.
+In the skeleton-based code, these two vectors are used by the customizing function (which is the dot product) for pairwise computations:
+the two elements marked as \circled{1} are multiplied and the intermediate result is stored;
+then, the next elements (marked as \circled{2}) are multiplied and the result is added to the intermediate result, and so forth.
+Let us estimate the number of global memory accesses for computing an element of the matrix multiplication in the generic implementation (Listing~\ref{lst:basic_impl}).
+One global memory read access for every element of both input vectors is performed, and a single global memory write access is required to write the result into the output matrix.
+Therefore, $n\cdot m\cdot (d + d + 1)$ global memory accesses are performed in total, where $n$ and $m$ are the height and width of matrix $C$ and $d$ is the width of $A$ and the height of $B$.
+
+Obviously, the customizing function of the pairwise Manhattan distance (Example 1 in Section~\ref{sec:allpairs_skeleton}) follows the same memory access pattern as matrix multiplication.
+To find a common representation for a customizing function with this pairwise access pattern, we describe it as a combination of two well-known algorithmic skeletons: \emph{zip} and \emph{reduce}.
+
+The \emph{zip} skeleton combines two input vectors by applying its customizing function ($\odot$) pairwise, producing the result vector:
+\[ \zip\ (\odot)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}\ =\ \DottedVector{a_1 \odot b_1}{a_n \odot b_n} \]
+
+The \emph{reduce} skeleton transforms an input vector into a scalar value by repeatedly applying its binary associative customizing operator ($\oplus$):
+\[ \reduce\ (\oplus)\ \DottedVector{a_1}{a_n}\ =\ a_1 \oplus a_2 \oplus \cdots \oplus a_n \]
+
+It is possible to sequentially compose these two customized skeletons.
+For two functions $f: X \to Y$ and $g: Y\to Z$, the \emph{sequential composition} denoted by $g \circ f: X \to Z$ means that $f$ is applied first and then $g$ is applied to the return value of $f$ as input: $(g\circ f)(x) = g(f(x))$.
+Our customized skeletons are functions with types that allow their composition as follows:
+\begin{eqnarray*}
+  (reduce\ (\oplus) \circ zip\ (\odot) ) \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n} &=& \\
+  reduce\ (\oplus) \left( zip\ (\odot) \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n} \right) &=& (a_1 \odot b_1) \oplus \cdots \oplus (a_n \odot b_n)
+\end{eqnarray*}
+This composition of the two customized skeletons yields a function which takes two input vectors and produces a single scalar value:
+\begin{equation}
+  zipReduce\ (\oplus, \odot)\ a\ b = 
+  \left( reduce\ (\oplus) \circ zip\ (\odot) \right)\ a\ b
+\end{equation}
+
+Following the definition of {\zipReduce}, we can express the customizing function of the Manhattan distance as follows.
+We use the binary operator $a \ominus b = |a - b|$ as customizing function for zip, and addition as customizing function for the reduce skeleton:
+\begin{eqnarray*}
+    ManDist(a, b) = \sum_{i=1}^{n} | a_i - b_i | &=&
+    (a_1 \ominus b_1) + \cdots + (a_n \ominus b_n) \\
+    &=& zipReduce(+, \ominus)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}
+\end{eqnarray*}
+
+Similarly, we can express the dot product (which is the customizing function of matrix multiplication) as a zip-reduce composition, by using multiplication for customizing zip and addition for customizing the reduce skeleton:
+\begin{eqnarray*}
+  \dotProduct(a, b) = \sum_{i = 1}^{n} a_i \cdot b_i &=& (a_1 \cdot b_1) + \cdots + (a_n \cdot b_n) \\
+  &=& zipReduce(+, \cdot)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}
+\end{eqnarray*}
+
+We can now specialize the generic Definition~\ref{def:allpairs} by employing the sequential composition of the customized reduce and zip skeletons for customizing the allpairs skeleton.
+From here on, we refer to this specialization as the allpairs skeleton \emph{customized with zip-reduce}.
+
+While not every allpairs computation can be expressed using the specialization, many real-world problems can.
+In addition to the matrix multiplication and the pairwise Manhattan distance examples are the pairwise computation of the Pearson correlation coefficient~\cite{DaDQR-09} and estimation of Mutual Informations~\cite{DaSSK-04}.
+The composition of zip and reduce is well known in the functional programming world.
+Google's popular MapReduce programming model has been inspired by a similar composition of the \emph{map} and reduce skeletons; see~\cite{La-07}~for the relation of MapReduce to functional programming.
+
+\begin{lstlisting}[%                                                             
+caption={Matrix multiplication in SkelCL using the specialized \emph{allpairs} skeleton.},%
+float=b,%                                                                       
+numbers=left,%
+label={lst:nested_allpairs}]
+skelcl::init();
+Zip<float(float, float)> mult
+    ("float func(float x, float y) { return x*y; }");
+Reduce<float(float, float)> sum_up
+    ("float func(float x, float y) { return x+y; }");
+Allpairs<float(float, float)> mm(sum_up, mult);
+Matrix<float> A(n, d); fill(A);
+Matrix<float> B(d, m); fill(B);
+Matrix<float> C = mm(A, B);
+\end{lstlisting}
+
+Listing~\ref{lst:nested_allpairs} shows how the matrix multiplication can be programmed in SkelCL using the allpairs skeleton customized with zip-reduce.
+In line 1, the SkelCL library is initialized.
+In lines 2 and 3, the zip skeleton is defined using multiplication as customizing function and in lines 4 and 5, the reduce skeleton is customized with addition.
+These two customized skeletons are passed to the allpairs skeleton on its creation in line 6.
+The implementation of the allpairs skeleton then uses the two customizing functions of zip and reduce to generate the OpenCL kernel performing the allpairs computation.
+In line 9, the skeleton is executed taking two input matrices and producing the output matrix.
+Note that we create objects of the same \texttt{Allpairs} class when using the generic allpairs implementation (Listing~\ref{lst:basic_impl} line 2) and the specialized implementation (Listing~\ref{lst:nested_allpairs} line 6).
+Depending on which of the overloaded constructors is used, either the generic or the specialized implementation is created.
+
+\subsection{Implementation of the specialized allpairs skeleton}
+By expressing the customizing function of the allpairs skeleton as a zip-reduce composition, we provide additional semantic information about the memory access pattern of the customizing function to the skeleton implementation, thus allowing for improving the performance.
+Our idea of optimization is based on the OpenCL programming model that organizes \emph{work-items} (i.\,e., threads executing a kernel) in \emph{work-groups} which share the same GPU local memory.
+By loading data needed by multiple work-items of the same work-group into the local memory, we can avoid repetitive accesses to the global memory.
+
+\begin{figure}[b]
+  \centering
+  \includegraphics[width=.4\textwidth]{HLPP/memory_access}
+  \caption{Implementation schema of the specialized allpairs skeleton.}
+  \label{fig:memory_access}
+\end{figure}
+For the allpairs skeleton with the zip-reduce customizing function, we can adopt the implementation schema for GPUs~\cite{SaA-13}, as shown in Figure~\ref{fig:memory_access}.
+We allocate two arrays in the local memory, one of size $r\times k$ ($r=2$, $k=3$ in Figure~\ref{fig:memory_access}) for elements of $A$ and one of size $k\times c$ ($c=3$ in Figure~\ref{fig:memory_access}) for elements of $B$.
+A work-group consisting of $c\times r$ work-items computes $s$ blocks ($s=2$ in Figure~\ref{fig:memory_access}) of the result matrix $C$.
+In Figure~\ref{fig:memory_access}, the two blocks marked as \circled{7} and \circled{8} are computed by the same work-group as follows.
+In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the zip-reduce pattern.
+The obtained intermediate result is stored in block \circled{7}.
+Then, the elements of block \circled{3} are loaded and combined with the elements from \circled{2} which still reside in the local memory.
+The intermediate result is stored in block \circled{8}.
+In the second iteration, the algorithm continues in the same manner with blocks \circled{4}, \circled{5}, and \circled{6}, but this time, the elements of the blocks are also combined with the intermediate results of the first iteration, which are stored in blocks \circled{7} and \circled{8}.
+The advantage of computing multiple blocks by the same work-group is that we keep the elements of $B$ in the local memory when computing the intermediate results, i.\,e., we do not reload block \circled{2} twice for the computation of blocks \circled{7} and \circled{8}.
+
+Every element loaded from the global memory is used by multiple work-items:
+e.\,g., the upper left element of block \circled{1} is loaded only once from the global memory, but used three times:
+in the computation of the upper left, upper middle, and upper right elements of \circled{7}.
+In general, every element loaded from $A$ is reused $c$ times, and every element from $B$ is reused $r\cdot s$ times.
+As the intermediate results are stored in the global memory of matrix $C$, we perform two additional memory accesses (read/write) for every iteration, i.\,e., $2\cdot \frac{d}{k}$ in total.
+Therefore, instead of $n\cdot m\cdot (d + d + 1)$ global memory accesses necessary when not using the local memory, only $n\cdot m\cdot (\frac{d}{r\cdot s} + \frac{d}{c} + 2\cdot \frac{d}{k})$ global memory accesses are performed.
+By increasing the parameters $s$ and $k$, or the number of work-items in a work-group ($c$ and $r$), more global memory accesses can be saved.
+However, the work-group size is limited by the GPU hardware.
+While the parameters can be chosen independently of the matrix sizes, we have to consider the amount of available local memory.
+\cite{SaA-13}~discusses how suitable parameters can be found by performing runtime experiments.
+
+\begin{figure}[b]
+  \centering
+  \includegraphics[width=.3\textwidth]{HLPP/multi_gpu}
+  \caption{Data distributions used for a system with two GPUs: matrices $A$ and $C$ are block distributed, matrix $B$ is copy distributed.}
+  \label{fig:multi_gpu}
+\end{figure}
+
+\section{The Allpairs Skeleton using Multiple GPUs (HLPP)}
+\label{sec:multi_gpu}
+The allpairs skeleton can be efficiently implemented not only on systems with a single GPU, but on multi-GPU systems as well.
+The SkelCL library provides four \emph{data distributions} which specify how a container data type (vector or matrix) is distributed among multiple GPUs~\cite{StKG-12}.
+We use two of them in our multi-GPU implementation of the allpairs skeleton, as shown in Figure~\ref{fig:multi_gpu}:
+Matrix $B$ is \emph{copy} distributed, i.\,e., it is copied entirely to all GPUs in the system.
+Matrix $A$ and $C$ are \emph{block} distributed, i.\,e., they are row-divided into as many equally-sized blocks as GPUs are available;
+each block is copied to its corresponding GPU.
+Following these distributions, each GPU computes one block of the result matrix $C$.
+In the example with two GPUs shown in Figure~\ref{fig:multi_gpu}, the first two rows of $C$ are computed by GPU 1 and the last two rows by GPU 2.
+The allpairs skeleton automatically selects these distributions; therefore, no changes to the already discussed implementations of the matrix multiplication are necessary for using multiple GPUs.
+\from{HLPP end}
+
+\from{PaCT begin}
+
+\subsection{The Allpairs Skeleton}
+\label{sec:all-pairs_skeleton}
+
+\emph{All-pairs computations} occur in a variety of applications, ranging from pairwise Manhattan distance computations used in bioinformatics~\cite{DaDQR-09} to N-Body simulations used in physics~\cite{ArSV-09}.
+All these applications follow a common computational scheme:
+for two sets of entities, the same computation is performed independently for all pairs of entities from the first set combined with entities from the second set.
+An entity is usually described by a $d$-dimensional vector.
+
+We define the all-pairs computation scheme for two sets of $n$ and $m$ entities, each entity represented by a $d$-dimensional vector.
+We represent the sets as an $n\times d$ matrix $A$ and an $m\times d$ matrix $B$.
+The all-pairs computation yields an output matrix $C$ of size $n\times m$ as follows:
+$C_{i, j} = A_i \oplus B_j$, where $A_i$ and $B_j$ are rows of $A$ and $B$, correspondingly:
+$A_i = [A_{i,1}, \cdots, A_{i, d}]$, $B_j = [B_{j,1}, \cdots, B_{j,d}]$,
+and $\oplus$ is a binary function applied to every pair of rows from $A$ and $B$.
+
+Figure~\ref{fig:allpairs_access} illustrates this definition:
+the element marked as \circled{3} of matrix $C$ is computed by combining the second row of $A$ marked as \circled{1} with the third row of $B$ marked as \circled{2} using the binary operator $\oplus$.
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=0.4\textwidth]{PaCT/allpairs_access_pattern_alternative}
+  \caption{The allpairs computation: Element $c_{2,3}$ 
+    (\protect\tikz[baseline=(char.base)]\protect\node[shape=circle,draw,inner sep=1pt] (char) {3};)
+    is computed by combining the second row of $A$
+    (\protect\tikz[baseline=(char.base)]\protect\node[shape=circle,draw,inner sep=1pt] (char) {1};)
+    with the third row of $B$
+    (\protect\tikz[baseline=(char.base)]\protect\node[shape=circle,draw,inner sep=1pt] (char) {2};)
+    using the binary operator $\oplus$}
+  \label{fig:allpairs_access}
+\end{figure}
+
+For formally defining the all-pairs skeleton, let $d$, $m$ and $n$ be positive numbers.
+  Let $A$ be a $n\times d$ matrix, $B$ be a $m\times d$ matrix and $C$ be a $n\times m$ matrix with their entries $a_{i,j}$, $b_{i,j}$ and $c_{i,j}$ respectively.
+  Let $\oplus$ be a binary function on vectors. % $\oplus: A \times B \to C$.
+  The algorithmic skeleton $allpairs$ is defined as follows:
+  \[
+    allpairs(\oplus)\left(\DottedMatrix{a_{1,1}}{a_{1,d}}{a_{n,1}}{a_{n,d}},%
+                             \DottedMatrix{b_{1,1}}{b_{1,d}}{b_{m,1}}{b_{m,d}}\right)%
+    \eqdef \DottedMatrix{c_{1,1}}{c_{1,m}}{c_{n,1}}{c_{n,m}}
+  \]
+  with entries $c_{i,j}$ of the computed $n\times m$ matrix $C$ defined as:
+  \[
+    c_{i,j} = \DottedVector{a_{i,1}}{a_{i,d}} \oplus \DottedVector{b_{j,1}}{b_{j,d}}
+  \]
+
+To illustrate the definition, we show how matrix multiplication can be expressed using the allpairs skeleton.
+
+\paragraph{Example 1:}
+The matrix multiplication is a basic linear algebra operation, which is a building block of many scientific applications.
+A $n\times d$ matrix $A$ is multiplied by a $d\times m$ matrix $B$, producing a $n\times m$ matrix $C=A\times B$ whose element $C_{i,j}$ is computed as the dot product of the $i$th row of $A$ with $j$th column of $B$.
+The dot product of two vectors $a$ and $b$ of length $d$ is computed as:
+\begin{equation}
+  dotProduct(a,b) = \sum_{k=1}^d a_k \cdot b_k
+\end{equation}
+The matrix multiplication can be expressed using the allpairs skeleton as:
+\begin{equation}
+  A\times B = allpairs(dotProduct)\left(A, B^T\right)
+  \label{eq:mat_mult_allpairs}
+\end{equation}
+where $B^T$ is the transpose of matrix $B$.
+
+
+
+
+
+
+
+
+
 
 
 

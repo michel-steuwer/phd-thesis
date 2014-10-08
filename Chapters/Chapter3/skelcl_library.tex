@@ -143,3 +143,388 @@ this has the advantage that if the output container is used as the input to anot
 Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers between the CPU and GPUs.
 
 
+
+%% MapOverlap / Stencil implementation
+
+% In the actual source code, the application developer provides the function $f$ which receives a pointer to the element in the middle, $m_{in}[i,j]$.
+% Listing~\ref{lst:mapoverlap01} shows a simple example of computing the sum of all direct neighboring values using the MapOverlap skeleton.
+% To access the elements of the input matrix $m_{in}$, function \texttt{get} is used, as provided by SkelCL.
+% All indices are specified relative to the middle element $m_{in}[i,j]$, therefore, for accessing this element the function call \texttt{get(m\_in, 0, 0)} is used.
+
+% The application developer must ensure that only elements in the range specified by the second argument $d$ of the MapOverlap skeleton, are accessed.
+% In Listing~\ref{lst:mapoverlap01}, range is specified as $d=1$, therefore, only direct neighboring elements are accessed.
+% To enforce this property, boundary checks are performed at runtime by the \texttt{get} function.
+% In future work, we plan to avoid boundary checks at runtime by statically proving that all memory accesses are in bounds, as it is the case in the shown example.
+
+
+% \begin{lstlisting}[%
+% caption={MapOverlap skeleton computing the sum of all direct neightbors for every element in a matrix},%
+% float=tbp,%
+% label={lst:mapoverlap01}]
+% MapOverlap<float(float)> m("float func(float* m_in){
+%      float sum = 0.0f;
+%      for (int i = -1; i < 1; ++i)
+%        for (int j = -1; j < 1; ++i)
+%          sum += get(m_in, i, j);
+%      return sum;
+%    }", 1, SCL_NEUTRAL, 0.0f);
+% \end{lstlisting}
+
+% Listing~\ref{lst:raw_opencl01} shows how the same simple calculation can be performed in standard OpenCL.
+% While the amount of lines of code increases by a factor of 2, the complexity of each single line also increases, as follows.
+% Besides a pointer to the output memory, the width of the matrix has to be provided as parameter.
+% The correct index has to be calculated for every memory access using an offset and the width of the matrix.
+% Therefore, knowledge about how the two-dimensional matrix is stored in one-dimensional memory is required.
+% In addition, manual boundary checks have to be performed to avoid faulty memory accesses.\bigskip
+
+% \begin{lstlisting}[%
+% caption={An OpenCL kernel performing the same calculation as the MapOverlap skeleton shown in Listing~\ref{lst:mapoverlap01}.\bigskip},%
+% label={lst:raw_opencl01}]
+% __kernel void sum_up(__global float* m_in,
+%                      __global float* m_out,
+%                      int width, int height) {
+%   int i_off = get_global_id(0); int j_off = get_global_id(1);
+%   float sum = 0.0f;
+%   for (int i = i_off - 1; i < i_off + 1; ++i)
+%     for (int j = j_off - 1; j < j_off + 1; ++j) {
+%       // perform boundary checks
+%       if ( i < 0 || i > width || j < 0 || j > height )
+%         continue;
+%       sum += m_in[ j * width + i ];     }
+%   m_out[ j_off * width + i_off ] = sum; }
+% \end{lstlisting}
+
+% SkelCL avoids all these low-level details.
+% Neither additional parameter, nor index calculations or manual boundary checks are necessary.
+% In SkelCL, the application developer only provides the source code implementing the steps required by the algorithm.
+
+
+% In the actual source code, the application developer provides the function $f$ which receives a pointer to the element in the middle, $m_{in}[i,j]$.
+
+% \begin{lstlisting}[%
+% caption={MapOverlap skeleton computing the sum of all direct neightbors for every element in a matrix},%
+% float=bp,%
+% label={lst:mapoverlap01}]
+% MapOverlap<float(float)> m("float func(float* m_in){
+% float sum = 0.0f;
+% for (int i = -1; i < 1; ++i)
+%   for (int j = -1; j < 1; ++i)
+%     sum += get(m_in, i, j); return sum;
+% }", 1, SCL_NEUTRAL, 0.0f);
+% \end{lstlisting}
+
+
+% Listing~\ref{lst:mapoverlap01} shows a simple example of computing the sum of all direct neighboring values using the MapOverlap skeleton.
+% To access the elements of the input matrix $m_{in}$, function \texttt{get} is provided by SkelCL.
+% All indices are specified relative to the middle element $m_{in}[i,j]$; therefore, for accessing this element the function call \texttt{get(m\_in, 0, 0)} is used.
+% The application developer must ensure that only elements in the range specified by the second argument $d$ of the MapOverlap skeleton, are accessed.
+% In Listing~\ref{lst:mapoverlap01}, range is specified as $d=1$, therefore, only direct neighboring elements are accessed.
+% To enforce this property, boundary checks are performed at runtime by the \texttt{get} function.
+% In future work, we plan to avoid boundary checks at runtime by statically proving that all memory accesses are in bounds, as it is the case in the shown example.
+
+% \begin{lstlisting}[%
+% caption={An OpenCL kernel performing the same calculation as the MapOverlap skeleton shown in Listing~\ref{lst:mapoverlap01}.},%
+% float=tbp,%
+% label={lst:raw_opencl01}]
+% __kernel void sum_up(__global float* m_in,
+%                      __global float* m_out,
+%                      int width, int height) {
+%   int i_off = get_global_id(0); 
+%   int j_off = get_global_id(1);
+%   float sum = 0.0f;
+%   for (int i = i_off - 1; i < i_off + 1; ++i)
+%     for (int j = j_off - 1; j < j_off + 1; ++j) {
+%       // perform boundary checks
+%       if ( i < 0 || i > width || j < 0 || j > height )
+%         continue;
+%       sum += m_in[ j * width + i ];     }
+%   m_out[ j_off * width + i_off ] = sum; }
+% \end{lstlisting}
+
+
+% Listing~\ref{lst:raw_opencl01} shows how the same simple calculation can be performed in standard OpenCL.
+% While the amount of lines of code increases by a factor of 2, the complexity of each single line also increases:
+% 1) Besides a pointer to the output memory, the width of the matrix has to be provided as parameter; 2) the correct index has to be calculated for every memory access using an offset and the width of the matrix, i.\,e.
+% knowledge about how the two-dimensional matrix is stored in one-dimensional memory is required.
+% 3) In addition, manual boundary checks have to be performed to avoid faulty memory accesses. 
+
+% SkelCL avoids all these low-level details.
+% Neither additional parameter, nor index calculations or manual boundary checks are necessary.
+
+
+
+% \from{HiStencils}
+% Listing~\ref{lst:mapoverlap01} shows the implementation of the Sobel edge detection using the \emph{MapOverlap} skeleton.
+% The MapOverlap skeleton applies a given function $func$ (defined in lines 2--6) to each element of an input matrix $in_{img}$ while taking the neighboring elements within the range $[-d, +d]$ in each dimension into account.
+% Here, $d$ is the second parameter (line 7) and two additional parameters define how the skeleton handles out-of-bound memory accesses (line 8).
+% A helper function (\code{get}) is used to easily access the neighboring elements.
+% The indexes are specified relative to the current element, e.\,g. to access the element on the left the function call \code{get(in, -1, 0)} is used.
+
+% Special handling is necessary when accessing elements out of the boundaries of the matrix, e.g., when the item in the top-left corner of the matrix accesses elements above and left of it.
+% The MapOverlap skeleton can be configured to handle such out-of-bound memory accesses in two possible ways:
+% 1) a specified neutral value is returned;
+% 2) the nearest valid value inside the matrix is returned.
+% In Listing~\ref{lst:mapoverlap01}, the first option is chosen and $0$ is provided as neutral value.
+
+% \begin{lstlisting}[%
+% caption={Implementation of Sobel edge detection using the MapOverlap skeleton},%
+% float=tbp,%
+% label={lst:mapoverlap01}]
+% MapOverlap<char(char)> sobel(
+%  "char func(const char* in_img) {
+%     char ul = get(in_img, -1, -1);
+%     ...
+%     char lr = get(in_img, +1, +1);
+%     return computeSobel(ul,..., lr);}",
+%  1, Padding::NEUTRAL, 0);
+
+% output = sobel(input);
+% \end{lstlisting}
+
+% Simple stencil computations with a regular stencil shape can easily be expressed using the MapOverlap skeleton.
+% For more complex stencil computations, e.\,g. iterative stencils, we introduce the more advanced \emph{Stencil} skeleton.
+
+% \paragraph{The MapOverlap Skeleton}
+
+% Listing~\ref{lst:stencil01} shows the implementation of an iterative stencil application simulating heat transfer.
+% This application simulates heat spreading from one location and flowing throughout a two-dimensional simulation space.
+% \begin{lstlisting}[%
+% caption={Implementation of heat simulation using the Stencil skeleton},%
+% float=tbp,%
+% label={lst:stencil01}]
+% Stencil<char(char)> heatSim(
+%  "char func(const char* in) {
+%     char lt = get(in, -1, -1);
+%     char lm = get(in, -1,  0);
+%     char lb = get(in, -1, +1);
+%     return computeHeat(lt, lm, lb); }",
+%  StencilShape(1, 0, 1, 1),
+%  Padding::NEUTRAL, 255);
+
+% output = heatSim(100, input);
+% \end{lstlisting}
+
+
+% The application developer specifies the function (line 2--6) describing the computation and, therefore, the stencil shape, as well as the stencil shape's extents (line 7) and the out-of-bound handling (line 8).
+% The stencil shape's extents are specified using four values for each of the directions:
+% up, right, down, left.
+% In the example in Listing~\ref{lst:stencil01}, the heat flows from left to right, therefore, no accesses to elements to the right are necessary and the stencil space's extents are specified accordingly (note the $0$ in line 7 representing the extent to the right).
+% Figure~\ref{fig:stencilShape} illustrates this situation: the dark gray element is updated by using the values from the left.
+% The specified stencil shape's extent is highlighted in light gray.
+% In our current implementation, the user has to explicitly specify the stencil shape's extents, which is necessary for performing the out-of-bound handling on the GPU.
+% In future work, we plan to automatically infer the stencil shape's extents
+% from the customizing function using source code analysis in order to free the user from specifying this information explicitly.
+% \begin{figure}
+%   \begin{centering}
+%     \includegraphics[width=.18\textwidth]{HiStencils/heat_transfer}
+%     \caption{Stencil shape for heat transfer simulation}
+%     \label{fig:stencilShape}
+%     \vspace{-.5em}
+%   \end{centering}
+% \end{figure}
+
+% Many stencil applications apply a stencil multiple times for a fixed number of iterations, or until a certain condition is met.
+% For example, to iterate the heat transfer simulation for one hundred steps, we specify the number of iterations to perform when executing the skeleton (line 10).
+% In the future, we plan to allow the user to specify a custom function which checks a condition to stop the iterations.
+
+% The MapOverlap skeleton can be configured to handle out-of-bounds accesses by returning the nearest valid value of the input matrix.
+% Another distinction can be made regarding iterations and sequences of stencil operations:
+% using elements of the \textbf{initial}, user-provided input matrix or using elements of the \textbf{current} step's input matrix, which already was updated during earlier stencil operations.
+% The Stencil skeleton can be configured to handle out-of-bounds accesses in both ways, thus offering three possible ways, including the neutral value. 
+% For each of them, there is an own kernel function, loading appropriate elements into local memory. 
+
+
+
+
+
+
+% Simple stencil computations with a regular stencil shape can easily be expressed using the \mapOverlap skeleton.
+% For more complex stencil computations, \eg iterative stencil computations, we introduce the more advanced \stencil skeleton.
+
+
+
+
+
+% Real-world applications often perform multiple stencil operations in sequence.
+% Let us consider the popular \emph{Canny algorithm} which is used for detecting edges in images.
+% For the sake of simplicity we consider a simplified version, which applies the following stencil operations in a sequence:
+% 1), a noise reduction operation is applied, e.g., a Gaussian filter;
+% 2), an edge detection operator like the Sobel filter is applied;
+% 3), the so-called non-maximum suppression is performed, where all pixels in the image are colored black except pixels being a local maximum;
+% 4), a threshold operation is applied to produce the final result.
+% A more complex version of the algorithm performs the edge tracking by hysteresis, as an additional step.
+% This results in detecting some weaker edges, but even without this additional step the algorithm usually achieves good results.
+
+% In SkelCL, each single step of the Canny algorithm can be expressed using the Stencil skeleton.
+% The last step, threshold operation, does not need access to neighboring elements, as the user threshold function only checks the value of the current pixel.
+% Therefore, this step can be expressed using SkelCL's simpler Map skeleton.
+% The Stencil skeleton's implementation automatically uses the simpler Map skeleton's implementation when the user specifies a stencil shape which extents are $0$ in all directions.
+
+% \begin{lstlisting}[%
+%   caption={Structure of the Canny algorithm as implemented with a sequence of skeletons.},%
+%   float=tbp,%
+%   label={lst:canny01}]
+% Stencil<Pixel(Pixel)> gauss(...);
+% Stencil<Pixel(Pixel)> sobel(...);
+% Stencil<Pixel(Pixel)> nms(...);
+% Stencil<Pixel(Pixel)> threshold(...);
+
+% StencilSequence<Pixel(Pixel)> canny(
+%   gauss, sobel, nms, threshold);
+
+% output = canny(1, input);
+% \end{lstlisting}
+
+% To implement the Canny algorithm in SkelCL, the single steps can be combined as shown in Listing~\ref{lst:canny01}.
+% The individual steps are defined in lines 1--4 and then combined to a sequence of stencils in line 6 and 7.
+% During execution (line 9), the stencil operation are performed in the order which is specified when creating the \emph{StencilSequence} object.
+
+% \paragraph{Implementation}
+% In order to achieve high performance, our implementations of both the MapOverlap and the Stencil skeleton use the GPU's fast local memory.
+% Both implementations perform the same basic steps on the GPU:
+% first, the data is loaded from the global memory into the local memory;
+% then, the user-defined function is called for every data element by passing a pointer to the element's location in the local memory;
+% finally, the result of the user-defined function is copied back into the global memory.
+
+% Although both implementations perform the same basic steps, different strategies are implemented for loading the data from the global into the local memory.
+
+% \begin{figure}
+%   \begin{centering}
+%     \includegraphics[width=.29\textwidth]{HiStencils/map_overlap}
+%     \caption{The MapOverlap skeleton prepares a matrix by copying data on the top and bottom.}
+%     \label{fig:preparation}
+%     \vspace{-.5em}
+%   \end{centering}
+% \end{figure}
+
+% The MapOverlap skeleton prepares the input matrix on the CPU before uploading it to the GPU:
+% padding elements are appended; they are used to avoid out-of-bounds memory accesses to the top and bottom of the input matrix, as shown in Figure~\ref{fig:preparation}.
+% This slightly enlarges the input matrix, but it reduces branching on the GPU due to avoiding some out-of-bound checks.
+% In SkelCL a matrix is stored row-wise in memory on the CPU and GPU, therefore, it would be complex and costly to add padding elements on the left and right of the matrix.
+% To avoid out-of-bound accesses for these regions, the boundary checks are performed on the GPU.
+
+% The Stencil skeleton has to use a different strategy in order to enable the usage of different padding modes and stencil shapes when using several Stencil skeletons in a sequence.
+% As an example, consider two stencil shapes in a sequence where the first shape defines a neutral element $0$ and the second defines a neutral element $1$.
+% This cannot be implemented using MapOverlap's implementation strategy.
+% Therefore, Stencil does not append padding elements on the CPU, but rather manages all out-of-bounds accesses on the GPU, which slightly increases branching.
+
+% \section{Targeting Multi-GPU Systems (HiStencils)}
+% \label{sec:multi_gpu}
+% The implicit and automatic support of systems with multiple OpenCL devices is one of the key features of SkelCL.
+% By using distributions, SkelCL completely liberates the user from error-prone and low-level explicit programming of data (re)distributions on multiple GPUs. 
+
+% The MapOverlap skeleton uses the overlap distribution with \textit{border regions} in which the elements calculated by a neighboring device are located.
+% When it comes to iteratively executing a skeleton, data has to be transferred among devices between iteration steps, in order to ensure that data for the next iteration step is up-to-date.
+% As the MapOverlap skeleton does not explicitly support iterations, its implementation is not able to exchange data between devices besides a full down- and upload of the matrix.
+% In addition, data exchange has to be performed after each iteration.
+% We can enlarge the number of elements in the border regions and perform multiple iteration steps on each device before exchanging data.
+% However, this introduces redundant computations, such that a trade-off between data exchange and redundant computations has to be found.
+ 
+% For the Stencil skeleton, the user can specify the number of iterations between \textit{device synchronisations}, where all border regions are updated with elements from the corresponding inner border regions of the neighboring device.
+% The border regions are sized by default in such a way that the specified number of iterations can be performed without leading to incorrect results.
+% However, there may be cases in which a different number of iterations between device synchronizations may result in better performance.
+% Therefore, Stencil offers the user the possibility to specify that number.
+% Please note that the implementation of the Stencil skeleton only exchanges elements from the border region and does not perform a full down- and upload of the matrix, as the MapOverlap skeleton does.
+
+% Figure \ref{fig:syncDevices} shows the device synchronization.
+% Only the appropriate elements in the inner border region are downloaded and stored as \texttt{std::vector}s in a \texttt{std::vector}.
+% Within the outer vector, the inner vectors are swapped pair-wise on the host, so that the inner border regions can be uploaded in order to replace the out-of-date border regions.
+
+% For the first iteration after a device synchronization, there are as many work-items on the GPU active as there are total elements on the device.
+% As the first and last rows of the border regions become invalid within an iteration, the corresponding work-items become inactive in the following iteration step.
+% This is done by using an offset and by reducing the number of total work-items when launching the OpenCL kernel.
+% The Stencil's four kernel functions (one for each out-of-bounds handling mode and one for the adapted Map skeleton) can be used for both single- and multi-GPU systems.
+ 
+% \begin{figure}[tb]
+%   \centering
+%   \includegraphics[width=\columnwidth]{HiStencils/data_exchange}
+%   \caption{\small Device synchronization for three devices. Equally patterned and colored chunks represent the border regions and their matching inner border region. After the download of the appropriate inner border regions, they are swapped pair-wise on the host. Then the inner border regions are uploaded in order to replace the out-of-date border regions.}
+%   \label{fig:syncDevices}
+%   \vspace{1em}
+% \end{figure} 
+
+
+
+
+
+
+% allpairs impl
+
+
+
+
+% \vspace{1em}
+% We develop the allpairs skeleton within the skeleton library SkelCL~\cite{StKG-12}, which is built on top of OpenCL and targets modern parallel systems with multiple GPUs.
+% Currently, five other skeletons are available in SkelCL: \emph{map}, \emph{zip}, \emph{reduce}, \emph{scan}, and \emph{mapOverlap}.
+% Skeletons operate on container data types (in particular vectors and matrices) which alleviate the memory management of GPUs:
+% data is copied automatically to and from GPUs, instead of manually performing data transfers as required in OpenCL.
+% For programming multi-GPU systems, SkelCL offers the application programmer a data distribution mechanism to specify how the data of a container is distributed among the GPUs in the system.
+% The container's data can either be assigned to a single GPU, be copied to all GPUs, or be partitioned in equal blocks across the GPUs, possibly with an overlap.
+% If the data distribution is changed in the program, the necessary data movements are done automatically by the system~\cite{StKG-12}.
+
+% \begin{lstlisting}[%                                                             
+% caption={Matrix multiplication in SkelCL using the \emph{allpairs} skeleton.},%
+% float=t,%                                                                       
+% numbers=left,%
+% label={lst:basic_mm}]
+% skelcl::init();
+% Allpairs<float(float, float)> mm(
+%  "float func(float_matrix_t a, float_matrix_t b) {\
+%   float c = 0.0f;\
+%   for (int i = 0; i < width(a); ++i) {\
+%     c += getElementFromRow(a, i) * getElementFromCol(b, i); }\
+%   return c; }");
+% Matrix<float> A(n, k); fill(A);
+% Matrix<float> B(k, m); fill(B);
+% Matrix<float> C = mm(A, B);
+% \end{lstlisting}
+
+% Listing~\ref{lst:basic_mm} shows the SkelCL program for computing matrix multiplication using the \emph{allpairs} skeleton;
+% the code follows directly from the mathematical formulation (\ref{eq:mat_mult_allpairs}).
+% In the first line, the SkelCL library is initialized.
+% Skeletons are implemented as classes in SkelCL and customized by instantiating a new object, like in line 2.
+% The \texttt{Allpairs} class is implemented as a template class specified with the data types of matrices involved in the computation (\texttt{float(float, float)}).
+% This way the implementation can ensure the type correctness by checking the types of the arguments when the skeleton is executed in line 10.
+% The customizing function -- specified as a string (line 3 -- 7) -- is passed to the constructor.
+% Data types for matrices (\texttt{float\_matrix\_t} in line 3) are defined by the SkelCL implementation and used as arguments of helper functions for accessing elements from both matrices (line 6).
+% The transpose of matrix $B$ required by the definition (\ref{eq:mat_mult_allpairs}) is implicitly performed by accessing elements from the columns of $B$ using the helper function \texttt{getElementFromCol}.
+% After initializing the two input matrices (line 8 and 9), the calculation is performed in line 10.
+
+% In our SkelCL library, skeletons are implemented by translating them into executable OpenCL code.
+% Listing~\ref{lst:basic_impl} shows the OpenCL kernel which is combined with the given customizing function by the implementation of the allpairs skeleton.
+% The customizing function (named \texttt{\emph{func}} in Listing~\ref{lst:basic_mm}) is renamed to match the name used in the function call in the implementation (\texttt{USER\_FUNC} in Listing~\ref{lst:basic_impl}).
+% In addition, the types used in the predefined OpenCL kernel (\texttt{TYPE\_LEFT}, \texttt{TYPE\_RIGHT}, and \texttt{TYPE\_OUT} in Listing~\ref{lst:basic_impl}) are adjusted to match the actual types of the elements used in the computation (in this case, all three types are \texttt{float}).
+% These modifications ensure that a valid OpenCL program performing the allpairs calculation is constructed.
+% This generated OpenCL program is executed once for every element of the output matrix $C$.
+% In lines 6 -- 7, the implementation prepares variables (\texttt{Am} and \texttt{Bm}) of a predefined data type (\texttt{float\_matrix\_t}) which encapsulate the matrices $A$ and $B$ and passes them to the customizing function which is called in line 9.
+
+% \begin{lstlisting}[%                                                             
+% caption={Generic OpenCL kernel used in the implementation of the allpairs skeleton.},%
+% float=t,%                                                                       
+% numbers=left,%
+% label={lst:basic_impl}]
+% __kernel void allpairs(const __global TYPE_LEFT*  A,
+%                        const __global TYPE_RIGHT* B,
+%                              __global TYPE_OUT*   C,
+%                              int n, int d, int m) {
+%   int col = get_global_id(0); int row = get_global_id(1);
+%   float_matrix_t Am; Am.data = A; Am.width = d; Am.row = row;
+%   float_matrix_t Bm; Bm.data = B; Bm.width = m; Bm.col = col;
+%   if (row < n && col < m)
+%     C[row * m + col] = USER_FUNC(Am, Bm); }
+% \end{lstlisting}
+
+% To achieve high performance, skeleton implementations must efficiently exploit the complex memory hierarchy of multi-GPU architectures.
+% There are two main types of memory in OpenCL: \emph{global} and \emph{local memory}.
+% The global memory is typically large but slow; the local memory is small but fast and has similar performance as caches in traditional systems, but has to be programmed manually.
+% On modern GPUs, accesses to the global memory are very expensive, taking up to 800 processor cycles, as compared to only few cycles required to access the local memory~\cite{NVIDIA-12}.
+
+% The generic implementation of the allpairs skeleton in Listing~\ref{lst:basic_impl} makes no assumption about the order in which the customizing function (\texttt{USER\_FUNC}) accesses the elements of its two input vectors.
+% In this general case, we cannot assume that the two vectors fit entirely into the restricted GPU local memory.
+% Therefore, we have to use only the global memory in the generic implementation.
+% To improve our implementation of the allpairs skeleton, we restrict the memory access pattern of the customizing function in the next section.
+
+
+
+
+
