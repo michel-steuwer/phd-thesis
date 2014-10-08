@@ -528,3 +528,31 @@ Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers b
 
 
 
+% specialized allpairs
+
+% \begin{lstlisting}[%                                                             
+% caption={Matrix multiplication in SkelCL using the specialized \emph{allpairs} skeleton.},%
+% float=b,%                                                                       
+% numbers=left,%
+% label={lst:nested_allpairs}]
+% skelcl::init();
+% Zip<float(float, float)> mult
+%     ("float func(float x, float y) { return x*y; }");
+% Reduce<float(float, float)> sum_up
+%     ("float func(float x, float y) { return x+y; }");
+% Allpairs<float(float, float)> mm(sum_up, mult);
+% Matrix<float> A(n, d); fill(A);
+% Matrix<float> B(d, m); fill(B);
+% Matrix<float> C = mm(A, B);
+% \end{lstlisting}
+
+% Listing~\ref{lst:nested_allpairs} shows how the matrix multiplication can be programmed in SkelCL using the allpairs skeleton customized with zip-reduce.
+% In line 1, the SkelCL library is initialized.
+% In lines 2 and 3, the zip skeleton is defined using multiplication as customizing function and in lines 4 and 5, the reduce skeleton is customized with addition.
+% These two customized skeletons are passed to the allpairs skeleton on its creation in line 6.
+% The implementation of the allpairs skeleton then uses the two customizing functions of zip and reduce to generate the OpenCL kernel performing the allpairs computation.
+% In line 9, the skeleton is executed taking two input matrices and producing the output matrix.
+% Note that we create objects of the same \texttt{Allpairs} class when using the generic allpairs implementation (Listing~\ref{lst:basic_impl} line 2) and the specialized implementation (Listing~\ref{lst:nested_allpairs} line 6).
+% Depending on which of the overloaded constructors is used, either the generic or the specialized implementation is created.
+
+
