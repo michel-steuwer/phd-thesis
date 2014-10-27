@@ -1,9 +1,133 @@
 \section{The SkelCL Library}
 \label{section:skelcl-library}
 In this section we discuss the \SkelCL Library, our implementation of the \SkelCL programming model.
-It provides to the user a \Cpp~\API that implements the features of the \SkelCL programming model, and thus liberates the application developer from writing low-level boilerplate code.
+It provides a \Cpp~\API that implements the features of the \SkelCL programming model, and thus liberates the application developer from writing low-level code.
 In addition, the library provides some commonly used utility functions, \eg, for program initialization.
 The \SkelCL Library is open source software and available at: \url{http://skelcl.uni-muenster.de}.
+
+We start our discussion with an example showing how to use the \SkelCL library.
+We describe the syntax used to represent the \SkelCL programming model introduced in the previous section.
+This will include a discussion of \Cpp techniques used to implement the library.
+We then shift the focus to the implementations of the memory management, algorithmic skeletons, and distributions.
+
+\subsection{Programming with the SkelCL Library}
+
+\autoref{lst:skelcl:dotproduct} shows the implementation of the dot product computation, discussed in the previous section, in \SkelCL.
+After inlcuding the appropiate \SkelCL headers (lines~\autoref{lst:skelcl:dotproduct:inc:start}--\autoref{lst:skelcl:dotproduct:inc:end}) the \SkelCL library can be initialized as seen in line~\autoref{lst:skelcl:dotproduct:init}.
+This will perform initializations required by \OpenCL.
+It is possible to provide arguments to the \code{init} function to specify which \OpenCL devices should be used by \SkelCL.
+The dot product is specified using the \zip and \reduce skeletons.
+The skeletons are created using \code{zip} (line~\autoref{lst:skelcl:dotproduct:zip}) and \code{reduce} (line~\autoref{lst:skelcl:dotproduct:reduce}) functions which expect the customizing functions of the skeletons as argument.
+Here we use \Cpp lambda expressions (lines~\autoref{lst:skelcl:dotproduct:zip:lambda} and \autoref{lst:skelcl:dotproduct:reduce:lambda}) to specify the customizing functions.
+We create the two input \code{Vector}s from C style pointers in lines~\autoref{lst:skelcl:dotproduct:vecA} and \autoref{lst:skelcl:dotproduct:vecB}.
+In line~\autoref{lst:skelcl:dotproduct:apply} we perform the computation by applying it to the data, before we finally return the computed result in line~\autoref{lst:skelcl:dotproduct:return}.
+
+\begin{lstlisting}[%                                                             
+caption={Implementation of the dot product computation in SkelCL},%
+float=t,%
+numbers=left,%
+label={lst:skelcl:dotproduct}]
+#include <SkelCL/SkelCL.h>$\label{lst:skelcl:dotproduct:inc:start}$
+#include <SkelCL/Zip.h>
+#include <SkelCL/Reduce.h>
+#include <SkelCL/Vector.h>$\label{lst:skelcl:dotproduct:inc:end}$
+
+float dotProduct(const float* a, const float* b, int n) {
+
+  skelcl::init();$\label{lst:skelcl:dotproduct:init}$
+
+  auto mult = skelcl::zip( $\label{lst:skelcl:dotproduct:zip}$
+      [](float x, float y) { return x*y; } );$\label{lst:skelcl:dotproduct:zip:lambda}$
+  auto sum  = skelcl::reduce($\label{lst:skelcl:dotproduct:reduce}$
+      [](float x, float y) { return x+y; }, 0 );$\label{lst:skelcl:dotproduct:reduce:lambda}$
+
+  skelcl::Vector<float> A(a, a+n);$\label{lst:skelcl:dotproduct:vecA}$
+  skelcl::Vector<float> B(b, b+n);$\label{lst:skelcl:dotproduct:vecB}$
+
+  skelcl::Vector<float> C = sum( mult(A, B) );$\label{lst:skelcl:dotproduct:apply}$
+
+  return C.front();$\label{lst:skelcl:dotproduct:return}$
+}
+\end{lstlisting}
+
+\autoref{lst:skelcl:dotproduct} shows that the \SkelCL library integrates nicely with \Cpp.
+The interface of the \code{Vector} class looks familiar to \Cpp programmers and the usage of modern \Cpp features like lambda expressions and type deduction (\code{auto}) simplify the programming:
+functions can be defined directly inline and type information can be omitted.
+
+We will discuss how our implementation enables this level of integration in the next section.
+
+
+\subsection{Syntax and Integration with \Cpp}
+\label{section:skelcl-library:syntax}
+
+The \SkelCL library is built on top of \OpenCL.
+This has benefits as well as disadvantages.
+One of the disadvantages is, that \OpenCL requires the kernel to be specified as a string in the host program.
+While this enables portability across different hardware architectures, it also introduces a burden on the application developer as strongly typing cannot be guarantied statically when the host program is compiled.
+For the implementation of \SkelCL we choose to address this issue using a two-step implementation.
+In the first step a custom compiler transforms the source code as seen in \autoref{lst:skelcl:dotproduct} to a representation where the kernel computations are represented as strings as required by \OpenCL.
+In the second step the transformed program is compiled with any \Cpp compiler to produce the final executable.
+
+This allows us to free the user from writing strings in their application code and maintain the usual type safety guarantees from \Cpp at compile time.
+Furthermore, we implemented type inference capabilities in our source-to-source compiler to free the application developer from specifying type information explicitly.
+Our two-step design also allows application developers to compile their application code into a form which then can be deployed on systems where it might be difficult to install a custom compiler.
+
+In the next paragraph we will start discussing our source-to-source compiler tool.
+We will discuss how our custom compiler, together with our template-based implementation helps to maintain strong type safety at compile time.
+Finally, we will look at issues regarding the integration with \Cpp like shared code between host and device code.
+
+\paragraph{The custom SkelCL compiler: \code{skelclc}}
+To allow a deep integration of \SkelCL code with \Cpp we implemented a custom compiler: \code{skelclc}.
+We leverage the LLVM infrastructure~\cite{Lattner2004} for building the compiler.
+LLVM and the related Clang project offer well defined application programming interfaces for writing C and \Cpp related compiler tools.
+In particular the \emph{LibTooling} API allows for writing tools which search for particular patterns in abstract syntax tree (AST) representing the source code and perform actions on those code fragments.
+The \code{skelclc} tool does exactly this.
+For example the tool searches for expressions like this:
+\begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={Code snippet before transformation.}]
+auto mult = skelcl::zip([](float x, float y){return x*y;});
+\end{lstlisting}
+and replaces it with:
+\begin{lstlisting}[numbers=none,label={lst:skelclc:after},caption={Code snippet after transformation.}]
+auto mult = skelcl::Zip<Container<float>(Container<float>,
+                                         Container<float>)>(
+              skelcl::Source("float func(float x, float y)"\
+                             " { return x*y; }"), "func");
+\end{lstlisting}
+
+In this example the \code{zip} function has been transformed into an call of the constructor of the \code{Zip} class and the lambda expression has been transformed into a string.
+Furthermore, type information have been added to the templated \code{Zip} class, which have been inferred from the lambda expression.
+
+The user is free to write expression~\ref{lst:skelclc:after} explicitly, but it is arguably more convenient to write expression~\ref{lst:skelclc:before} and let our custom compiler perform the transformation automatically.
+
+There exist a function like \code{zip} for every skeleton available in \SkelCL which is transformed by \code{skelclc} to a call of the constructor of the corresponding class.
+
+\paragraph{Maintaining type safety}
+Each skeleton in \SkelCL is represented by a templated class, as seen in \autoref{lst:skelclc:after}.
+The template arguments of the skeleton define the types which can be used when executing the skeleton.
+When executing a skeleton \code{skeleton<T(U)>} an object of type \code{U} has to be provided to receive an object of type \code{T}.
+In this respect skeletons behave exactly like functions in \Cpp which can be represented using the \code{std::function<T(U)>} template class.
+Skeletons taking more then one argument (like the \code{zip} skeleton) are represented as \code{skeleton<T(U, V)>} using the \emph{variadic template} feature of \Cpp.
+
+When performing the transformations \code{skelclc} infers the types used as template arguments of the skeleton class.
+To do so, it determines the types of the lambda expression.
+For \autoref{lst:skelclc:before} this is: \code{float} and \code{float} as argument types and \code{float} as result type.
+The result type is inferred following standard \Cpp rules.
+Based on this types the template arguments of the skeleton are constructed.
+The skeletons \map, \zip, and \stencil can operate on \code{Vector} and \code{Matrix}.
+For these skeletons it must be possible to execute the skeleton with either a \code{Vector} or a \code{Matrix}.
+To allow this, the templated class \code{Container} was introduced.
+Using the template specialization mechanism, the mentioned skeletons have a special implementation when \code{Container} is used as a template argument.
+In this case the classes provide two distinct overloaded member functions for execution using \code{Vector} or \code{Matrix}.
+
+Type safety is guarantied, as the templated skeleton classes can only be executed with a container of compatible type and the type inference ensures that the user function has exactly the same type as the template argument of the skeleton class.
+Therefore, applying the user function to the input data is always a type safe operation.
+
+Because skeletons are strongly types the composition of skeletons is type safe as well, \ie, in \autoref{lst:skelcl:dotproduct} type safety between the two skeletons is guaranteed.
+If the result type of \code{zip} would not match the input type of \code{reduce} an compile time error would occur.
+
+\paragraph{Integration with \Cpp}
+% shared types, shared functions, lambda captures
+
 
 \subsection{Memory Management Implementation}
 \label{section:skelcl-library:memory-management}
@@ -17,7 +141,7 @@ Internally, a vector comprises pointers to corresponding areas of main memory (a
 The vector holds one pointer for the host and one pointer for each device available.
 Memory on the devices is allocated automatically, according to the distribution of the vector:
 while for a single distributed vector only memory on a single device is allocated, for a vector distributed with the copy, block, or overlap distribution memory on all devices is allocated.
-The selected distribution obviously also influences how big the buffer allocated on the devices are.
+The selected distribution obviously also influences how big the buffers allocated on the devices are.
 
 Before the execution of a skeleton, the input vector's implementation ensures that all of its data is available on the devices.
 This might result in implicit data transfers from the host memory to device memory.
@@ -46,6 +170,9 @@ This frees the application developer from performing cumbersome index calculatio
 \subsection{Algorithmic Skeletons Implementation}
 \label{section:skelcl-library:skeletons}
 
+
+\subsection{Distribution Implementation}
+\label{section:skelcl-library:distribution}
 
 % TODO: ...
 
