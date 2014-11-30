@@ -17,8 +17,9 @@ After inlcuding the appropiate \SkelCL headers (lines~\autoref{lst:skelcl:dotpro
 This will perform the initializations required by \OpenCL.
 It is possible to provide arguments to the \code{init} function to specify which \OpenCL devices should be used by \SkelCL.
 The dot product is specified using the \zip and \reduce skeletons.
-The skeletons are created using \code{zip} (line~\autoref{lst:skelcl:dotproduct:zip}) and \code{reduce} (line~\autoref{lst:skelcl:dotproduct:reduce}) functions which expect the customizing functions of the skeletons as argument.
-Here we use \Cpp lambda expressions (lines~\autoref{lst:skelcl:dotproduct:zip:lambda} and \autoref{lst:skelcl:dotproduct:reduce:lambda}) to specify the customizing functions.
+The skeletons are created using \code{zipVector} (line~\autoref{lst:skelcl:dotproduct:zip}) and \code{reduce} (line~\autoref{lst:skelcl:dotproduct:reduce}) functions which expect the customizing functions of the skeletons as argument.
+By using the \code{zipVector} function we specify that the \zip skeleton operates on two input vectors and not two input matrices.
+In this example we use \Cpp lambda expressions (lines~\autoref{lst:skelcl:dotproduct:zip:lambda} and \autoref{lst:skelcl:dotproduct:reduce:lambda}) to specify the customizing functions of the skeletons.
 We create the two input \code{Vector}s from C style pointers in this example (lines~\autoref{lst:skelcl:dotproduct:vecA} and \autoref{lst:skelcl:dotproduct:vecB}).
 In line~\autoref{lst:skelcl:dotproduct:apply} we perform the computation by applying the customized skeletons to the data, before we finally return the computed result in line~\autoref{lst:skelcl:dotproduct:return}.
 
@@ -35,7 +36,7 @@ label={lst:skelcl:dotproduct}]
 float dotProduct(const float* a, const float* b, int n) {
   skelcl::init();$\label{lst:skelcl:dotproduct:init}$
 
-  auto mult = skelcl::zip( $\label{lst:skelcl:dotproduct:zip}$
+  auto mult = skelcl::zipVector( $\label{lst:skelcl:dotproduct:zip}$
       [](float x, float y) { return x*y; } );$\label{lst:skelcl:dotproduct:zip:lambda}$
   auto sum  = skelcl::reduce($\label{lst:skelcl:dotproduct:reduce}$
       [](float x, float y) { return x+y; }, 0 );$\label{lst:skelcl:dotproduct:reduce:lambda}$
@@ -83,17 +84,18 @@ In particular the \emph{LibTooling} API allows for writing tools which search fo
 The \code{skelclc} tool does exactly this.
 For example the tool searches for expressions like this:
 \begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={Code snippet before transformation.}]
-auto mult = skelcl::zip([](float x, float y){return x*y;});
+auto mult = skelcl::zipVector(
+              [](float x, float y){ return x*y; } );
 \end{lstlisting}
 and replaces it with:
 \begin{lstlisting}[numbers=none,label={lst:skelclc:after},caption={Code snippet after transformation.}]
-auto mult = skelcl::Zip<Container<float>(Container<float>,
-                                         Container<float>)>(
+auto mult = skelcl::Zip<Vector<float>(Vector<float>,
+                                      Vector<float>)>(
               skelcl::Source("float func(float x, float y)"\
                              " { return x*y; }"), "func");
 \end{lstlisting}
 
-In this example the \code{zip} function has been transformed into an call of the constructor of the \code{Zip} class and the lambda expression has been transformed into a string.
+In this example the \code{zipVector} function has been transformed into an call of the constructor of the \code{Zip} class and the lambda expression has been transformed into a string.
 Furthermore, type information have been added to the templated \code{Zip} class, which have been inferred from the lambda expression.
 
 The user is free to write the expression in \autoref{lst:skelclc:after} explicitly, but it is arguably more convenient to write the expression in \autoref{lst:skelclc:before} and let our custom compiler perform the transformation automatically.
@@ -114,12 +116,13 @@ The result type is inferred following standard \Cpp rules.
 Based on this types the template arguments of the skeleton are constructed.
 
 The skeletons \map, \zip, and \stencil can operate on either \code{Vector} or \code{Matrix}.
-For these skeletons it must be possible to execute the skeleton with either a \code{Vector} or a \code{Matrix}.
-To allow this, the templated class \code{Container} was introduced.
+For each of these skeletons there exists three kinds of factory functions:
+1)~for creating a skeleton operating on vectors, \eg \code{mapVector};
+2)~for creating a skeleton operating on matrices, \eg \code{mapMatrix};
+3)~for creating a skeleton capable of operating on both vectors and matrices, \eg \code{map}.
+To allow the last case the templated class \code{Container} was introduced.
 Using the template specialization mechanism, the mentioned skeletons have a special implementation when \code{Container} is used as a template argument.
-In this case the classes provide two distinct overloaded member functions for execution using \code{Vector} or \code{Matrix}.
-
-\todo{Resolve the redue(vector) o zip(containe) issue}
+In this case the classes provide two distinct overloaded member functions for execution using either \code{Vector} or \code{Matrix}.
 
 Type safety is guarantied, as the templated skeleton classes can only be executed with a container of compatible type and the type inference ensures that the user function has exactly the same type as the template argument of the skeleton class.
 Therefore, applying the user function to the input data is always a type safe operation.
@@ -127,51 +130,247 @@ Therefore, applying the user function to the input data is always a type safe op
 Because skeletons are strongly types the composition of skeletons is type safe as well, \ie, in \autoref{lst:skelcl:dotproduct} type safety between the two skeletons is guaranteed.
 If the result type of \code{zip} would not match the input type of \code{reduce} a compile time error would occur.
 
-\todo{Continue here ...}
 \paragraph{Integration with \Cpp}
-% shared types, shared functions, lambda captures
+To allow a deep integration with \Cpp the customizing function is allowed to make use of user defined types and make calls to other functions.
+The \code{skelclc} compiler detects these behaviors and ensures that the definition of the user defined type and the source code of all functions called is included in the source code passed to the skeleton.
+This frees the user from providing type definitions and source code twice, which is required when using OpenCL directly or SkelCL without the \code{skelclc} compiler.
+Code duplication should almost always be avoided as it can easily lead to hard maintainable code and subtle bugs.
+
+In real-world applications (\eg, the LMSOEM discussed in detail in Section~\ref{sec:list-mode_OSEM}), user-defined functions often work not only on a skeleton's input vector, but may also take additional inputs.
+With only a fixed number of input arguments, traditional skeletons would not be applicable for the implementation of such applications.
+In \SkelCL skeletons can accept an arbitrary number of additional arguments which are passed to the skeleton's customizing function.
+
+\autoref{lst:saxpy:addArgs} shows an example implementation of the \emph{single-precision real-alpha x plus y} ($saxpy$) computation -- a commonly used BLAS routine -- in \SkelCL.
+\begin{lstlisting}[%
+  caption={The BLAS $saxpy$ computation using a \zip skeleton with additional arguments},%
+  float=tbp,%
+  label={lst:saxpy:addArgs}]
+float a = initScalar();
+
+/* create skeleton Y <- a * X + Y */
+auto saxpy = skelcl::zipVector(
+      [](float x, float y, float a) { return a*x+y; });
+
+/* create input vectors */
+Vector<float> X(SIZE); initVector(X);
+Vector<float> Y(SIZE); initVector(Y);
+
+Y = saxpy( X, Y, a );      /* execute skeleton */ $\label{lst:saxpy:addArgs:execution}$
+\end{lstlisting}
+$saxpy$ is a combination of scalar multiplication of $a$ with vector $X$ followed by vector addition with $Y$.
+In \autoref{lst:saxpy:addArgs}, the computation is implemented using a \zip skeleton:
+vectors $X$ and $Y$ are passed as input, while factor $a$ is passed to the customizing function as an additional argument.
+The additional argument is simply appended to the argument list when the skeleton is executed (line~\ref{lst:saxpy:addArgs:execution}).
+Besides scalar values, like shown in the example, vectors and matrices can also be passed as additional arguments to a skeleton.
+When vectors or matrices are used as additional arguments, the user is responsible to ensure that no race conditions occur when writing to or reading from the container.
+If the container is only used for reading it is guaranteed that no race conditions will occur.
+
+The additional argument feature is implemented in SkelCL using the variadic template feature from \Cpp.
+
+In \Cpp lambda expressions can make use of variables which where accessible at the time the lambda expression is created.
+The user has to explicitly indicate how these variable are \emph{captured},\ie how they will be accessed once the lambda is executed.
+A variable can either be captured \emph{by-value} or \emph{by-reference}.
+If a variable is captured by-value a copy of the variable is made at the time the lambda expression is created and accessed later when the lambda expression is executed.
+If a variable is captured by-reference the original variable is accessed when the lambda expression is executed through a reference.
+Capturing a variable by reference allows the user to change the content of the variable from inside the lambda expression, furthermore, in an concurrent setting the user has to ensure that the lifetime of the variable exceeds the time when the lambda expression is executed.
+
+In \SkelCL the customizing function can be expressed as a lambda expression capturing variables.
+The capturing of variables by-value is fully supported by the \code{skelclc} compiler and the capturing by-reference is supported with the following restrictions:
+By-reference capturing is only allowed if the reference is used to read from the variable only, writing to the captured variable is forbidden.
+The reason for this behavior is that when executing the lambda expression on the GPU a write to a by-reference captured variable requires a costly data transfer to ensure the variable, stored in CPU memory, is modified.
+Furthermore, as the lambda expression will be executed multiple times in parallel as part of the skeletons execution it is likely that race conditions occur when writing to the captured reference.
+We can rewrite the $saxpy$ example using a lambda expression capturing the variable $a$ as shown in \autoref{lst:saxpy:capture}.
+\begin{lstlisting}[%
+  caption={The BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing the variable $a$.},%
+  float=tbp,%
+  label={lst:saxpy:capture}]
+float a = initScalar();
+
+/* create skeleton Y <- a * X + Y */
+auto saxpy = skelcl::zipVector(
+      [a](float x, float y) { return a*x+y; }); $\label{lst:saxpy:capture:capture}$
+
+/* create input vectors */
+Vector<float> X(SIZE); initVector(X);
+Vector<float> Y(SIZE); initVector(Y);
+
+Y = saxpy( X, Y );      /* execute skeleton */ $\label{lst:saxpy:capture:execute}$
+\end{lstlisting}
+
+The variable $a$ is now captured by the lambda expression in line~\ref{lst:saxpy:capture:capture}.
+Note that $a$ is no longer passed as an argument when executing the skeleton in line~\ref{lst:saxpy:capture:execute}.
+
+\subsection{Skeleton Execution on OpenCL Devices}
+\label{section:skelcl-library:execution}
+The process of executing a skeleton on an OpenCL device, \eg a GPU, follows always the same steps independent of the skeletons involved.
+This process is described in this subsection before we will look at the individual skeleton implementations in the next subsection.
+
+The \code{skelclc} compiler transforms the \SkelCL application code so that the source code of the customizing function of a skeleton is available to the \SkelCL library implementation as a string.
+When a skeleton instance is created the \SkelCL library implementation performs the following steps to create an OpenCL kernel:
+1)~the source code of the customizing function is merged with an OpenCL implementation of the skeleton;
+2)~the merged source code is adapted into the final OpenCL kernel to support additional arguments and so that names and types of the customizing function and skeleton implementation match;
+3)~the created OpenCL kernel is cached to a file to avoid performing steps 1) and 2) multiple times for the same kernel.
+
+On execution of the skeleton the following steps are performed to execute the computation on an OpenCL device:
+1)~the data of the input containers is uploaded to the OpenCL device, if it is not already there;
+2)~the OpenCL kernel arguments are set, including the additional arguments;
+3)~the OpenCL kernel is executed.
+
+In the next two paragraphs we will look closer at these two processes and their individual steps.
+
+\paragraph{Create an OpenCL kernel}
+We will use the $saxpy$ example from the previous section as a running example to explain how an OpenCL kernel is created.
+\autoref{lst:saxpy:transformed} shows the code for the $saxpy$ application emitted by the \code{skelclc} compiler after receiving the code shown in \autoref{lst:saxpy:addArgs} as input.
+\begin{lstlisting}[%
+  caption={Source code for the $saxpy$ application emitted by the \code{skelclc} compiler.},%
+  float=tbp,%
+  label={lst:saxpy:transformed}]
+float a = initScalar();
+
+/* create skeleton Y <- a * X + Y */
+auto saxpy = skelcl::Zip<Vector<float>(Vector<float>,
+                                       Vector<float>,
+                                       float)>(
+     skelcl::Source("float func(float x, float y, float a)"$\label{lst:saxpy:transformed:funcStart}$\
+                    " { return a*x+y; }"), "func"); $\label{lst:saxpy:transformed:funcEnd}$
+
+/* create input vectors */
+Vector<float> X(SIZE); initVector(X);
+Vector<float> Y(SIZE); initVector(Y);
+
+Y = saxpy( X, Y, a );      /* execute skeleton */
+\end{lstlisting}
+
+To create the corresponding OpenCL kernel the source code of the customizing function in lines~\ref{lst:saxpy:transformed:funcStart} and \ref{lst:saxpy:transformed:funcEnd} is combined with the prototype implementation of the \zip skeleton which is shown in \autoref{lst:zip:impl}.
+%
+\begin{lstlisting}[%
+  caption={Prototype implementation of the \zip skeleton in OpenCL.},%
+  float=tbp,%
+  label={lst:zip:impl}]
+typedef int T0; typedef int T1; typedef int T2;$\label{lst:zip:impl:typedef}$
+
+kernel void ZIP(const global T0* left,
+                const global T1* right,
+                      global T2* out,
+                const unsigned int size) {
+  unsigned int id = get_global_id(0);
+  if (id < size) { $\label{lst:zip:impl:boundaryCheck}$
+    out[id] = USER_FUNC(left[id], right[id]); } }  $\label{lst:zip:impl:call}$
+\end{lstlisting}
+%
+The prototype implementation defined an OpenCL kernel \code{ZIP} receiving three pointers to global memory and one integer as arguments.
+A boundary check is performed in line~\ref{lst:zip:impl:boundaryCheck} before a function with the name \code{USER\_FUNC} is called (line~\ref{lst:zip:impl:call}) with a pair of elements read from the two input arrays \code{left} and \code{right}.
+The result of the function call is stored in the output array \code{out}.
+
+The combined source codes clearly do not form a valid OpenCL kernel as there exists no function called \code{USER\_FUNC}.
+This \emph{prototype} implementation has to be adapted to be a valid OpenCL kernel.
+To do this adaption the \SkelCL library implementation makes use of the same LLVM and Clang infrastructure used to build the \code{skelclc} compiler.
+Three steps are performed to create a valid OpenCL kernel:
+1)~the customizing function is renamed into \code{USER\_FUNC};
+2)~the types of the customizing functions are used to change the \code{typedef}s in line~\ref{lst:zip:impl:typedef} so that the types of the kernel function \code{ZIP} match;
+3)~the additional arguments of the customizing function are appended to the parameter list of the kernel function \code{ZIP} and the call to the customizing function is adapted to forward the arguments.
+
+After these steps the source code has been transformed into a valid OpenCL kernel as shown in \autoref{lst:zip:mergedImpl}.
+\begin{lstlisting}[%
+  caption={OpenCL implementation of the \zip skeleton customized for performing the $saxpy$ computation.},%
+  float=tbp,%
+  label={lst:zip:mergedImpl}]
+float USER_FUNC(float x, float y, float a) { return a*x+y; }
+typedef float T0; typedef float T1; typedef float T2;
+
+kernel void ZIP(const global T0* left,
+                const global T1* right,
+                      global T2* out,
+                const unsigned int size, float a) {
+  unsigned int id = get_global_id(0);
+  if (id < size) {
+    out[id] = USER_FUNC(left[id], right[id], a); } }
+\end{lstlisting}
+
+Performing the adaption of the source code involves parsing the code and building an abstract syntax tree for it by the clang compiler library.
+Performing this every time a skeleton is created is wasteful as this task can take up to several hundreds of milliseconds, which can be a considerable overhead for small kernels.
+Therefore, the \SkelCL library implements a caching of already transformed kernels to disk.
+If the same kernel is used again the transformed code is loaded from the cache.
+We observed that loading kernels from disk is at least five times faster than creating them from source.
 
 
-\subsection{Memory Management Implementation}
-\label{section:skelcl-library:memory-management}
-In the \SkelCL programming model the user managed its memory using \emph{container data types}.
-The two container data types -- vector and matrix -- are implemented as template classes in the \SkelCL Library.
-This generic implementation allows for storing data items of any primitive C/\Cpp data type (\eg, \code{int}), as well as user-defined data structures (\code{struct}s).
+\paragraph{Execute a Skeleton on an OpenCL Device}
+On execution of the skeleton the created OpenCL kernel is executed on possibly multiple OpenCL devices.
+The data distribution of the input containers determine what OpenCL devices are used for the execution.
+If the copy, block, or overlap distribution is used all available devices are involved in the computation as defined by the distributions.
+If the single distribution is used just a single device is used.
+If no distribution is set for the input containers each skeleton selects a default distribution.
 
-\paragraph{The SkelCL Vector}
-The \SkelCL vector replicates the interface of the vector from the Standard Template Library (\STL), \ie, it can be used as a drop-in replacement of the standard vector.
-Internally, a vector comprises pointers to corresponding areas of main memory (accessible by the host) and device memory.
-The vector holds one pointer for the host and one pointer for each device available.
-Memory on the devices is allocated automatically, according to the distribution of the vector:
-while for a single distributed vector only memory on a single device is allocated, for a vector distributed with the copy, block, or overlap distribution memory on all devices is allocated.
-The selected distribution obviously also influences how big the buffers allocated on the devices are.
+The first step for execution is to upload the data of the input containers to the OpenCL devices.
+Before performing a data transfer the \SkelCL implementation checks if the transfer is necessary or if the data is already up to date on the receiving side.
+The details how this is implemented in the memory management are described in \autoref{section:skelcl-library:memory-management}.
 
-Before the execution of a skeleton, the input vector's implementation ensures that all of its data is available on the devices.
-This might result in implicit data transfers from the host memory to device memory.
-The data of the output vector is not copied back to the host memory but rather resides in the device memory.
-Before every data transfer, the vector implementation checks whether the data transfer is necessary;
-only then the data is actually transferred.
-Hence, if an output vector is used as the input to another skeleton, no further data transfer is performed.
-This \emph{lazy copying} defers data transfers as long as possible or avoids them completely and, thus, minimizes the costly data transfers between host and device.
-While all data transfers are performed implicitly by \SkelCL we understand that advanced application developers want fine grained control over the data transfers between host and devices.
-For that purpose \SkelCL offers a set of \APIs developers can use to explicitly initiate and control the data transfer to and from the devices.
+Before enqueuing the OpenCL kernel in the OpenCL command queue its kernel arguments have to be set.
+First the regular arguments are set corresponding to the order of arguments as defined in the skeletons prototype implementation of the OpenCL kernel.
+Afterwards, the additional arguments are set.
 
-%In a SkelCL program, a vector object can be created and filled with data like this:
-%\vspace{.5em}
-%\centerline{\lstinline!Vector<int> vec(size);!}
-%\centerline{\lstinline!for (int i = 0; i < vec.size(); ++i) \{ vec[i] = i; \}!}
-%\vspace{.5em}
-
-\paragraph{The SkelCL Matrix}
-The \SkelCL matrix offers an easy to use interface similar to the interface of the vector.
-Data is stored in row-major order and iterators are provided to iterate first over rows and then inside of a single row to access a particular element.
-For the copy, block, and overlap distribution the matrix is divided across rows.
-A single row is never split across multiple devices, which simplifies the memory management.
-Besides offering an interface to access elements on the host, the matrix also offers an interface for accessing elements on the device by using two-dimensional indices.
-This frees the application developer from performing cumbersome index calculations manually.
+Finally, the OpenCL kernel is enqueued with a global size corresponding to the size of the input containers.
 
 \subsection{Algorithmic Skeletons Implementation}
 \label{section:skelcl-library:skeletons}
+
+\todo{continue here ...}
+
+\subsection{Skeletons for Multiple GPUs}
+\label{sec:multi-gpu_skeletons}
+
+The skeletons of SkelCL possess specific features for working in multi-GPU systems.
+They take into account the distribution of their input vectors: each GPU that holds a part or a complete copy of a vector is involved in the execution of the skeleton.
+Therefore, all GPUs automatically cooperate in the skeleton execution if its input vector is \emph{block}-distributed, whereas the skeleton is executed on one GPU if the vector distribution is \emph{single}.
+If a skeleton's input vector is \emph{copy}-distributed, then all GPUs execute the same skeleton on their own copies.
+
+Vectors can be passed to skeletons either as main inputs or as additional arguments.
+For main input vectors, a skeleton-specific default distribution is set automatically by SkelCL, but the programmer can override the defaults, i.\,e., specify a distribution that fits best for the application.
+For vectors passed as an additional argument, no meaningful default distribution can be provided by the system, because the access pattern for the vector is determined by the user-defined function.
+Therefore, the user has to specify explicitly the distribution for these vectors.
+
+\subsection{Implementation of Skeletons on Multiple GPUs}
+
+\paragraph{Map and zip}
+In a multi-GPU setting, each GPU executes the map's unary function on its part of the input vector.
+The same holds for the zip skeleton, but it requires both input vectors to have the same distribution, and, in case of the single-distributed vectors, they also have to be stored on the same GPU.
+If this requirement is not satisfied, SkelCL automatically changes the input vector distribution to block distribution.
+This distribution is also set by default for input vectors with no distribution specified by the user.
+Both, the map and zip skeleton, set their output vector distribution to that of their input vectors.
+
+\paragraph{Reduce}
+The reduce skeleton automatically performs all necessary synchronization and communication between CPU and GPUs, in three steps:
+\begin{enumerate}
+ \item Every GPU executes a local reduction for its local part of data;
+ \item The results of all GPUs are gathered by the CPU;
+ \item The CPU reduces these intermediate results to compute the final result.
+\end{enumerate}
+The output vector of the reduce skeleton holds only a single element, therefore, the output vector distribution is set to single.
+
+\paragraph{Scan}
+An example of the scan skeleton executed on four devices using addition as operation is shown in Figure~\ref{fig:scan}.
+The input vector $[1,\ldots,16]$ is distributed using the \emph{block} distribution by default (shown in the top line).
+After performing the scan algorithm on all devices (second line of the figure), map skeletons are built implicitly using the marked values and executed on all devices except the first one.
+This produces the final result, as shown in the bottom line.
+
+\begin{figure*}[tbp]
+    \centering
+    \includegraphics[width=.9\textwidth]{ASHES/scan}
+    \caption{Scan on four GPUs: (1) All GPUs scan their parts independently.
+            (2) map skeletons are created automatically and
+             executed to produce the result.}
+    \label{fig:scan}
+\end{figure*}
+
+The SkelCL implementation of the scan skeleton assumes the GPUs to have a fixed order, such that each GPU (except the first one) has a predecessor:
+\begin{enumerate}
+ \item Every GPU executes a local scan algorithm for its local part of data;
+ \item The results of all GPUs are downloaded to the host;
+ \item For each GPU (except the first one), a map skeleton is implicitly created that combines the result of the GPU's predecessors with all elements of its part using the user-defined operation of the scan skeleton;
+ \item The newly created map skeletons compute the final results on all GPUs.
+\end{enumerate}
+The output vector is block-distributed among all GPUs.
+\from{ASHES end}
 
 
 \subsection{Distribution Implementation}
@@ -685,4 +884,98 @@ Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers b
 % Note that we create objects of the same \texttt{Allpairs} class when using the generic allpairs implementation (Listing~\ref{lst:basic_impl} line 2) and the specialized implementation (Listing~\ref{lst:nested_allpairs} line 6).
 % Depending on which of the overloaded constructors is used, either the generic or the specialized implementation is created.
 
+
+
+
+
+\subsection{Memory Management Implementation}
+\label{section:skelcl-library:memory-management}
+In the \SkelCL programming model the user managed its memory using \emph{container data types}.
+The two container data types -- vector and matrix -- are implemented as template classes in the \SkelCL Library.
+This generic implementation allows for storing data items of any primitive C/\Cpp data type (\eg, \code{int}), as well as user-defined data structures (\code{struct}s).
+
+\paragraph{The SkelCL Vector}
+The \SkelCL vector replicates the interface of the vector from the Standard Template Library (\STL), \ie, it can be used as a drop-in replacement of the standard vector.
+Internally, a vector comprises pointers to corresponding areas of main memory (accessible by the host) and device memory.
+The vector holds one pointer for the host and one pointer for each device available.
+Memory on the devices is allocated automatically, according to the distribution of the vector:
+while for a single distributed vector only memory on a single device is allocated, for a vector distributed with the copy, block, or overlap distribution memory on all devices is allocated.
+The selected distribution obviously also influences how big the buffers allocated on the devices are.
+
+Before the execution of a skeleton, the input vector's implementation ensures that all of its data is available on the devices.
+This might result in implicit data transfers from the host memory to device memory.
+The data of the output vector is not copied back to the host memory but rather resides in the device memory.
+Before every data transfer, the vector implementation checks whether the data transfer is necessary;
+only then the data is actually transferred.
+Hence, if an output vector is used as the input to another skeleton, no further data transfer is performed.
+This \emph{lazy copying} defers data transfers as long as possible or avoids them completely and, thus, minimizes the costly data transfers between host and device.
+While all data transfers are performed implicitly by \SkelCL we understand that advanced application developers want fine grained control over the data transfers between host and devices.
+For that purpose \SkelCL offers a set of \APIs developers can use to explicitly initiate and control the data transfer to and from the devices.
+
+%In a SkelCL program, a vector object can be created and filled with data like this:
+%\vspace{.5em}
+%\centerline{\lstinline!Vector<int> vec(size);!}
+%\centerline{\lstinline!for (int i = 0; i < vec.size(); ++i) \{ vec[i] = i; \}!}
+%\vspace{.5em}
+
+\paragraph{The SkelCL Matrix}
+The \SkelCL matrix offers an easy to use interface similar to the interface of the vector.
+Data is stored in row-major order and iterators are provided to iterate first over rows and then inside of a single row to access a particular element.
+For the copy, block, and overlap distribution the matrix is divided across rows.
+A single row is never split across multiple devices, which simplifies the memory management.
+Besides offering an interface to access elements on the host, the matrix also offers an interface for accessing elements on the device by using two-dimensional indices.
+This frees the application developer from performing cumbersome index calculations manually.
+
+% \subsection{Data distribution}
+
+% SkelCL's vector data type abstracts from memory ranges on multiple GPUs, such that the vector's data is accessible by each GPU.
+% However, each GPU may access different parts of a vector or may even not access it at all.
+% For example, when implementing work-sharing on multiple GPUs, the GPUs will access disjoint parts of input data, such that copying only a part of the vector to a GPU would be more efficient than copying the whole data to each GPU.
+
+% For specifying partitionings of vectors in multi-GPU systems, the concept of \emph{distribution} is introduced in SkelCL.
+% A distribution describes how the vector's data is distributed among the available GPUs.
+% It allows the programmer to abstract from the challenges of managing memory ranges which are shared or partitioned across multiple devices: the programmer can think of a distributed vector as of a self-contained entity.
+
+% Figure~\ref{fig:distributions} shows three distributions which are currently implemented in SkelCL and offered to the programmer:
+% \emph{single}, \emph{block}, and \emph{copy}.
+% If set to \emph{single} distribution (Figure~\ref{fig:distributions:single}), vector's whole data is stored on a single GPU (the first GPU if not specified otherwise).
+% With \emph{block} distribution (Figure~\ref{fig:distributions:block}), each GPU stores a contiguous, disjoint part of the vector.
+% The \emph{copy} distribution (Figure~\ref{fig:distributions:copy}) copies vector's entire data to each available device.
+% A newly created vector can adopt any of these distributions.
+
+% \begin{figure}[tb]
+%   \centering
+%   \begin{subfigure}{.30\textwidth}
+%     \includegraphics[width=\textwidth]{ASHES/singleDistribution}
+%     \caption{\emph{single}}
+%     \label{fig:distributions:single}
+%   \end{subfigure}
+%   \hfill
+%   \begin{subfigure}{.30\textwidth}
+%     \includegraphics[width=\textwidth]{ASHES/copyDistribution}
+%     \caption{\emph{copy}}
+%     \label{fig:distributions:copy}
+%   \end{subfigure}
+%   \hfill
+%   \begin{subfigure}{.30\textwidth}
+%     \includegraphics[width=\textwidth]{ASHES/blockDistribution}
+%     \caption{\emph{block}}
+%     \label{fig:distributions:block}
+%   \end{subfigure}
+%   \caption{Distributions of a vector in SkelCL.}
+%   \label{fig:distributions}
+%   \bigskip
+% \end{figure}
+
+% The vector distribution can be changed at runtime either explicitly by the programmer or implicitly by the system.
+% A change of distribution implies data exchanges between multiple GPUs and the host, which are performed implicitly by SkelCL.
+% These implicit data exchanges are also performed lazily, i.\,e. only if really necessary, as described in Section~\ref{sec:introduction_to_skelcl}.
+% Implementing such data transfers in OpenCL manually is a cumbersome task:
+% data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
+% this results in a lot of low-level code which is completely hidden when using SkelCL.
+
+% A special situation arises when the distribution is changed from the \emph{copy} distribution, where each GPU holds its own full copy of the data.
+% In such a case, each GPU may hold a different version of the vector as data modifications are only performed locally on the GPU.
+% In order to maintain SkelCL's concept of a self-contained vector, these different versions must be combined using a user-specified function when the distribution is changed.
+% If no function is specified, the copy of the first device is taken as the new version of the vector; the copies of the other devices are discarded.
 
