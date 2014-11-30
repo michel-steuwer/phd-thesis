@@ -182,7 +182,7 @@ In \SkelCL the \scan skeleton is only defined on vectors:
 Even though, the \scan pattern seems inherently sequential, because each individual results contains the results of its predecessor, efficient parallel implementations do exist for this problem.
 Blelloch~\cite{Blelloch1991} studies this parallel pattern in great details and efficient implementations for \GPUs exists~\cite{HarrisSeOw2007} following his algorithmic ideas.
 
-A possibel application of the \scan skeleton is the computation of the prefix sum which can be used as part of the counting sort algorithm~\cite{Knuth1998} or for solving the list ranking problem~\cite{ColeVi1989}.
+A possible application of the \scan skeleton is the computation of the prefix sum which can be used as part of the counting sort algorithm~\cite{Knuth1998} or for solving the list ranking problem~\cite{ColeVi1989}.
 \begin{align*}
   prefixSum(\vec{x}) = scan(\ +,\ 0,\ \vec{x}\ )
 \end{align*}
@@ -390,7 +390,7 @@ The \stencil skeleton can currently be configured to handle out of bound accesse
 \end{enumerate}
 
 Possible applications for the stencil skeleton are image processing applications or physics simulations (see~\autoref{chapter:skelcl:apps}).
-A simple example appliucation is the \emph{discrete Laplacian operator} used in image processing, \eg, for edge detection~\cite{Umbaugh1997}.
+A simple example application is the \emph{discrete Laplacian operator} used in image processing, \eg, for edge detection~\cite{Umbaugh1997}.
 It computes a new value for every pixel of an image by weighting and summing up its direct neighboring pixel values:
 \begin{align*}
   laplacian&(M) = stencil(\ f,\ 1,\ \overline{0},\ M\ )\\
@@ -533,23 +533,24 @@ The matrix multiplication can be expressed using the \allpairs skeleton as:
 \end{equation}
 where $B^T$ is the transpose of matrix $B$.
 
-\paragraph{The \allpairs skeleton using multiple GPUs}
-\label{sec:allpairs:multi_gpu}
-\begin{figure}[b]
-  \centering
-  \includegraphics[width=.3\textwidth]{HLPP/multi_gpu}
-  \caption{Data distributions used for a system with two GPUs: matrices $A$ and $C$ are \emph{block} distributed, matrix $B$ is \emph{copy} distributed.}
-  \label{fig:multi_gpu}
-\end{figure}
-
-The \allpairs skeleton can be efficiently implemented not only on systems with a single \GPU, but on multi-\GPU systems as well.
-The necessary data distribution can be easily expressed using two of \SkelCL's \emph{distributions}, as shown in \autoref{fig:multi_gpu}:
-Matrix $B$ is \emph{copy} distributed, \ie, it is copied entirely to all \GPUs in the system.
-Matrix $A$ and $C$ are \emph{block} distributed, \ie, they are row-divided into as many equally-sized blocks as \GPUs are available;
-each block is copied to its corresponding \GPU.
-Following these distributions, each \GPU computes one block of the result matrix $C$.
-In the example with two GPUs shown in \autoref{fig:multi_gpu}, the first two rows of $C$ are computed by \GPU 1 and the last two rows by \GPU 2.
-The \allpairs skeleton automatically selects these distributions, therefore, the same source code can be used when using a single \GPU or multiple \GPUs.
+% TODO: moved to impl ...
+% \paragraph{The \allpairs skeleton using multiple GPUs}
+% \label{sec:allpairs:multi_gpu}
+% \begin{figure}[b]
+%   \centering
+%   \includegraphics[width=.3\textwidth]{HLPP/multi_gpu}
+%   \caption{Data distributions used for a system with two GPUs: matrices $A$ and $C$ are \emph{block} distributed, matrix $B$ is \emph{copy} distributed.}
+%   \label{fig:multi_gpu}
+% \end{figure}
+% 
+% The \allpairs skeleton can be efficiently implemented not only on systems with a single \GPU, but on multi-\GPU systems as well.
+% The necessary data distribution can be easily expressed using two of \SkelCL's \emph{distributions}, as shown in \autoref{fig:multi_gpu}:
+% Matrix $B$ is \emph{copy} distributed, \ie, it is copied entirely to all \GPUs in the system.
+% Matrix $A$ and $C$ are \emph{block} distributed, \ie, they are row-divided into as many equally-sized blocks as \GPUs are available;
+% each block is copied to its corresponding \GPU.
+% Following these distributions, each \GPU computes one block of the result matrix $C$.
+% In the example with two GPUs shown in \autoref{fig:multi_gpu}, the first two rows of $C$ are computed by \GPU 1 and the last two rows by \GPU 2.
+% The \allpairs skeleton automatically selects these distributions, therefore, the same source code can be used when using a single \GPU or multiple \GPUs.
 
 
 
@@ -559,7 +560,7 @@ When targeting \GPU architectures implementing an optimized version of the \allp
 In this section, we will start by discussing the properties of $f$ necessary for an optimized \GPU implementation.
 In particular we will analyze the memory access pattern of the matrix multiplication as the memory accesses turns out to be crucial for the performance.
 We then observe that the identified memory access pattern can also be found in other allpairs computations and, therefore, define a specialized version of the allpairs skeleton, which is suitable for applications having this pattern.
-Finally, we estimate the gained efficiency by the optimized implementation over the generic one.
+% Finally, we estimate the gained efficiency by the optimized implementation over the generic one.
 
 
 \paragraph{The memory access pattern of the matrix multiplication}
@@ -575,16 +576,17 @@ In the skeleton-based code, these two vectors are used by the customizing functi
 The dot product performs a pairwise multiplication of the two vectors and then sums of the intermediate result.
 In the example, the two elements marked as \circled{1} are multiplied first and the intermediate result is stored;
 then, the next elements (marked as \circled{2}) are multiplied and the result is added to the intermediate result, and so forth.
-Let us assume targeting \GPU architectures and estimate the number of global (and therefore expensive) memory accesses required for computing an element of the matrix multiplication in the generic case.
-One global memory read access for every element of both input vectors is performed, and a single global memory write access is required to write the result into the output matrix.
-Therefore, 
-\begin{equation}
-  n\cdot m\cdot (d + d + 1)
-  \label{eq:mm:accesses}
-\end{equation}
-global memory accesses are performed in total, where $n$ and $m$ are the height and width of matrix $C$ and $d$ is the width of $A$ and the height of $B$.
-By using the fast but small local memory this number of global memory accesses can be reduces and, thus, performance can be improved.
-Using the local memory for matrix matrix multiplication is a well known optimization.
+% TODO: Moved to impl section ...
+% Let us assume targeting \GPU architectures and estimate the number of global (and therefore expensive) memory accesses required for computing an element of the matrix multiplication in the generic case.
+% One global memory read access for every element of both input vectors is performed, and a single global memory write access is required to write the result into the output matrix.
+% Therefore, 
+% \begin{equation}
+%   n\cdot m\cdot (d + d + 1)
+%   \label{eq:mm:accesses}
+% \end{equation}
+% global memory accesses are performed in total, where $n$ and $m$ are the height and width of matrix $C$ and $d$ is the width of $A$ and the height of $B$.
+% By using the fast but small local memory this number of global memory accesses can be reduces and, thus, performance can be improved.
+% Using the local memory for matrix matrix multiplication is a well known optimization.
 
 A key observation is, that other applications share the same memory access pattern as the matrix matrix multiplication shown in \autoref{fig:mm_access_pattern}.
 The customizing function of the pairwise Manhattan distance as defined by \autoref{eq:man_dist} follows obviously the same memory access pattern as the matrix matrix multiplication.
@@ -652,45 +654,46 @@ Google's popular \emph{MapReduce} programming model has been inspired by a simil
 \cite{Laemmel2007} extensively discusses the relation of MapReduce to functional programming.
 
 
-\paragraph{Estimation of the performance gain of specialization}
-By expressing the customizing function of the \allpairs skeleton as a \zip-\reduce composition, we provide additional semantic information about the memory access pattern of the customizing function to the skeleton implementation, thus allowing for improving the performance.
-Our idea of optimization is based on the OpenCL programming model that organizes \emph{work-items} (i.\,e., threads executing a kernel) in \emph{work-groups} which share the same \GPU local memory.
-By loading data needed by multiple work-items of the same work-group into the local memory, we can avoid repetitive accesses to the global memory.
-
-\begin{figure}[b]
-  \centering
-  \includegraphics[width=.4\textwidth]{HLPP/memory_access}
-  \caption{Implementation schema of the specialized allpairs skeleton.}
-  \label{fig:memory_access}
-\end{figure}
-For the \allpairs skeleton with the \zip-\reduce customizing function, we can adopt the implementation schema for \GPUs~\cite{SarjeAl2013}, as shown in Figure~\ref{fig:memory_access}.
-We allocate two arrays in the local memory, one of size $r\times k$ ($r=2$, $k=3$ in Figure~\ref{fig:memory_access}) for elements of $A$ and one of size $k\times c$ ($c=3$ in Figure~\ref{fig:memory_access}) for elements of $B$.
-A work-group consisting of $c\times r$ work-items computes $s$ blocks ($s=2$ in Figure~\ref{fig:memory_access}) of the result matrix $C$.
-In Figure~\ref{fig:memory_access}, the two blocks marked as \circled{7} and \circled{8} are computed by the same work-group as follows.
-In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the zip-reduce pattern.
-The obtained intermediate result is stored in block \circled{7}.
-Then, the elements of block \circled{3} are loaded and combined with the elements from \circled{2} which still reside in the local memory.
-The intermediate result is stored in block \circled{8}.
-In the second iteration, the algorithm continues in the same manner with blocks \circled{4}, \circled{5}, and \circled{6}, but this time, the elements of the blocks are also combined with the intermediate results of the first iteration, which are stored in blocks \circled{7} and \circled{8}.
-The advantage of computing multiple blocks by the same work-group is that we keep the elements of $B$ in the local memory when computing the intermediate results, \ie, we do not reload block \circled{2} twice for the computation of blocks \circled{7} and \circled{8}.
-
-Every element loaded from the global memory is used by multiple work-items:
-\eg, the upper left element of block \circled{1} is loaded only once from the global memory, but used three times:
-in the computation of the upper left, upper middle, and upper right elements of \circled{7}.
-In general, every element loaded from $A$ is reused $c$ times, and every element from $B$ is reused $r\cdot s$ times.
-As the intermediate results are stored in the global memory of matrix $C$, we perform two additional memory accesses (read/write) for every iteration, \ie, $2\cdot \frac{d}{k}$ in total.
-Therefore, instead of $n\cdot m\cdot (d + d + 1)$ (see \autoref{eq:mm:accesses}) global memory accesses necessary when using the non-specialized skeleton and, thus, only the global memory, only
-\begin{equation}
-  n\cdot m\cdot (\frac{d}{r\cdot s} + \frac{d}{c} + 2\cdot \frac{d}{k})
-\end{equation}
-global memory accesses are performed.
-By increasing the parameters $s$ and $k$, or the number of work-items in a work-group ($c$ and $r$), more global memory accesses can be saved.
-However, the work-group size is limited by the \GPU hardware.
-While the parameters can be chosen independently of the matrix sizes, we have to consider the amount of available local memory.
-\cite{Friese2013}~and~\cite{SarjeAl2013}~discusses how suitable parameters can be found by performing runtime experiments.
-In~\cite{Friese2013} the parameters $c = 32$, $r=8$, $s=32$, and $k=64$ are used on modern \GPU hardware showing good performance.
-
-We will report measurements of the performance difference for the two skeleton implementations on real hardware in \autoref{chapter:skelcl:apps}.
-
-
+% TODO: Moved to impl ...
+% \paragraph{Estimation of the performance gain of specialization}
+% By expressing the customizing function of the \allpairs skeleton as a \zip-\reduce composition, we provide additional semantic information about the memory access pattern of the customizing function to the skeleton implementation, thus allowing for improving the performance.
+% Our idea of optimization is based on the OpenCL programming model that organizes \emph{work-items} (i.\,e., threads executing a kernel) in \emph{work-groups} which share the same \GPU local memory.
+% By loading data needed by multiple work-items of the same work-group into the local memory, we can avoid repetitive accesses to the global memory.
+% 
+% \begin{figure}[b]
+%   \centering
+%   \includegraphics[width=.4\textwidth]{HLPP/memory_access}
+%   \caption{Implementation schema of the specialized allpairs skeleton.}
+%   \label{fig:memory_access}
+% \end{figure}
+% For the \allpairs skeleton with the \zip-\reduce customizing function, we can adopt the implementation schema for \GPUs~\cite{SarjeAl2013}, as shown in Figure~\ref{fig:memory_access}.
+% We allocate two arrays in the local memory, one of size $r\times k$ ($r=2$, $k=3$ in Figure~\ref{fig:memory_access}) for elements of $A$ and one of size $k\times c$ ($c=3$ in Figure~\ref{fig:memory_access}) for elements of $B$.
+% A work-group consisting of $c\times r$ work-items computes $s$ blocks ($s=2$ in Figure~\ref{fig:memory_access}) of the result matrix $C$.
+% In Figure~\ref{fig:memory_access}, the two blocks marked as \circled{7} and \circled{8} are computed by the same work-group as follows.
+% In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the zip-reduce pattern.
+% The obtained intermediate result is stored in block \circled{7}.
+% Then, the elements of block \circled{3} are loaded and combined with the elements from \circled{2} which still reside in the local memory.
+% The intermediate result is stored in block \circled{8}.
+% In the second iteration, the algorithm continues in the same manner with blocks \circled{4}, \circled{5}, and \circled{6}, but this time, the elements of the blocks are also combined with the intermediate results of the first iteration, which are stored in blocks \circled{7} and \circled{8}.
+% The advantage of computing multiple blocks by the same work-group is that we keep the elements of $B$ in the local memory when computing the intermediate results, \ie, we do not reload block \circled{2} twice for the computation of blocks \circled{7} and \circled{8}.
+% 
+% Every element loaded from the global memory is used by multiple work-items:
+% \eg, the upper left element of block \circled{1} is loaded only once from the global memory, but used three times:
+% in the computation of the upper left, upper middle, and upper right elements of \circled{7}.
+% In general, every element loaded from $A$ is reused $c$ times, and every element from $B$ is reused $r\cdot s$ times.
+% As the intermediate results are stored in the global memory of matrix $C$, we perform two additional memory accesses (read/write) for every iteration, \ie, $2\cdot \frac{d}{k}$ in total.
+% Therefore, instead of $n\cdot m\cdot (d + d + 1)$ (see \autoref{eq:mm:accesses}) global memory accesses necessary when using the non-specialized skeleton and, thus, only the global memory, only
+% \begin{equation}
+%   n\cdot m\cdot (\frac{d}{r\cdot s} + \frac{d}{c} + 2\cdot \frac{d}{k})
+% \end{equation}
+% global memory accesses are performed.
+% By increasing the parameters $s$ and $k$, or the number of work-items in a work-group ($c$ and $r$), more global memory accesses can be saved.
+% However, the work-group size is limited by the \GPU hardware.
+% While the parameters can be chosen independently of the matrix sizes, we have to consider the amount of available local memory.
+% \cite{Friese2013}~and~\cite{SarjeAl2013}~discusses how suitable parameters can be found by performing runtime experiments.
+% In~\cite{Friese2013} the parameters $c = 32$, $r=8$, $s=32$, and $k=64$ are used on modern \GPU hardware showing good performance.
+% 
+% We will report measurements of the performance difference for the two skeleton implementations on real hardware in \autoref{chapter:skelcl:apps}.
+% 
+% 
 

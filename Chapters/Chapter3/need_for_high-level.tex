@@ -99,7 +99,7 @@ We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (
 Altogether eleven such memory operations -- each with different amounts of bytes and offsets -- appear in the OpenCL source code.
 
 \begin{lstlisting}[float,
-  caption={Implementation of the upload phase in OpenCL (ommitting error checks for brevity)},
+  caption={Implementation of the upload phase in OpenCL (omitting error checks for brevity)},
   label={lst:lmosem:upload}]
 for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
   // upload $S$
