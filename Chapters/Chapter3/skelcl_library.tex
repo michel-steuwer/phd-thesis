@@ -33,7 +33,6 @@ label={lst:skelcl:dotproduct}]
 #include <SkelCL/Vector.h>$\label{lst:skelcl:dotproduct:inc:end}$
 
 float dotProduct(const float* a, const float* b, int n) {
-
   skelcl::init();$\label{lst:skelcl:dotproduct:init}$
 
   auto mult = skelcl::zip( $\label{lst:skelcl:dotproduct:zip}$
@@ -80,7 +79,7 @@ Finally, we will look at issues regarding the integration with \Cpp like shared 
 To allow a deep integration of \SkelCL code with \Cpp we implemented a custom compiler: \code{skelclc}.
 We leverage the LLVM infrastructure~\cite{Lattner2004} for building the compiler.
 LLVM and the related Clang project offer well defined application programming interfaces for writing C and \Cpp related compiler tools.
-In particular the \emph{LibTooling} API allows for writing tools which search for particular patterns in abstract syntax tree (AST) representing the source code and perform actions on those code fragments.
+In particular the \emph{LibTooling} API allows for writing tools which search for particular patterns in abstract syntax tree~(AST) representing the source code and perform actions on those code fragments.
 The \code{skelclc} tool does exactly this.
 For example the tool searches for expressions like this:
 \begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={Code snippet before transformation.}]
@@ -102,7 +101,7 @@ The user is free to write expression~\ref{lst:skelclc:after} explicitly, but it 
 There exist a function like \code{zip} for every skeleton available in \SkelCL which is transformed by \code{skelclc} to a call of the constructor of the corresponding class.
 
 \paragraph{Maintaining type safety}
-Each skeleton in \SkelCL is represented by a templated class, as seen in \autoref{lst:skelclc:after}.
+Each skeleton in \SkelCL is represented by a templated class, as seen in \autoref{lst:skelclc:after} for the \zip skeleton.
 The template arguments of the skeleton define the types which can be used when executing the skeleton.
 When executing a skeleton \code{skeleton<T(U)>} an object of type \code{U} has to be provided to receive an object of type \code{T}.
 In this respect skeletons behave exactly like functions in \Cpp which can be represented using the \code{std::function<T(U)>} template class.
@@ -113,11 +112,14 @@ To do so, it determines the types of the lambda expression.
 For \autoref{lst:skelclc:before} this is: \code{float} and \code{float} as argument types and \code{float} as result type.
 The result type is inferred following standard \Cpp rules.
 Based on this types the template arguments of the skeleton are constructed.
+In \autoref{lst:skelcl:after} the type \code{Container<float>} is used as input types and result type for the template arguments of the \zip skeleton.
 The skeletons \map, \zip, and \stencil can operate on \code{Vector} and \code{Matrix}.
 For these skeletons it must be possible to execute the skeleton with either a \code{Vector} or a \code{Matrix}.
 To allow this, the templated class \code{Container} was introduced.
 Using the template specialization mechanism, the mentioned skeletons have a special implementation when \code{Container} is used as a template argument.
 In this case the classes provide two distinct overloaded member functions for execution using \code{Vector} or \code{Matrix}.
+
+\todo{Resolve the redue(vector) o zip(containe) issue}
 
 Type safety is guarantied, as the templated skeleton classes can only be executed with a container of compatible type and the type inference ensures that the user function has exactly the same type as the template argument of the skeleton class.
 Therefore, applying the user function to the input data is always a type safe operation.
