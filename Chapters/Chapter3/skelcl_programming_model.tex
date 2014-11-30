@@ -148,7 +148,7 @@ In \SkelCL the \reduce skeleton is only defined on vectors:
 \end{definition}
 \noindent
 Requiring the operator to be associative and commutative enables efficient parallel implementations.
-The identity element $id$ can be used by the implementation, \eg, to initialize intermediate buffers. % TODO: think harder
+The identity element $id$ can be used by the implementation, \eg, to initialize intermediate buffers.
 
 A possible application of the \reduce skeleton is to find the maximum value of a vector:
 \begin{align*}
@@ -296,10 +296,9 @@ If distribution is set to \emph{single} (\autoref{fig:distributions:single}), th
 The \emph{copy} distribution (\autoref{fig:distributions:copy}) copies vector's entire data to each available \GPU.
 With the \emph{block} distribution (\autoref{fig:distributions:block}), each \GPU stores a contiguous, disjoint chunk of the vector.
 
-The same four distributions are provided also for the matrix data type as shown in \autoref{fig:distributions_matrix}.
+The same three distributions are provided also for the matrix data type as shown in \autoref{fig:distributions_matrix}.
 The \emph{block} distribution (\autoref{fig:distributions_matrix:block}) splits the matrix into chunks of rows, which simplifies the implementation.
 
-% TODO: move to block
 % In particular the overlap distribution splits the matrix into one chunk for each GPU; in addition, each chunk contains a number of continuous rows from the neighboring chunks.
 % A parameter -- the \emph{overlap size} -- specifies the number of rows at the borders of a chunk which are copied to the two neighboring GPUs.
 % \autoref{fig:Distribution_matrix:overlap} illustrates the overlap distribution:

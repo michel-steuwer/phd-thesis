@@ -88,7 +88,7 @@ Note that for step 1, each GPU requires a full copy of the image estimate, while
 After step 2, the disjoint parts of the image estimate are copied from all GPUs back to the CPU (\emph{download}).
 
 \bigskip\noindent
-In the following, we describe how the parallelization schema phases in \autoref{fig:lmosem:em_distribution} are implemented using OpenCL.
+In the following, we describe how the phases in the parallelization schema in \autoref{fig:lmosem:em_distribution} are implemented using OpenCL.
 
 \paragraph{Upload}
 \autoref{lst:lmosem:upload} shows the simplified OpenCL implementation of the upload phase.
@@ -98,7 +98,7 @@ For performance reasons, we use asynchronous copy operations, specified using th
 We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (copy to each GPU), therefore, there are differences when specifying the amount of bytes to copy (lines \autoref{lst:lmosem:upload:1:amount} and \autoref{lst:lmosem:upload:2:amount}) and the offsets in the CPU memory (lines \autoref{lst:lmosem:upload:1:offset} and \autoref{lst:lmosem:upload:2:offset}).
 Altogether eleven such memory operations -- each with different amounts of bytes and offsets -- appear in the OpenCL source code.
 
-\begin{lstlisting}[
+\begin{lstlisting}[float,
   caption={Implementation of the upload phase in OpenCL (ommitting error checks for brevity)},
   label={lst:lmosem:upload}]
 for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
@@ -119,18 +119,24 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
 \end{lstlisting}
 
 \paragraph{Step 1}
-The implementation of step 1 performs the operations shown in \autoref{lst:lmosem:seq_code}: first computing $A_i$, then the local error for $A_i$ and finally adding the local error to $c_l$.
-Because of GPU memory restrictions, the OpenCL implementation is not straightforward, such that, for the sake of brevity, we will not discuss it in more detail here.
-\todo{Do discuss it in a bit more detail here ...}
+The implementation of step 1 performs the operations shown in \autoref{lst:lmosem:seq_code}.
+Because of GPU memory restrictions, the OpenCL implementation is not straightforward, therefore, we will not show the detailed code here.
+An OpenCL kernel is launched where each work item processes multiple events one after another.
+For each event first $A_i$ is computed, then the local error for $A_i$ computed using the current image estimate $f_l$ which is finally added to $c_l$.
+
+In the formula $A_i$ represents the \emph{path} of a detected line through the 3D image space.
+In mathematics it is convenient to think as this as a sparse vector containing the length of the intersection of the line with a given voxel in the image space.
+As most voxels are not intersected by the line, most entries in the vector remain zero.
+Therefore, in the OpenCL code $A_i$ is represented as an array of pairs, where the first entry of each pair is the index of an voxel in the image space and the second entry is the length of the intersection with this voxel.
+
+Synchronization between work items in OpenCL is highly restricted, \ie, synchronization is only possible for work items organized in the same work group.
+Therefore, it is not possible to efficiently protect the writing operation to $c_l$ to avoid race conditions.
+We have conducted studies and found that for this particular algorithm these race conditions are acceptable as they do not substantially decrease the numerical accuracy of the computed result~\cite{SchellmannGoMeKoScWuBu2009}.
+
 
 \paragraph{Redistribution}
-\autoref{lst:lmosem:redistribution} shows an OpenCL pseudocode for the redistribution phase.
-To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
-For such synchronization, OpenCL uses \emph{events}, associated with an operation (line \autoref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
-After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (line \autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
-Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in OpenCL.
 
-\begin{lstlisting}[
+\begin{lstlisting}[float,
   caption={OpenCL pseudocode for the redistribution phase},
   label={lst:lmosem:redistribution}]
 // download all c_l values from the GPUs to the CPU
@@ -149,6 +155,12 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 }
 \end{lstlisting}
 
+\autoref{lst:lmosem:redistribution} shows an OpenCL pseudocode for the redistribution phase.
+To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
+For such synchronization, OpenCL uses \emph{events}, associated with an operation (line \autoref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
+After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (line \autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
+Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in OpenCL.
+
 \paragraph{Step 2}
 \autoref{lst:lmosem:step_2} shows the implementation of step 2.
 In OpenCL, computations are specified as \emph{kernels} which are created from the source code specifying the computation.
@@ -163,7 +175,7 @@ For executing the computations of step 2, we have to perform the following steps
   \item specify execution environment, i.\,e., how many instances of the kernel to start (line \autoref{lst:lmosem:step_2:env:start} -- \autoref{lst:lmosem:step_2:env:stop});
   \item launch the kernel (line \autoref{lst:lmosem:step_2:kernel:start} -- \autoref{lst:lmosem:step_2:kernel:stop}).
 \end{itemize}
-\begin{lstlisting}[
+\begin{lstlisting}[float,
   caption={Implementation of step 2 in OpenCL (omitting error checks for brevity)},
   label={lst:lmosem:step_2}]
 // step 2 (in $\autoref{fig:lmosem:em_distribution}$)
