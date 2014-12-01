@@ -1,27 +1,31 @@
 \section{Experimental Setup}
+This section briefly discusses the evaluation metrics used in this chapter which where chosen to measure the quality of the abstractions introduced in the \SkelCL programming model and their implementation in the \SkelCL library.
+We will also discuss the hardware used in the experiments.
 
-\from{HIPS begin}
-\subsection{HIPS}
-We developed implementations of two application case studies using the SkelCL library:
-1) the calculation of a Mandelbrot fractal as a simple benchmark application, and, 2) a real-world algorithm for medical image reconstruction.
-In this section, both implementations are compared to similar implementations in CUDA and OpenCL regarding programming effort and runtime performance.
 
-For our runtime experiments we use a common PC with a quad-core CPU (Intel Xeon E5520, 2.26\,GHz) and 12\,GB of memory.
-The system is connected to a Tesla S1070 computing system equipped with 4 Tesla GPUs.
-Its dedicated 16\,GB of memory (4\,GB per GPU) is accessed with up to 408\,GB/s (102\,GB/s per GPU).
+\subsection{Evaluation Metrics}
+We want to evaluate ease of programming and performance of the \SkelCL programming model and library.
+
+Directly measuring the ease of programming is difficult.
+Various metrics~\cite{} have been proposed to measure how easy a certain style of programming or a certain programming model is.
+None of these metrics is widely established in the scientific or industrial communities.
+We chose to use one of the simples metrics possible to measure programming effort: counting the \emph{lines of source code}.
+The author wants to emphasize that this metric is not an actuate representation of ease of programming.
+A shorter program does not necessarily mean that the programming of the program has been easier.
+We will, therefore, alongside presenting the lines of code argue \emph{why} the programming of parallel devices, like \GPUs, is easier as compared to the state-of-the-art approaches CUDA and OpenCL.
+% These discussions will argue that code written using the \SkelCL programming approach has, besides ease of programming, other properties of high quality software including:
+% high level of re-use, portability, 
+
+As metric for performance we use absolute and relative runtime.
+%-- where possible --
+We only make comparisons using software executed on the same hardware and perform comparisons of existing, or self developed and optimized, CUDA and OpenCL code versus the code written using the \SkelCL library.
+
+\subsection{Hardware Setup}
+For performing our runtime experiments we used a PC equipped with a quad-core CPU (Intel Xeon E5520, 2.26\,GHz) and 12\,GB of memory.
+The system is connected to a Nvidia Tesla S1070 computing system consisting of four Nvidia Tesla GPUs.
+The S1070 has 16\,GB of dedicated memory (4\,GB per GPU) which is accessed with up to 408\,GB/s (102\,GB/s per GPU).
 Each GPU comprises 240 streaming processor cores running at up to 1.44\,GHz.
-\from{HIPS end}
-
-
-\from{PaCT begin}
-\subsection{PaCT}
-We consider two application case studies using the SkelCL library:
-1) the calculation of a Mandelbrot fractal, and 2) the Sobel edge detection.
-Both SkelCL implementations are compared to similar implementations in CUDA and OpenCL regarding their programming effort and runtime performance.
-
-For our runtime experiments we use a PC with a quad-core CPU (Intel Xeon E5520, 2.26\,GHz) and 12\,GB of memory.
-The system is connected to a Tesla S1070 computing system equipped with 4 Tesla GPUs.
-Its dedicated 16\,GB of memory (4\,GB per GPU) is accessed with up to 408\,GB/s (102\,GB/s per GPU).
-Each GPU comprises 240 streaming processor cores running at 1.44\,GHz.
-\from{PaCT end}
+The Linux based Ubuntu operating system was used.
+The runtime experiments where conducted at different times from 2010 until 2014.
+For each experiment the latest Nvidia GPU driver available was used.
 
