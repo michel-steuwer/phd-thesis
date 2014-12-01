@@ -785,11 +785,12 @@ The \allpairs skeleton automatically selects these distributions, therefore, the
 \subsection{Memory Management Implementation}
 \label{section:skelcl-library:memory-management}
 In the \SkelCL programming model the user managed its memory using \emph{container data types}.
-The two container data types -- vector and matrix -- are implemented as template classes in the \SkelCL Library.
+In the \SkelCL library two container data types -- vector and matrix -- are implemented as template classes.
 This generic implementation allows for storing data items of any primitive C/\Cpp data type (\eg, \code{int}), as well as user-defined data structures (\code{struct}s).
+The implementations follow the \emph{resource acquisition is initialization} (RAII) idiom, which means that they automatically allocate needed resources and free them automatically when the lifetime of the container ends.
 
 \paragraph{The SkelCL Vector}
-The \SkelCL vector replicates the interface of the vector from the Standard Template Library (\STL), \ie, it can be used as a drop-in replacement of the standard vector.
+The \SkelCL vector replicates the interface of the vector from the \Cpp Standard Template Library (\STL), \ie, it can be used as a drop-in replacement of the standard vector.
 Internally, a vector comprises pointers to corresponding areas of main memory (accessible by the host) and device memory.
 The vector holds one pointer for the host and one pointer for each device available.
 Memory on the devices is allocated automatically, according to the distribution of the vector:
@@ -806,11 +807,10 @@ This \emph{lazy copying} defers data transfers as long as possible or avoids the
 While all data transfers are performed implicitly by \SkelCL we understand that advanced application developers want fine grained control over the data transfers between host and devices.
 For that purpose \SkelCL offers a set of \APIs developers can use to explicitly initiate and control the data transfer to and from the devices.
 
-%In a SkelCL program, a vector object can be created and filled with data like this:
-%\vspace{.5em}
-%\centerline{\lstinline!Vector<int> vec(size);!}
-%\centerline{\lstinline!for (int i = 0; i < vec.size(); ++i) \{ vec[i] = i; \}!}
-%\vspace{.5em}
+Implementing such data transfers in OpenCL manually is a cumbersome task:
+data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
+this results in a lot of low-level code which is completely hidden when using \SkelCL.
+
 
 \paragraph{The SkelCL Matrix}
 The \SkelCL matrix offers an easy to use interface similar to the interface of the vector.
@@ -820,65 +820,6 @@ A single row is never split across multiple devices, which simplifies the memory
 Besides offering an interface to access elements on the host, the matrix also offers an interface for accessing elements on the device by using two-dimensional indices.
 This frees the application developer from performing cumbersome index calculations manually.
 
-% \subsection{Data distribution}
-
-% SkelCL's vector data type abstracts from memory ranges on multiple GPUs, such that the vector's data is accessible by each GPU.
-% However, each GPU may access different parts of a vector or may even not access it at all.
-% For example, when implementing work-sharing on multiple GPUs, the GPUs will access disjoint parts of input data, such that copying only a part of the vector to a GPU would be more efficient than copying the whole data to each GPU.
-
-% For specifying partitionings of vectors in multi-GPU systems, the concept of \emph{distribution} is introduced in SkelCL.
-% A distribution describes how the vector's data is distributed among the available GPUs.
-% It allows the programmer to abstract from the challenges of managing memory ranges which are shared or partitioned across multiple devices: the programmer can think of a distributed vector as of a self-contained entity.
-
-% Figure~\ref{fig:distributions} shows three distributions which are currently implemented in SkelCL and offered to the programmer:
-% \emph{single}, \emph{block}, and \emph{copy}.
-% If set to \emph{single} distribution (Figure~\ref{fig:distributions:single}), vector's whole data is stored on a single GPU (the first GPU if not specified otherwise).
-% With \emph{block} distribution (Figure~\ref{fig:distributions:block}), each GPU stores a contiguous, disjoint part of the vector.
-% The \emph{copy} distribution (Figure~\ref{fig:distributions:copy}) copies vector's entire data to each available device.
-% A newly created vector can adopt any of these distributions.
-
-% \begin{figure}[tb]
-%   \centering
-%   \begin{subfigure}{.30\textwidth}
-%     \includegraphics[width=\textwidth]{ASHES/singleDistribution}
-%     \caption{\emph{single}}
-%     \label{fig:distributions:single}
-%   \end{subfigure}
-%   \hfill
-%   \begin{subfigure}{.30\textwidth}
-%     \includegraphics[width=\textwidth]{ASHES/copyDistribution}
-%     \caption{\emph{copy}}
-%     \label{fig:distributions:copy}
-%   \end{subfigure}
-%   \hfill
-%   \begin{subfigure}{.30\textwidth}
-%     \includegraphics[width=\textwidth]{ASHES/blockDistribution}
-%     \caption{\emph{block}}
-%     \label{fig:distributions:block}
-%   \end{subfigure}
-%   \caption{Distributions of a vector in SkelCL.}
-%   \label{fig:distributions}
-%   \bigskip
-% \end{figure}
-
-% The vector distribution can be changed at runtime either explicitly by the programmer or implicitly by the system.
-% A change of distribution implies data exchanges between multiple GPUs and the host, which are performed implicitly by SkelCL.
-% These implicit data exchanges are also performed lazily, i.\,e. only if really necessary, as described in Section~\ref{sec:introduction_to_skelcl}.
-% Implementing such data transfers in OpenCL manually is a cumbersome task:
-% data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
-% this results in a lot of low-level code which is completely hidden when using SkelCL.
-
-% A special situation arises when the distribution is changed from the \emph{copy} distribution, where each GPU holds its own full copy of the data.
-% In such a case, each GPU may hold a different version of the vector as data modifications are only performed locally on the GPU.
-% In order to maintain SkelCL's concept of a self-contained vector, these different versions must be combined using a user-specified function when the distribution is changed.
-% If no function is specified, the copy of the first device is taken as the new version of the vector; the copies of the other devices are discarded.
-
-
-% data transfers
-In some situations, our SkelCL implementation can optimize data transfers:
-\eg, after executing a skeleton, the output data remains in the GPU memory;
-this has the advantage that if the output container is used as the input to another skeleton, no data transfer has to be performed.
-Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers between the CPU and GPUs.
 
 
 
@@ -888,7 +829,19 @@ Such \emph{lazy copying} implemented in SkelCL minimizes costly data transfers b
 
 
 
-
-\subsection{Distribution Implementation}
+\subsection{Data Distribution Implementation}
 \label{section:skelcl-library:distribution}
+The data distributions determine how the data of a container is distributed across multiple devices.
+In the \SkelCL library implementation there exists a class for each data distribution encapsulating the behavior of the distribution.
+Every container stores its current data distribution as a member variable.
+When the data of the container has to be transfered to or from the devices, the data distribution object is invoked to perform the operation.
+
+The data distribution of a container can be changed at runtime either explicitly by the programmer or implicitly by the \SkelCL implementation.
+A change of distribution implies data exchanges between multiple devices and the host, which are performed implicitly by \SkelCL.
+These implicit data exchanges are also performed lazily, \ie, only if really necessary, as described in the previous subsection.
+
+A special situation arises when the distribution is changed from the \emph{copy} distribution, where each device holds its own full copy of the data.
+In such a case, each device may hold a different version of the container as data modifications are only performed locally on the device.
+In order to maintain \SkelCL's concept of a self-contained container, these different versions must be combined using a user-specified function when the distribution is changed.
+If no function is specified, the copy of the first device is taken as the new version of the container; the copies of the other devices are discarded.
 
