@@ -303,3 +303,224 @@ Overall, when performing sequences of stencil operations, the Stencil skeleton r
 When performing the Canny algorithm, Stencil outperforms MapOverlap by $21\%$.
 \from{HiStencils end}
 
+
+\begin{lstlisting}[%
+caption={MapOverlap skeleton computing the sum of all direct neightbors for every element in a matrix},%
+float=tbp,%
+label={lst:mapoverlap01}]
+MapOverlap<float(float)> m("float func(float* m_in){
+     float sum = 0.0f;
+     for (int i = -1; i < 1; ++i)
+       for (int j = -1; j < 1; ++i)
+         sum += get(m_in, i, j);
+     return sum;
+   }", 1, SCL_NEUTRAL, 0.0f);
+\end{lstlisting}
+
+Listing~\ref{lst:raw_opencl01} shows how the same simple calculation can be performed in standard OpenCL.
+While the amount of lines of code increases by a factor of 2, the complexity of each single line also increases, as follows.
+Besides a pointer to the output memory, the width of the matrix has to be provided as parameter.
+The correct index has to be calculated for every memory access using an offset and the width of the matrix.
+Therefore, knowledge about how the two-dimensional matrix is stored in one-dimensional memory is required.
+In addition, manual boundary checks have to be performed to avoid faulty memory accesses.\bigskip
+
+\begin{lstlisting}[%
+caption={An OpenCL kernel performing the same calculation as the MapOverlap skeleton shown in Listing~\ref{lst:mapoverlap01}.\bigskip},%
+label={lst:raw_opencl01}]
+__kernel void sum_up(__global float* m_in,
+                     __global float* m_out,
+                     int width, int height) {
+  int i_off = get_global_id(0); int j_off = get_global_id(1);
+  float sum = 0.0f;
+  for (int i = i_off - 1; i < i_off + 1; ++i)
+    for (int j = j_off - 1; j < j_off + 1; ++j) {
+      // perform boundary checks
+      if ( i < 0 || i > width || j < 0 || j > height )
+        continue;
+      sum += m_in[ j * width + i ];     }
+  m_out[ j_off * width + i_off ] = sum; }
+\end{lstlisting}
+
+SkelCL avoids all these low-level details.
+Neither additional parameter, nor index calculations or manual boundary checks are necessary.
+In SkelCL, the application developer only provides the source code implementing the steps required by the algorithm.
+
+
+In the actual source code, the application developer provides the function $f$ which receives a pointer to the element in the middle, $m_{in}[i,j]$.
+
+\begin{lstlisting}[%
+caption={MapOverlap skeleton computing the sum of all direct neightbors for every element in a matrix},%
+float=bp,%
+label={lst:mapoverlap01}]
+MapOverlap<float(float)> m("float func(float* m_in){
+float sum = 0.0f;
+for (int i = -1; i < 1; ++i)
+  for (int j = -1; j < 1; ++i)
+    sum += get(m_in, i, j); return sum;
+}", 1, SCL_NEUTRAL, 0.0f);
+\end{lstlisting}
+
+
+Listing~\ref{lst:mapoverlap01} shows a simple example of computing the sum of all direct neighboring values using the MapOverlap skeleton.
+To access the elements of the input matrix $m_{in}$, function \texttt{get} is provided by SkelCL.
+All indices are specified relative to the middle element $m_{in}[i,j]$; therefore, for accessing this element the function call \texttt{get(m\_in, 0, 0)} is used.
+The application developer must ensure that only elements in the range specified by the second argument $d$ of the MapOverlap skeleton, are accessed.
+In Listing~\ref{lst:mapoverlap01}, range is specified as $d=1$, therefore, only direct neighboring elements are accessed.
+To enforce this property, boundary checks are performed at runtime by the \texttt{get} function.
+In future work, we plan to avoid boundary checks at runtime by statically proving that all memory accesses are in bounds, as it is the case in the shown example.
+
+\begin{lstlisting}[%
+caption={An OpenCL kernel performing the same calculation as the MapOverlap skeleton shown in Listing~\ref{lst:mapoverlap01}.},%
+float=tbp,%
+label={lst:raw_opencl01}]
+__kernel void sum_up(__global float* m_in,
+                     __global float* m_out,
+                     int width, int height) {
+  int i_off = get_global_id(0); 
+  int j_off = get_global_id(1);
+  float sum = 0.0f;
+  for (int i = i_off - 1; i < i_off + 1; ++i)
+    for (int j = j_off - 1; j < j_off + 1; ++j) {
+      // perform boundary checks
+      if ( i < 0 || i > width || j < 0 || j > height )
+        continue;
+      sum += m_in[ j * width + i ];     }
+  m_out[ j_off * width + i_off ] = sum; }
+\end{lstlisting}
+
+
+Listing~\ref{lst:raw_opencl01} shows how the same simple calculation can be performed in standard OpenCL.
+While the amount of lines of code increases by a factor of 2, the complexity of each single line also increases:
+1) Besides a pointer to the output memory, the width of the matrix has to be provided as parameter; 2) the correct index has to be calculated for every memory access using an offset and the width of the matrix, i.\,e.
+knowledge about how the two-dimensional matrix is stored in one-dimensional memory is required.
+3) In addition, manual boundary checks have to be performed to avoid faulty memory accesses. 
+
+SkelCL avoids all these low-level details.
+Neither additional parameter, nor index calculations or manual boundary checks are necessary.
+
+\from{HiStencils}
+Listing~\ref{lst:mapoverlap01} shows the implementation of the Sobel edge detection using the \emph{MapOverlap} skeleton.
+The MapOverlap skeleton applies a given function $func$ (defined in lines 2--6) to each element of an input matrix $in_{img}$ while taking the neighboring elements within the range $[-d, +d]$ in each dimension into account.
+Here, $d$ is the second parameter (line 7) and two additional parameters define how the skeleton handles out-of-bound memory accesses (line 8).
+A helper function (\code{get}) is used to easily access the neighboring elements.
+The indexes are specified relative to the current element, e.\,g. to access the element on the left the function call \code{get(in, -1, 0)} is used.
+
+Special handling is necessary when accessing elements out of the boundaries of the matrix, e.g., when the item in the top-left corner of the matrix accesses elements above and left of it.
+The MapOverlap skeleton can be configured to handle such out-of-bound memory accesses in two possible ways:
+1) a specified neutral value is returned;
+2) the nearest valid value inside the matrix is returned.
+In Listing~\ref{lst:mapoverlap01}, the first option is chosen and $0$ is provided as neutral value.
+
+\begin{lstlisting}[%
+caption={Implementation of Sobel edge detection using the MapOverlap skeleton},%
+float=tbp,%
+label={lst:mapoverlap01}]
+MapOverlap<char(char)> sobel(
+ "char func(const char* in_img) {
+    char ul = get(in_img, -1, -1);
+    ...
+    char lr = get(in_img, +1, +1);
+    return computeSobel(ul,..., lr);}",
+ 1, Padding::NEUTRAL, 0);
+
+output = sobel(input);
+\end{lstlisting}
+
+Simple stencil computations with a regular stencil shape can easily be expressed using the MapOverlap skeleton.
+For more complex stencil computations, e.\,g. iterative stencils, we introduce the more advanced \emph{Stencil} skeleton.
+
+\paragraph{The MapOverlap Skeleton}
+
+Listing~\ref{lst:stencil01} shows the implementation of an iterative stencil application simulating heat transfer.
+This application simulates heat spreading from one location and flowing throughout a two-dimensional simulation space.
+\begin{lstlisting}[%
+caption={Implementation of heat simulation using the Stencil skeleton},%
+float=tbp,%
+label={lst:stencil01}]
+Stencil<char(char)> heatSim(
+ "char func(const char* in) {
+    char lt = get(in, -1, -1);
+    char lm = get(in, -1,  0);
+    char lb = get(in, -1, +1);
+    return computeHeat(lt, lm, lb); }",
+ StencilShape(1, 0, 1, 1),
+ Padding::NEUTRAL, 255);
+
+output = heatSim(100, input);
+\end{lstlisting}
+
+
+The application developer specifies the function (line 2--6) describing the computation and, therefore, the stencil shape, as well as the stencil shape's extents (line 7) and the out-of-bound handling (line 8).
+The stencil shape's extents are specified using four values for each of the directions:
+up, right, down, left.
+In the example in Listing~\ref{lst:stencil01}, the heat flows from left to right, therefore, no accesses to elements to the right are necessary and the stencil space's extents are specified accordingly (note the $0$ in line 7 representing the extent to the right).
+Figure~\ref{fig:stencilShape} illustrates this situation: the dark gray element is updated by using the values from the left.
+The specified stencil shape's extent is highlighted in light gray.
+In our current implementation, the user has to explicitly specify the stencil shape's extents, which is necessary for performing the out-of-bound handling on the GPU.
+In future work, we plan to automatically infer the stencil shape's extents
+from the customizing function using source code analysis in order to free the user from specifying this information explicitly.
+\begin{figure}
+  \begin{centering}
+    \includegraphics[width=.18\textwidth]{HiStencils/heat_transfer}
+    \caption{Stencil shape for heat transfer simulation}
+    \label{fig:stencilShape}
+    \vspace{-.5em}
+  \end{centering}
+\end{figure}
+
+Many stencil applications apply a stencil multiple times for a fixed number of iterations, or until a certain condition is met.
+For example, to iterate the heat transfer simulation for one hundred steps, we specify the number of iterations to perform when executing the skeleton (line 10).
+In the future, we plan to allow the user to specify a custom function which checks a condition to stop the iterations.
+
+The MapOverlap skeleton can be configured to handle out-of-bounds accesses by returning the nearest valid value of the input matrix.
+Another distinction can be made regarding iterations and sequences of stencil operations:
+using elements of the \textbf{initial}, user-provided input matrix or using elements of the \textbf{current} step's input matrix, which already was updated during earlier stencil operations.
+The Stencil skeleton can be configured to handle out-of-bounds accesses in both ways, thus offering three possible ways, including the neutral value. 
+For each of them, there is an own kernel function, loading appropriate elements into local memory. 
+
+
+
+
+
+
+Simple stencil computations with a regular stencil shape can easily be expressed using the \mapOverlap skeleton.
+For more complex stencil computations, \eg iterative stencil computations, we introduce the more advanced \stencil skeleton.
+
+
+
+
+
+Real-world applications often perform multiple stencil operations in sequence.
+Let us consider the popular \emph{Canny algorithm} which is used for detecting edges in images.
+For the sake of simplicity we consider a simplified version, which applies the following stencil operations in a sequence:
+1), a noise reduction operation is applied, e.g., a Gaussian filter;
+2), an edge detection operator like the Sobel filter is applied;
+3), the so-called non-maximum suppression is performed, where all pixels in the image are colored black except pixels being a local maximum;
+4), a threshold operation is applied to produce the final result.
+A more complex version of the algorithm performs the edge tracking by hysteresis, as an additional step.
+This results in detecting some weaker edges, but even without this additional step the algorithm usually achieves good results.
+
+In SkelCL, each single step of the Canny algorithm can be expressed using the Stencil skeleton.
+The last step, threshold operation, does not need access to neighboring elements, as the user threshold function only checks the value of the current pixel.
+Therefore, this step can be expressed using SkelCL's simpler Map skeleton.
+The Stencil skeleton's implementation automatically uses the simpler Map skeleton's implementation when the user specifies a stencil shape which extents are $0$ in all directions.
+
+\begin{lstlisting}[%
+  caption={Structure of the Canny algorithm as implemented with a sequence of skeletons.},%
+  float=tbp,%
+  label={lst:canny01}]
+Stencil<Pixel(Pixel)> gauss(...);
+Stencil<Pixel(Pixel)> sobel(...);
+Stencil<Pixel(Pixel)> nms(...);
+Stencil<Pixel(Pixel)> threshold(...);
+
+StencilSequence<Pixel(Pixel)> canny(
+  gauss, sobel, nms, threshold);
+
+output = canny(1, input);
+\end{lstlisting}
+
+To implement the Canny algorithm in SkelCL, the single steps can be combined as shown in Listing~\ref{lst:canny01}.
+The individual steps are defined in lines 1--4 and then combined to a sequence of stencils in line 6 and 7.
+During execution (line 9), the stencil operation are performed in the order which is specified when creating the \emph{StencilSequence} object.
+
