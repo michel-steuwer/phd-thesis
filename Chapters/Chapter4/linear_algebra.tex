@@ -1,8 +1,107 @@
 \section{Linear Algebra Applications}
 
-  \subsection{Sum of absolute values}
+BLAS ... important building blocks ...
 
-  \subsection{Dot product}
+\subsection{Sum of absolute values}
+\label{sec:asum}
+\autoref{eq:asum} shows the mathematical definition of the sum of absolute values (short \emph{asum}) for a vector $\vec{x}$ of length $n$ with elements $x_i$.
+\begin{equation}
+  asum(\vec{x}) = \sum_{i=0}^{n} | x_i |
+  \label{eq:asum}
+\end{equation}
+For all elements of the vector the absolute values are added up to produce the final scalar result.
 
-  \input{Chapters/Chapter4/matrix_matrix_multiplication.tex}
+\subsubsection*{\SkelCL Implementation}
+In \SkelCL we can express \emph{asum} using the \map and \reduce skeletons as follows:
+\begin{align}
+  asum(\vec{x}) &= reduce(\ +,\ 0\ ) \circ map(\ abs, \vec{x}\ )\\
+  \text{where:} \qquad abs(a) &=
+    \left\{
+      \begin{array}{r l}
+      a & \text{if } a \geq 0\\
+      -a & \text{if } a < 0
+      \end{array}
+    \right.\nonumber
+\end{align}
+
+The \map skeleton applies the $abs$ function to each element of the input vector before the \reduce skeleton is used to sum up the elements.
+
+The implementation using the \SkelCL library is shown in \autoref{lst:skelcl:asum}.
+In lines~\ref{lst:skelcl:asum:skeletons:start}--\ref{lst:skelcl:asum:skeletons:end} the customized skeletons are defined.
+By applying the skeletons to the input vector (line~\ref{lst:skelcl:asum:call}) the result is computed and accessed in line~\ref{lst:skelcl:asum:return}.
+In the \SkelCL library implementation the \reduce skeleton returns a vector containing a single element.
+This allows the computation of all skeletons to be performed asynchronously, \ie, when executing a skeleton the computation is launched and the called function returns immediately.
+When accessing values of the returned container the call might block until the accessed values have been computed.
+Therefore, the containers are implemented as \emph{futures}~\cite{HewittBa1977,FriedmanWi1978} in the \SkelCL library.
+
+\begin{lstlisting}[%                                                             
+caption={Implementation of the \emph{asum} application in \SkelCL},%
+numbers=left,%
+float=tb,
+label={lst:skelcl:asum}]
+float asum(const skelcl::Vector<float>& x) {
+  auto absAll = skelcl::mapVector($\label{lst:skelcl:asum:skeletons:start}$
+      [](float x){ if (x >= 0) return x; else return -x; });
+  auto sumUp  = skelcl::reduce(
+      [](float x, float y){ return x+y; }, 0.0f);$\label{lst:skelcl:asum:skeletons:end}$
+
+  auto result = sumUp( absAll( x ) );$\label{lst:skelcl:asum:call}$
+  return result[0]; }$\label{lst:skelcl:asum:return}$
+\end{lstlisting}
+
+We compare this implementation against a native OpenCL implementation and an implementation using the CUBLAS library.
+
+\subsubsection*{Programming effort}
+\todo{...}
+
+\subsubsection*{Performance experiments}
+\todo{...}
+
+As discussed in \autoref{chapter:skelcl} generates the \SkelCL library implementation one (or more) OpenCL kernel for each skeleton.
+This procedure makes it difficult to \emph{merge} multiple OpenCL kernel into a single one, which would be required to achieve the same performance as the native OpenCL implementation.
+In \autoref{ch:fifth} we will discuss a novel compilation technique addressing this challenge.
+This technique supports the generation of a single efficient OpenCL kernel for implementing the \emph{asum} application.
+
+\subsection{Dot product}
+\label{sec:dot}
+The computation of the dot product, \aka scalar product, is a common mathematical operation performed on two input vectors $\vec{x}$ and $\vec{y}$ of identical length $n$ as defined in \autoref{eq:dot_product}.
+\begin{equation}
+  dotProduct(\vec{x}, \vec{y}) = \sum_{i=0}^{n} x_i \times y_i
+  \label{eq:dot_product}
+\end{equation}
+
+\subsubsection*{\SkelCL Implementation}
+In \SkelCL we can express $dotProduct$ using the \zip and \reduce skeletons as follows:
+\begin{equation}
+  dotProduct(\vec{x}, \vec{y}) = reduce(\ +,\ 0\ ) \circ zip(\ \times, \vec{x}, \vec{y}\ )
+\end{equation}
+
+The \zip skeleton performs the pairwise multiplication of the input vectors before the \reduce skeleton is used to sum up the intermediate results.
+
+\autoref{lst:skelcl:dot} shows the implementation using the \SkelCL library.
+The structure of the implementation is very similar to the \emph{asum} application discussed in \autoref{sec:asum}.
+Here we use the \code{front} member function to access the first (and only) element of the computed result vector.
+
+\begin{lstlisting}[%                                                             
+caption={Implementation of the dot product application in \SkelCL},%
+numbers=left,%
+float=tb,
+label={lst:skelcl:dot}]
+float dotProduct(const skelcl::Vector<float>& x,
+                 const skelcl::Vector<float>& y) {
+  auto mult  = skelcl::zipVector($\label{lst:skelcl:dot:skeletons:start}$
+      [](float x, float y){ return x*y; });
+  auto sumUp = skelcl::reduce(
+      [](float x, float y){ return x+y; }, 0.0f);$\label{lst:skelcl:dot:skeletons:end}$
+
+  return sumUp( mult( x, y ) ).front(); }$\label{lst:skelcl:dot:call}$
+\end{lstlisting}
+
+\subsubsection*{Programming effort}
+\todo{...}
+
+\subsubsection*{Performance experiments}
+\todo{...}
+
+\input{Chapters/Chapter4/matrix_matrix_multiplication.tex}
 

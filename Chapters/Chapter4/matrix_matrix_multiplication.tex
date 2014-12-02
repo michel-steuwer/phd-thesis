@@ -1,10 +1,59 @@
-\subsection{Matrix-Matrix Multiplication (HLPP)}
+\subsection{Matrix Multiplication}
 
-\from{HLPP begin}
-We use matrix multiplication as an example to evaluate our allpairs skeleton implementations regarding programming effort and performance.
+The multiplication of matrices is a basic operation in linear algebra and, therefore, a fundamental building block for many mathematic and scientific applications.
+An $n\times d$ matrix $A$ is multiplied with a $d\times m$ matrix $B$ to produce a $n\times m$ matrix $C$, where the elements of $C$ are computed as:
+\begin{equation*}
+  C_{ij} = \sum_{k=0}^{d} A_{ik} \times B_{kj}, \qquad \forall\ i \in 1, \ldots, n \wedge j \in 1, \ldots, m
+\end{equation*}
+Here $A_{i*}$ refers to the $i$th row of $A$ and $B_{*j}$ to the $j$th column of $B$.
+\autoref{fig:mm} visualizes this computation.
+To compute the highlighted element in matrix $C$ the highlighted row of matrix $A$ is combined with the highlighted column of matrix $B$.
+For computing the entire matrix $C$ \emph{all pairs} of rows from $A$ and columns of $B$ have to be processed.
+Therefore, in \SkelCL the \allpairs skeleton can be used to express matrix multiplication.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=0.5\textwidth]{HLPP/mm}
+  \caption{Matrix multiplication $A\times B = C$.
+           The red element in matrix $C$ is computed by combining the highlighted row of matrix $A$ with the column of matrix $B$.}
+  \label{fig:mm}
+\end{figure}
 
 
-\subsubsection{Implementations of matrix multiplication}
+\subsubsection*{\SkelCL Implementation}
+\autoref{eq:skelcl:mm} shows how matrix multiplication can be expressed using the \allpairs skeleton in \SkelCL.
+\begin{align}
+  \label{eq:skelcl:mm}
+  mm(A, B) &= allpairs(f)(A, B^T)\\
+  \text{where:} \qquad f(a, b) &= \sum_{k=0}^d a_k \times b_k \nonumber
+\end{align}
+When looking back at \autoref{sec:dot} we can see, that $f$ is actually the definition of the dot product computation, therefore, we can write:
+\begin{align}
+  mm(A, B) &= allpairs(dotProduct)(A, B^T)
+  \label{eq:skelcl:mm:dot}
+\end{align}
+We know, that we can express the dot product as a sequential composition of the \zip and \reduce skeletons.
+In \autoref{sec:opt_allpairs_skeleton} we discussed a specialized implementation of the \allpairs skeleton for computations which can be expressed in this way.
+Therefore, we can use the \SkelCL library to write two implementations:
+1) using the generic \allpairs skeleton; and 2) using the specialized \allpairs skeleton.
+
+\autoref{lst:skelcl:mm:generic} shows the implementation of matrix multiplication using the generic \allpairs skeleton.
+\begin{lstlisting}[%                                                             
+caption={Implementation of matrix multiplication using the generic \allpairs skeleton in \SkelCL},%
+numbers=left,%
+float=tb,
+label={lst:skelcl:mm:generic}]
+skelcl::Matrix<float> mm(const skelcl::Matrix<float>& A,
+                         const skelcl::Matrix<float>& B) {
+  auto mult  = skelcl::zipVector($\label{lst:skelcl:dot:skeletons:start}$
+      [](float x, float y){ return x*y; });
+  auto sumUp = skelcl::reduce(
+      [](float x, float y){ return x+y; }, 0.0f);$\label{lst:skelcl:dot:skeletons:end}$
+
+  return sumUp( mult( x, y ) ).front(); }$\label{lst:skelcl:dot:call}$
+\end{lstlisting}
+
+\subsubsection*{Implementations of matrix multiplication}
 We compare six different implementations of the matrix multiplication:
 \begin{enumerate}
   \item the OpenCL implementation from~\cite{KiHw-10} without optimizations,
@@ -79,7 +128,7 @@ Listing~\ref{lst:basic_mm} in Section~\ref{sec:allpairs_skeleton} shows the impl
 Listing~\ref{lst:nested_allpairs} in Section~\ref{sec:opt_allpairs_skeleton} shows the implementation using the allpairs skeleton customized with zip-reduce.
 
 
-\subsubsection{Programming effort}
+\subsubsection*{Programming effort}
 As the simplest criterion for programming effort, we use the program size in lines of code (LoC).
 Figure~\ref{fig:mat_mult_loc} shows the number of LoCs required for each of the six implementations.
 Table~\ref{tab:mat_mult_loc} presents the detailed numbers.
@@ -128,7 +177,7 @@ Furthermore, the skeleton-based implementations are more general, as they can be
   \label{tab:mat_mult_loc}
 \end{table}
 
-\subsubsection{Runtime experiments}
+\subsubsection*{Performance experiments}
 We performed our experiments with the six different implementations 1. -- 6. of matrix multiplication on two different computer systems with GPUs:
 \begin{itemize}[leftmargin=50pt]
   \item[System A:] An NVIDIA S1070 equipped with four NVIDIA Tesla GPUs, each with 240 streaming processors and 4 GByte memory.
@@ -266,5 +315,4 @@ We observe a good scalability of our skeleton-based implementations, achieving s
 Detailed numbers can be found in Table~\ref{tab:mat_mult_devices}.
 For the matrices of size $16384\times 16384$, performance is also provided in GFlops;
 to compute this value we excluded the data-transfer time (as usually done in related work) for a better comparison.
-\from{HLPP end}
 

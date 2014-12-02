@@ -220,7 +220,7 @@ We use the $\circ$ to denote the sequential composition of two functions, \ie\ $
 \noindent
 To compute the dot product of two vectors we compose a \zip skeleton customized with multiplication and a \reduce skeleton customized with addition:
 \begin{align*}
-  dot(\vec{x}, \vec{y}) &= reduce(\ +,\ 0\ ) \circ zip(\ *, \vec{x}, \vec{y}\ )
+  dot(\vec{x}, \vec{y}) &= reduce(\ +,\ 0\ ) \circ zip(\ \times, \vec{x}, \vec{y}\ )
 \end{align*}
 
 \noindent
