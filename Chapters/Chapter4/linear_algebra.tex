@@ -39,12 +39,10 @@ caption={Implementation of the \emph{asum} application in \SkelCL},%
 numbers=left,%
 float=tb,
 label={lst:skelcl:asum}]
-float asum(const skelcl::Vector<float>& x) {
-  auto absAll = skelcl::mapVector($\label{lst:skelcl:asum:skeletons:start}$
+float asum(const Vector<float>& x) {
+  auto absAll = mapVector($\label{lst:skelcl:asum:skeletons:start}$
       [](float x){ if (x >= 0) return x; else return -x; });
-  auto sumUp  = skelcl::reduce(
-      [](float x, float y){ return x+y; }, 0.0f);$\label{lst:skelcl:asum:skeletons:end}$
-
+  auto sumUp = reduce([](float x, float y){return x+y;}, 0);$\label{lst:skelcl:asum:skeletons:end}$
   auto result = sumUp( absAll( x ) );$\label{lst:skelcl:asum:call}$
   return result[0]; }$\label{lst:skelcl:asum:return}$
 \end{lstlisting}
@@ -87,13 +85,10 @@ caption={Implementation of the dot product application in \SkelCL},%
 numbers=left,%
 float=tb,
 label={lst:skelcl:dot}]
-float dotProduct(const skelcl::Vector<float>& x,
-                 const skelcl::Vector<float>& y) {
-  auto mult  = skelcl::zipVector($\label{lst:skelcl:dot:skeletons:start}$
-      [](float x, float y){ return x*y; });
-  auto sumUp = skelcl::reduce(
-      [](float x, float y){ return x+y; }, 0.0f);$\label{lst:skelcl:dot:skeletons:end}$
-
+float dotProduct(const Vector<float>& x,
+                 const Vector<float>& y) {
+  auto mult  = zipVector([](float x, float y){return x*y;});$\label{lst:skelcl:dot:skeletons:start}$
+  auto sumUp = reduce([](float x, float y){return x+y;}, 0);$\label{lst:skelcl:dot:skeletons:end}$
   return sumUp( mult( x, y ) ).front(); }$\label{lst:skelcl:dot:call}$
 \end{lstlisting}
 

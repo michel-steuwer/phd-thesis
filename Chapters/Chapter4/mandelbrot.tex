@@ -49,11 +49,11 @@ float=tb,
 label={lst:skelcl:mandelbrot}]
 typedef struct { char r; char g; char b; } Pixel;$\label{lst:skelcl:mandelbrot:pixel}$
 
-Pixel computeColorOfPixel(skelcl::IndexPoint) { ... };
+Pixel computeColorOfPixel(IndexPoint) { ... };
 
 void mandelbrot(const int width, const int height) {
-  auto m = skelcl::map(computeColorOfPixel);$\label{lst:skelcl:mandelbrot:map}$
-  auto image = m(skelcl::IndexMatrix{w, h});$\label{lst:skelcl:mandelbrot:apply}$
+  auto m = map(computeColorOfPixel);$\label{lst:skelcl:mandelbrot:map}$
+  auto image = m(IndexMatrix{w, h});$\label{lst:skelcl:mandelbrot:apply}$
   writeToDisk(image); }
 \end{lstlisting}
 

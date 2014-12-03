@@ -429,6 +429,7 @@ The output vector is block-distributed among all \GPUs.
 
 
 \subsubsection{The \stencil Skeleton}
+\label{sec:skelcl:stencil}
 In stencil applications the same computation is performed for each element of a container where the computation depends upon neighboring values.
 In section in \autoref{section:skelcl-programming-model} we defined the \stencil skeleton to simplify the development of stencil applications.
 The \SkelCL library provides two implementations of the \stencil skeleton.
@@ -635,7 +636,7 @@ Finally, we will discuss the implementation of the \allpairs skeleton on multi d
 
 \paragraph{The Generic \allpairs Skeleton}
 \begin{lstlisting}[%                                                             
-caption={Matrix matrix multiplication expressed using the generic \allpairs skeleton.},%
+caption={Matrix multiplication expressed using the generic \allpairs skeleton.},%
 float=t,%                                                                       
 numbers=left,%
 label={lst:allpairs:generic:impl}]
@@ -647,7 +648,7 @@ auto mm = allpairs([](const Vector<float>& a,
                         return c; });
 \end{lstlisting}
 
-\autoref{lst:allpairs:generic:impl} shows the \SkelCL program for computing matrix matrix multiplication using the generic \allpairs skeleton.
+\autoref{lst:allpairs:generic:impl} shows the \SkelCL program for computing matrix multiplication using the generic \allpairs skeleton.
 The implementation of the customizing function is straightforward.
 It is expressed as a lambda expression receiving a pair of vectors, multiply their elements and sum them up.
 
@@ -701,12 +702,12 @@ Therefore,
 \end{equation}
 global memory accesses are performed in total, where $n$ and $m$ are the height and width of matrix $C$ and $d$ is the width of $A$ and the height of $B$.
 By using the fast but small local memory this number of global memory accesses can be reduces and, thus, performance can be improved.
-Using the local memory for matrix matrix multiplication is a well known optimization.
+Using the local memory for matrix multiplication is a well known optimization.
 
 \paragraph{The Specialized \allpairs Skeleton}
-\autoref{lst:allpairs:special:impl} shows the matrix matrix multiplication application expressed with the specialized \allpairs skeleton.
+\autoref{lst:allpairs:special:impl} shows the matrix multiplication application expressed with the specialized \allpairs skeleton.
 \begin{lstlisting}[%                                                             
-caption={Matrix matrix multiplication expressed using the specialized \allpairs skeleton.},%
+caption={Matrix multiplication expressed using the specialized \allpairs skeleton.},%
 float=b,%                                                                       
 numbers=left,%
 label={lst:allpairs:special:impl}]
