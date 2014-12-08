@@ -2,7 +2,7 @@
 \label{section:medical-imaging}
 
 We used the LM OSEM medical imaging application as our motivational example and application study to identify requirements for a high-level programming model at the beginning of \autoref{chapter:skelcl}.
-In this section we will now see how we can express the LM OSEM application using algorithmic skeletons and how the parallel container data types and \SkelCL's redistribution feature levitate the programming of multi GPU systems.
+In this section we will now see how we can express the LM OSEM application using algorithmic skeletons and how the parallel container data types and \SkelCL's redistribution feature simplify the programming of multi GPU systems.
 We will start by briefly reintroducing the application and its sequential implementation before moving to the parallel implementation using traditional OpenCL and \SkelCL in comparison.
 A particular focus of this section will be on multi GPU systems and how \SkelCL radically simplifies their programming.
 
@@ -49,13 +49,13 @@ The LM OSEM is an iterative algorithm refining the reconstruction image $f$ over
 In each iteration two major steps are performed:
 \begin{itemize}
   \item[] \emph{Step 1:} the error image $c_l$ is computed by performing three sub-steps: 1) computation of the row $A_i$; 2) computing the local error for row $A_i$; 3) adding the local error to $c_l$;
-  \item[] \emph{Step 2:} update the reconstruction image $f$ using the error image $c$ computed in Step 1.
+  \item[] \emph{Step 2:} update the reconstruction image $f$ using the error image $c_l$ computed in Step 1.
 \end{itemize}
 
 \paragraph{Parallelization strategy}
 For parallelization two possible decomposition strategies can be considered for the LM OSEM algorithm as initially suggested in~\cite{JonesJoKeNeReLeByBaMiCa2002}: Projection Space Decomposition (PSD) and Image Space Decomposition (ISD).
 
-In PSD, the subsets $S_l$ are split into sub-subsets that are processed simultaneously while all processing units access a common reconstruction $f$ and error image $c$.
+In PSD, the subsets $S_l$ are split into sub-subsets that are processed simultaneously while all processing units access a common reconstruction image $f$ and error image $c$.
 Using this approach, we are able to parallelize \emph{Step~1} of the algorithm, but \emph{Step~2} is performed by a single processing unit.
 On a multi-\GPU system, we have to copy the reconstruction image to all \GPUs before each iteration, and we have to merge all \GPUs' error images computed in \emph{Step~1} before proceeding with \emph{Step~2}.
 While both steps are easy to implement, \emph{Step~2} does not efficiently use the available processing units.
@@ -72,7 +72,7 @@ This results in the sequence of five phases shown in \autoref{fig:lmosem:em_dist
 \begin{enumerate}
 \item \emph{Upload:} the subset ($S$) is divided into sub-subsets, one sub-subset per \GPU.
       One sub-subset and the reconstruction image ($f$) are uploaded to each \GPU;
-\item \emph{Step 1:} each \GPU computes a local error image ($c$) for its sub-subset;
+\item \emph{Step 1:} each \GPU computes a local error image ($c_l$) for its sub-subset;
 \item \emph{Redistribution:} the local error images that are distributed on all \GPUs are downloaded and combined into a single error image on the host by performing element-wise addition.
       Afterwards, the combined error image and reconstruction image are partitioned, in order to switch the parallelization strategy from PSD to ISD.
       The corresponding parts of both images are distributed to the \GPUs again;
@@ -119,7 +119,7 @@ for (l = 0; l < subsets; l++) {
   cl.setDistribution(copy, add);$\label{lst:em:skelcl:upload:end}$
 
   /* Step 1: compute error image cl */
-  computeCl(s, f, out(cl));
+  computeCl(s, f, out(cl));$\label{lst:em:skelcl:execute}$
 
   /* Redistribution */
   f.setDistribution(block);$\label{lst:em:skelcl:redistribute:start}$
@@ -135,13 +135,13 @@ The redistribution phase is implemented by changing the distributions of the cor
 The two computational steps are implemented using the \map and \zip skeleton from \SkelCL.
 
 The first step -- the computation of the error image $c_l$ -- is implemented using the \map skeleton.
-For each event \code{e} of the currently processed subset the $A_i$ is computed (line~\ref{lst:em:skelcl:computeAi}).
-As $A_i$ is very sparse it is stored as a special data structure, called \code{Path}, to reduce the memory footprint.
+For each event \code{e} of the currently processed subset the row $A_i$ is computed (line~\ref{lst:em:skelcl:computeAi}).
+As $A_i$ is sparsely populated it is stored as a special data structure, called \code{Path}, to reduce its memory footprint.
 Next, the local error is computed using $A_i$ together with the current reconstruction image $f$ which is passed to the \map skeleton as an additional argument.
 Finally, the error image \code{cl} is updated with the local error.
-The error image is also provided as additional argument, but when calling the \map skeleton \code{cl} is wrapped using the \code{out} helper function.
-This marks the additional argument as output parameter,\ie the \SkelCL implementation is notified that this argument will be modified by the customizing function.
-It is interesting to point out that the \map skeleton does not return a value,\ie its return type is \code{void}.
+The error image is also provided as additional argument, but when executing the \map skeleton \code{cl} is wrapped using the \code{out} helper function (line~\ref{lst:em:skelcl:execute}).
+This marks the additional argument as output parameter, \ie, the \SkelCL implementation is notified that this argument will be modified by the customizing function.
+It is interesting to point out that the \map skeleton does not return a value, \ie, its return type is \code{void}.
 The skeleton is only executed for its side effects on \code{cl}.
 
 The second step -- the update of the reconstruction image $f$ -- is implemented using the \zip skeleton.
@@ -170,6 +170,9 @@ However, when using \SkelCL's vector data type, we avoid additional programming 
 \end{figure}
 
 \autoref{fig:list-mode_OSEM:LOC} shows the lines of code required for each implementation.
+The amount of lines required on the \GPU is similar for all implementations.
+This is not surprising, as these code describes the computation performed on the \GPU which is similar for all implementations.
+The host code required for implementing the management of the \GPU execution differs significantly across implementations.
 For a single \GPU, the \OpenCL-based implementation has the longest code (206 LOC), \ie about 2.5 times longer than the \CUDA-based host program (88 LOC) and more than 11 times longer than the \SkelCL program.
 Our \SkelCL-based implementation has 18 LOC, \ie its length is only about 20\% of the \CUDA-based version.
 
