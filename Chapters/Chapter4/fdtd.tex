@@ -1,33 +1,20 @@
-\emph{Finite-Difference-Time-Domain (FDTD) Method for Random Lasing Simulations}
-As our third application study we use a simulation from the field of optical physics, where the propagation of light through a medium is simulated.
+Physics simulations are a very important class of scientific applications.
+As one representative we study the \emph{Finite-Difference-Time-Domain (FDTD) Method} used for Random Lasing Simulations.
+This simulation from the field of optical physics simulates the propagation of light through a medium.
 
 In the simulation two fields, the electric field $\vec{E}$ and the magnetic field $\vec{H}$, are iteratively updated using stencils computations.
 The Maxwell's equations are the basic equations describing electrodynamic processes in nature and are used here to describe the light propagating through a non-magnetic (\emph{dielectric}) medium.
 
-\bigskip
-\begin{minipage}{.44\linewidth}
-\begin{equation} \vec{\nabla}\vec{E}\left(\vec{r}, t\right) = 0, \label{eq:div_e}\end{equation}
-\end{minipage}
-\hspace{.04\linewidth}
-\begin{minipage}{.44\linewidth}
-\begin{equation} \vec{\nabla}\vec{H}\left(\vec{r}, t\right) = 0, \label{eq:div_h}\end{equation}
-\end{minipage}
+\begin{align}
+  \vec{\nabla}\vec{E}\left(\vec{r}, t\right) &= 0, \label{eq:div_e}\\
+  \vec{\nabla}\vec{H}\left(\vec{r}, t\right) &= 0, \label{eq:div_h}\\
+  \frac{\partial\vec{H}\left(\vec{r}, t\right)}{\partial t} &= -\frac{1}{\mu_0}\vec{\nabla} \times \vec{E}\left(\vec{r}, t\right), \label{eq:rot_h}\\
+  \frac{\partial\vec{D}\left(\vec{r}, t\right)}{\partial t} &= \frac{1}{\epsilon_0}\vec{\nabla} \times \vec{H}\left(\vec{r}, t\right), \label{eq:rot_d}
+\end{align}
 
-\bigskip
-
-\begin{minipage}{.44\linewidth}
-\begin{equation} \frac{\partial\vec{H}\left(\vec{r}, t\right)}{\partial t} = -\frac{1}{\mu_0}\vec{\nabla} \times \vec{E}\left(\vec{r}, t\right), \label{eq:rot_h}\end{equation}
-\end{minipage}
-\hspace{.04\linewidth}
-\begin{minipage}{.44\linewidth}
-\begin{equation} \frac{\partial\vec{D}\left(\vec{r}, t\right)}{\partial t} = \frac{1}{\epsilon_0}\vec{\nabla} \times \vec{H}\left(\vec{r}, t\right), \label{eq:rot_d}\end{equation}
-\end{minipage}
-\bigskip
-
-\newpage
 \noindent
-Eq. (\ref{eq:div_e})-(\ref{eq:rot_d}) show the Maxwell's equations consisting of four coupled partial differential equations (PDEs).
-To couple the polarisation of a medium $\vec{P}$ to the electric field, Eq. (\ref{eq:flussdichte}) is introduced:
+\autoref{eq:div_e}---\ref{eq:rot_d} show the Maxwell's equations consisting of four coupled partial differential equations (PDEs).
+To couple the polarisation of a medium $\vec{P}$ to the electric field, \autoref{eq:flussdichte} is introduced:
 
 \begin{equation}
 \vec{E}\left(\vec{r}, t\right) = \frac{\vec{D}\left(\vec{r}, t\right) - \vec{P}\left(\vec{r}, t, \vec{N}\right)}{\epsilon_0\epsilon_r\left(\vec{r}\right)}
