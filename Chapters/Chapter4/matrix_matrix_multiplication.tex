@@ -95,8 +95,8 @@ caption={OpenCL kernel of the matrix multiplication without optimizations~\cite{
 float=tb,%
 numbers=left,%
 label={lst:naive_opencl}]
-__kernel void mm(__global float* A, __global float* B,
-                 __global float* C, int m, int d, int n) {
+kernel void mm(global float* A, global float* B,
+               global float* C, int m, int d, int n) {
   int row = get_global_id(0); int col = get_global_id(1);
   float sum = 0.0f;
   for (int k = 0; k < d; k++)
@@ -113,10 +113,10 @@ float=tb,%
 numbers=left,%
 label={lst:local_mem_opencl}]
 #define T_WIDTH 16
-__kernel void mm(__global float* A, __global float* B,
-                 __global float* C, int m, int d, int n) {
-  __local float Al[T_WIDTH][T_WIDTH];$\label{lst:local_mem_opencl:allocA}$
-  __local float Bl[T_WIDTH][T_WIDTH];$\label{lst:local_mem_opencl:allocB}$
+kernel void mm(global float* A, global float* B,
+               global float* C, int m, int d, int n) {
+  local float Al[T_WIDTH][T_WIDTH];$\label{lst:local_mem_opencl:allocA}$
+  local float Bl[T_WIDTH][T_WIDTH];$\label{lst:local_mem_opencl:allocB}$
   int row = get_global_id(0); int col = get_global_id(1);
   int l_row = get_local_id(0);  int l_col = get_local_id(1);
   float sum = 0.0f;

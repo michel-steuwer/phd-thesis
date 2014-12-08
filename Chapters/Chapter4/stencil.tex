@@ -5,11 +5,11 @@ In this section we will study three application examples from image processing a
 
 We start by looking at the Gaussian blur application which reduces noise in images and is often used as a preprocessing step in more complex algorithms.
 We will then discuss two algorithms used for edge detection in images:
-first, the Sobel filter application will be presented before, finally, the more complex Canny edge detection algorithm will be discussed.
+first, the Sobel edge detection application will be presented before, finally, the more complex Canny edge detection algorithm will be discussed.
 
 All these three applications can be expressed using the \stencil skeleton but have different characteristics.
 The Gaussian blur applies a single stencil computation, possibly iterated multiple times, for reducing the noise in images.
-The Sobel filter applies a stencil computation once to detect edges in images.
+The Sobel edge detection applies a stencil computation once to detect edges in images.
 The more advanced Canny edge detection algorithm consists of a sequence of stencil operations which are applied to obtain the final result.
 For each application, we compare the performance of our two implementations of the \stencil skeletons: \code{MapOverlap} and \code{Stencil} with native OpenCL implementations using an input image of size $4096 \times 3072$.
 
@@ -51,8 +51,29 @@ The Gaussian blur computes the color of every pixel using a weighted average of 
 Using \SkelCL this application can easily be expressed using the \stencil skeleton.
 
 \subsubsection*{\SkelCL Implementation}
-\autoref{lst:skelcl:gauss} shows the implementation of the Gaussian blur using the \code{MapOverlap} implementation of the \stencil skeleton.
-Here just the immediate neighboring pixels are access and used to compute a weighted value for each pixel.
+\autoref{eq:gauss} shows the implementation in \SkelCL using the \stencil skeleton.
+\begin{align}
+  \label{eq:gauss}
+  gauss&(M) = stencil(\ f,\ 1,\ \overline{0},\ M\ ) \qquad\text{where:}\\
+  &
+  \begin{array}{ll}%
+  f &\left(\left[\begin{array}{lll}%
+      \hspace{-.5em} M_{i-1,j-1}& \hspace{-.5em} M_{i-1,j} & \hspace{-.5em}M_{i-1,j+1}\vspace{-.25em}\\%
+      \hspace{-.5em} M_{i,j-1}& \hspace{-.5em} M_{i,j} & \hspace{-.5em}M_{i,j+1}\vspace{-.25em}\\%
+      \hspace{-.5em} M_{i+1,j-1}& \hspace{-.5em} M_{i+1,j} & \hspace{-.5em}M_{i+1,j+1}\vspace{-.25em}
+    \end{array}\right] \right) = \\[2em]
+          &\qquad \displaystyle\frac{\displaystyle\sum_{k=-1}^{1} \sum_{l=-1}^{1} G(k, l)\cdot M_{i+k, j+k}}{9}
+  \end{array} \nonumber\\[1em]
+  &G(x, y) = \frac{1}{2\pi \sigma^{2}} e^{-\frac{x^2 + y^2}{2\sigma^2}} \nonumber\\
+  \text{and } \overline{0} \text{ is th}&\text{e constant function always returning 0.}\nonumber
+\end{align}
+$G$ is the two dimensional Gaussian function used in the customizing function $f$ to weight the neighboring values $M_{i,j}$.
+The values gained from applying $G$ can be precomputed, as $G$ is only evaluated with values in the interval $[-1, 1]$ for $x$ and $y$.
+
+
+\autoref{lst:skelcl:gauss} shows the implementation in the \SkelCL library of the Gaussian blur using the \code{MapOverlap} implementation of the \stencil skeleton.
+Here the immediate neighboring pixels are access (lines~\ref{lst:skelcl:gauss:start}--\ref{lst:skelcl:gauss:end}) and used to compute a weighted value for each pixel.
+The function performing the weighted sum is omitted here.
 It is also possible to extend the \emph{range} of the Gaussian blur and include more neighboring pixel values in the computation.
 
 \begin{lstlisting}[%                                                             
@@ -63,9 +84,9 @@ label={lst:skelcl:gauss}]
 Matrix<char> gaussianBlur(const Matrix<char>& image) {
   auto gauss = mapOverlap(
     [](Neighborhood<char>& in) {
-      char ul = in[{-1, -1}];
+      char ul = in[{-1, -1}];$\label{lst:skelcl:gauss:start}$
       ...
-      char lr = in[{+1, +1}];
+      char lr = in[{+1, +1}];$\label{lst:skelcl:gauss:end}$
       return computeGaussianBlur(ul, ..., lr); },
     1, BorderHandling::NEUTRAL(0));
   return gauss(image); }
@@ -175,6 +196,33 @@ In this sequential version, for computing an output value \code{out\_img[i][j]} 
 Therefore, the \stencil skeleton is a perfect fit for implementing the Sobel edge detection.
 
 \subsubsection*{\SkelCL Implementation}
+\autoref{eq:sobel} shows the implementation of the Sobel edge detection in \SkelCL.
+\begin{align}
+  \label{eq:sobel}
+  sobel(M)& = stencil(\ f,\ 1,\ \overline{0},\ M\ ) \qquad\text{where:}\\
+  f&\left(\left[\begin{array}{lll}%
+      \hspace{-.5em} M_{i-1,j-1}& \hspace{-.5em} M_{i-1,j} & \hspace{-.5em}M_{i-1,j+1}\vspace{-.25em}\\%
+      \hspace{-.5em} M_{i,j-1}& \hspace{-.5em} M_{i,j} & \hspace{-.5em}M_{i,j+1}\vspace{-.25em}\\%
+      \hspace{-.5em} M_{i+1,j-1}& \hspace{-.5em} M_{i+1,j} & \hspace{-.5em}M_{i+1,j+1}\vspace{-.25em}
+    \end{array}\right] \right) = \displaystyle\sqrt{ h^2 + v^2 }\nonumber\\
+  h & = \sum_{k=0}^2 \sum_{l=0}^2 Gx_{k, l}\cdot M_{i+k-1,j+k-1}\nonumber\\
+  v & = \sum_{k=0}^2 \sum_{l=0}^2 Gy_{k, l}\cdot M_{i+k-1,j+k-1}\nonumber\\
+  Gx& = \left[\begin{array}{ccc}%
+      -1&0&+1\\
+      -2&0&+2\\
+      -1&0&+1
+    \end{array}\right]
+  Gy = \left[\begin{array}{ccc}%
+      -1&-2&-1\\
+      0&0&0\\
+      +1&+2&+1
+    \end{array}\right] \nonumber\\
+  \text{and } \overline{0} \text{ is th}&\text{e constant function always returning 0.}\nonumber
+\end{align}
+The formula resembles the sequential implementation shown in \autoref{lst:sobel:seq} where the final result is computed as the square root of the sum of two squared terms $h$ and $v$.
+These are computed as weighted sums of the neighboring values $M_{i,j}$.
+The weights are given by the two matrices $Gx$ and $Gy$.
+
 \autoref{lst:sobel:skelcl} shows the \SkelCL implementation using the \code{MapOverlap} implementation of the \stencil skeleton.
 %
 \begin{lstlisting}[%
@@ -194,7 +242,7 @@ Matrix<char> sobelEdge(const Matrix<char>& image) {
   return soble(img); }
 \end{lstlisting}
 %
-The implementation is straightforward and very similar to the sequential version in \autoref{lst:sobel:seq}.
+The implementation is straightforward and very similar to the formula in \autoref{eq:sobel} and the sequential version in \autoref{lst:sobel:seq}.
 
 \subsubsection*{Programming effort}
 
@@ -260,7 +308,7 @@ In this particular example, \SkelCL even slightly outperforms the implementation
 The Canny edge detection algorithm is a more complex algorithm to detect edges in images than the Sobel edge detection presented in the previous section.
 For the sake of simplicity we consider a slightly simplified version, which applies the following stencil operations in a sequence:
 1), a noise reduction operation is applied, \eg, a Gaussian blur;
-2), an edge detection operator like the Sobel filter is applied;
+2), an edge detection operator like the Sobel edge detection is applied;
 3), the so-called non-maximum suppression is performed, where all pixels in the image are colored black except pixels being a local maximum;
 4), a threshold operation is applied to produce the final result.
 A more complex version of the algorithm performs the edge tracking by hysteresis, as an additional step.
@@ -271,7 +319,7 @@ This results in detecting some weaker edges, but even without this additional st
 In \SkelCL, each single step of the Canny algorithm can be expressed using the \stencil skeleton.
 The last step, the threshold operation, does not need access to neighboring elements, as the user threshold function only checks the value of the current pixel.
 Therefore, this step can be expressed using \SkelCL's simpler \map skeleton.
-The \code{Stencil} skeleton's implementation automatically uses the simpler \map skeleton's implementation when the user specifies a stencil shape which extents are $0$ in all directions.
+In the \SkelCL library the \code{Stencil} skeleton's implementation automatically uses the simpler \map skeleton's implementation when the user specifies a stencil shape which extents are $0$ in all directions.
 
 \begin{lstlisting}[%
   caption={Structure of the Canny algorithm as implemented with a sequence of skeletons.},%
