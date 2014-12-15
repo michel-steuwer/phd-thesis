@@ -2,26 +2,28 @@
 \label{section:skelcl-programming-model}
 \SkelCL (Skeleton Computing Language) is a high-level programming model targeting multi-\GPU system.
 It is developed as an extension of the standard \OpenCL programming model~\cite{OpenCL}.
+
 \SkelCL adds three main high-level features to \OpenCL which we identified as desirable in~\autoref{section:requirements}:
 
 \begin{itemize}
   \item \emph{parallel container data types} for unified memory management between \CPU and (multiple) \GPUs;
   \item \emph{recurring patterns of parallelism} (\aka \emph{algorithmic skeletons}) for easily expressing parallel computation patterns;
-  \item \emph{data distribution} and \emph{redistribution} mechanisms for programming multi-\GPU systems.
+  \item \emph{data distribution} and \emph{redistribution} mechanisms for transparent data transfers in multi-\GPU systems.
 \end{itemize}
 
 \noindent
-\SkelCL inherits all properties of \OpenCL, including its portability across different heterogeneous parallel systems.
+\SkelCL inherits all advantageous properties of \OpenCL, including its portability across different heterogeneous parallel systems.
 \SkelCL is designed to be fully compatible with \OpenCL: arbitrary parts of a \SkelCL code can be written or rewritten in \OpenCL, without influencing program's correctness.
 
-In the rest of the section we discuss the design of the \SkelCL programming model in more detail.
-The implementation as a \Cpp library will be discussed in the next section.
+In the remainder of this section we discuss the design of the \SkelCL programming model in more detail.
+Its implementation as a \Cpp library will be discussed in the next section.
 
 % ============================================================================ %
 \subsection{Parallel Container Data Types}
 \label{section:skelcl-programming-model:container}
 \SkelCL offers the application developer two container classes -- vector and matrix -- which are transparently accessible by both, \CPU and \GPUs (or using \OpenCL's terminology, host and devices).
 The \emph{vector} abstracts a one-dimensional contiguous memory area while the \emph{matrix} provides an interface to a two-dimensional memory area.
+
 When a container is created on the host, memory is allocated on the devices automatically;
 when a container on the host is deleted, the memory allocated on the devices is freed automatically.
 
@@ -42,32 +44,32 @@ Therefore, in addition to the vector as a one-dimensional abstract data structur
 \label{section:skelcl-programming-model:skeletons}
 In original \OpenCL, computations are expressed as compute \emph{kernels} which are executed in a parallel manner on an \OpenCL device, \eg, a \GPU.
 As seen earlier the application developer must explicitly specify the parallelism by indicating how many instances of a kernel (called \emph{work items}) should be launched in parallel.
-Communication between work items are limited and have to be implemented carefully to avoid race conditions and deadlocks.
+Communications between work items are limited and have to be implemented carefully to avoid race conditions and deadlocks.
 In addition, kernels take unsafe pointers to device memory as input and contain program code for reading/writing single data items from/to it.
 These pointers have to be used carefully, because no boundary checks are performed by \OpenCL.
 
 To shield the application developer from these low-level programming issues, \SkelCL extends \OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{Cole1991}.
 Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner, thus hiding the details of parallelism and communication from the user~\cite{GorlatchCo2011}.
 
-\SkelCL provides four basic data-parallel skeletons: \map, \zip, \reduce, and \scan;
-as well as two more specialized skeletons targeting specific application domains: \stencil, and \allpairs.
-In this section we will look at the basic skeletons, the specialized skeletons will be discussed in~\autoref{section:skelcl-programming-model:specialSkeletons}.
+\SkelCL provides four basic data-parallel skeletons: \map, \zip, \reduce, and \scan,
+as well as two more advanced skeletons targeting specific application domains: \stencil and \allpairs.
+In this section we will look at the basic skeletons, the advanced skeletons will be discussed in~\autoref{section:skelcl-programming-model:specialSkeletons}.
 The four basic skeletons have been selected, because they have been proven to be useful for a broad range of applications.
-Moreover, these skeletons can be efficiently implemented on \GPUs as their computation patterns match the data-parallel \SIMD (Singe Instruction, Multiple Data) execution model used by \GPUs.
+Moreover, these skeletons can be efficiently implemented on \GPUs as their computation patterns match the data-parallel \SIMD (Singe Instruction, Multiple Data) execution model implemented by \GPUs.
 
 
 \paragraph{The \map skeleton}
-The \map skeleton is a well known basic algorithmic skeleton, applying the customizing function to each element of a container in parallel.
+The \map skeleton is a well-known basic algorithmic skeleton, applying the customizing function to each element of a container in parallel.
 This skeleton originates from the functional world, where the \code{map} function is recognized as an important primitive for writing high-level code.
-In many programming languages an equivalent sequential function exists, either known by the same name, like in Haskell or Python, or by other names, like \code{transform} in \Cpp.
+In many programming languages an equivalent sequential function exists, either known under the same name, like in Haskell or Python, or by other names, like \code{transform} in \Cpp.
 
 In \SkelCL the \map skeleton can operate on vectors as well as matrices.
-We start by formally define the skeleton on vectors:
+We start by formally defining the skeleton on vectors:
 \begin{definition}
   \label{definition:map}
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $f$ be a unary customizing function.
-  The algorithmic skeleton \map is defined as follows:
+  Let $f$ be a unary customizing function defined on elements.
+  The algorithmic skeleton \map is then defined as follows:
   \begin{equation*}
     map \big(\ f,\ [x_1, x_2, \dots, x_n]\ \big) \eqdef [f(x_1), f(x_2), \dots, f(x_n)]
   \end{equation*}
@@ -85,7 +87,7 @@ The definition for matrices is similar:
   \end{equation*}
 \end{definition}
 \noindent
-The output container, either vector or matrix, can be computed in parallel, because the computation of each single element is independent of each other.
+The output container of the \map skeleton, either vector or matrix, can be computed in parallel, because the computation of each single element is independent of each other.
 
 A simple possible application of the \map skeleton is negating all the values in a vector:
 \begin{align*}
@@ -134,7 +136,7 @@ A possible application of the \zip skeleton is performing pairwise addition of t
 
 
 \paragraph{The \reduce skeleton}
-The \reduce skeleton computes a single value from a vector by successively applying the customizing function.
+The \reduce skeleton computes a single value from a vector by successively applying the binary customizing function.
 In \SkelCL the \reduce skeleton is only defined on vectors:
 \begin{definition}
   \label{definition:reduce}
@@ -150,7 +152,7 @@ In \SkelCL the \reduce skeleton is only defined on vectors:
 Requiring the operator to be associative and commutative enables efficient parallel implementations.
 The identity element $id$ can be used by the implementation, \eg, to initialize intermediate buffers.
 
-A possible application of the \reduce skeleton is to find the maximum value of a vector:
+A possible application of the \reduce skeleton is to finding the maximum value of a vector:
 \begin{align*}
   maxValue(\vec{x}) &= reduce(\ max,\ 0,\ \vec{x}\ )\\
   \text{where:} \qquad max(a, b) &=
@@ -165,7 +167,7 @@ A possible application of the \reduce skeleton is to find the maximum value of a
 
 \paragraph{The \scan skeleton}
 The \scan skeleton (\aka prefix-sum) yields an output vector with each element obtained by applying the customizing function to the elements of the input vector up to the current element's index.
-In \SkelCL the \scan skeleton is only defined on vectors:
+In \SkelCL, the \scan skeleton is only defined on vectors:
 \begin{definition}
   \label{definition:scan}
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
@@ -179,8 +181,8 @@ In \SkelCL the \scan skeleton is only defined on vectors:
   \end{equation*}
 \end{definition}
 \noindent
-Even though, the \scan pattern seems inherently sequential, because each individual results contains the results of its predecessor, efficient parallel implementations do exist for this problem.
-Blelloch~\cite{Blelloch1991} studies this parallel pattern in great details and efficient implementations for \GPUs exists~\cite{HarrisSeOw2007} following his algorithmic ideas.
+Even though the \scan pattern seems inherently sequential, because each individual result contains the results of its predecessor, efficient parallel implementations do exist for this problem.
+Blelloch~\cite{Blelloch1991} studies this parallel pattern in great detail and efficient implementations for \GPUs exist~\cite{HarrisSeOw2007} following his algorithmic ideas.
 
 A possible application of the \scan skeleton is the computation of the prefix sum which can be used as part of the counting sort algorithm~\cite{Knuth1998} or for solving the list ranking problem~\cite{ColeVi1989}.
 \begin{align*}
@@ -195,7 +197,7 @@ In case of a multi-device system, the calculation specified by a skeleton is per
 Skeletons can be customized and composed to express more complex algorithms.
 To demonstrate how to express computations with algorithmic skeletons let us consider three simple linear algebra applications:
 scaling a vector with a constant, computing the sum of absolute values of a vector, and computing the dot product (\aka inner product) of two vectors.
-These three applications are all part of the well known \emph{Basic Linear Algebra Subprograms (\BLAS)}~\cite{Dongarra2002,Dongarra2002a}.
+These three applications are all part of the well-known \emph{Basic Linear Algebra Subprograms (\BLAS)}~\cite{Dongarra2002,Dongarra2002a} library.
 
 For scaling a vector with a constant $\alpha$ we use the \map skeleton:
 \begin{align*}
@@ -205,7 +207,7 @@ For scaling a vector with a constant $\alpha$ we use the \map skeleton:
 
 \noindent
 For computing the sum of absolute values we compose a \map and \reduce skeleton.
-We use the $\circ$ to denote the sequential composition of two functions, \ie\ $f \circ g(x) = f(g(x))$.
+We use the $\circ$ to denote the sequential composition of two functions, \ie\ $(f \circ g)(x) = f(g(x))$.
 \begin{align*}
   asum(\vec{x}) &= reduce(\ +,\ 0\ ) \circ map(\ abs, \vec{x}\ )\\
   \text{where:} \qquad abs(a) &=
@@ -224,7 +226,7 @@ To compute the dot product of two vectors we compose a \zip skeleton customized 
 \end{align*}
 
 \noindent
-Algorithmic skeletons are not just limited to linear algebra applications, but can be used to implement a boarded range of application types as we will discuss in \autoref{chapter:skelcl-evaluation}.
+Algorithmic skeletons are not limited to linear algebra applications, but can be used to implement a boarded range of application types as we will discuss in \autoref{chapter:skelcl-evaluation}.
 Among others, we will see an implementation using algorithmic skeletons of the real-world medial imaging application example discussed at the beginning of this chapter.
 
 
@@ -292,7 +294,7 @@ It allows the application developer to abstract from the challenges of managing 
 
 Three kinds of basic distributions are currently available in \SkelCL:
 \emph{single}, \emph{copy}, and \emph{block} (see \autoref{fig:distributions} for distributing a vector on a system with two \GPUs).
-If distribution is set to \emph{single} (\autoref{fig:distributions:single}), than vector's whole data is stored on a single \GPU (the first \GPU if not specified otherwise).
+If distribution is set to \emph{single} (\autoref{fig:distributions:single}), then vector's whole data is stored on a single \GPU (the first \GPU if not specified otherwise).
 The \emph{copy} distribution (\autoref{fig:distributions:copy}) copies vector's entire data to each available \GPU.
 With the \emph{block} distribution (\autoref{fig:distributions:block}), each \GPU stores a contiguous, disjoint chunk of the vector.
 
@@ -322,15 +324,15 @@ If no function is specified, the copy of the first \GPU is taken as the new vers
 \subsection{More Complex Algorithmic Skeletons}
 \label{section:skelcl-programming-model:specialSkeletons}
 
-The basic algorithmic skeletons presented in~\autoref{section:skelcl-programming-model:skeletons} are long known in the functional and algorithmic skeleton community.
-In this section we will introduce two new algorithmic skeletons, which are more specialized and, thus, more restrictive.
+The basic algorithmic skeletons presented in~\autoref{section:skelcl-programming-model:skeletons} are long known in the functional and algorithmic skeleton communities.
+In this section we will introduce two new more advanced algorithmic skeletons, which are more restrictive.
 By limiting the use cases of these novel algorithmic skeleton we are able to make more assumptions in the implementation and provide advanced optimizations on modern multi-\GPU systems.
 
-The first new skeletons (\stencil) is targeted towards \emph{stencil} (\aka nearest neighbor) computations, which are computations performed for every element of a container while including neighboring elements in the computation.
-The second new skeleton (\allpairs) allows to combine two matrix containers in an all-to-all fashion, which is a pattern used in application like n-body simulations or matrix matrix multiplication.
+The first new skeleton (\stencil) is targeted towards \emph{stencil} (\aka nearest neighbor) computations, which are computations performed for every element of a container while including neighboring elements in the computation.
+The second new skeleton (\allpairs) combines two matrix containers in an all-to-all fashion, which is a pattern used in applications like n-body simulation or matrix matrix multiplication.
 
-For both skeletons we will first formally define it before looking at possible use cases.
-The implementations targeting multi-\GPU systems will be described in~\autoref{section:skelcl-library}.
+For both skeletons we will first formally define them before looking at possible use cases.
+Their implementations targeting multi-\GPU systems will be described in~\autoref{section:skelcl-library}.
 
 
 \subsubsection{The \stencil Skeleton}
@@ -339,15 +341,15 @@ Many numerical and image processing applications dealing with two-dimensional da
 These type of applications are also known as \emph{stencil} or \emph{nearest neighbor} applications.
 To facilitate the development of such applications, we introduce the \stencil skeleton that can be used with both vector and matrix data type.
 
-The \stencil skeleton is customized with three parameters: a unary function $f$, an integer value $d$, and an out of bounds function $h$.
+The \stencil skeleton is customized with three parameters: a unary function $f$, an integer value $d$, and an out-of-bounds function $h$.
 The skeleton applies $f$ to each element of an input container while taking the neighboring elements within the range $d$ in each dimension into account.
 When neighboring elements are accesses at the boundaries of the container out of bound accesses occur.
 In these cases the function $h$ is called with the index causing the out of bound access and should return a replacement value.
 We now formally define the \stencil skeleton. We start with the definition for vectors:
 \begin{definition}
   \label{definition:mapoverlap}
-  Let $\vec{x}$ and be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $f$ be a customizing function, $d$ be an positive integer value, and $h$ be a out of bound handling function.
+  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $f$ be a customizing function, $d$ be a positive integer value, and $h$ be an out-of-bound handling function.
   The algorithmic skeleton \stencil is defined as follows:
   \begin{equation*}
     \begin{split}
@@ -381,7 +383,7 @@ The definition for matrices is similar:
 \end{definition}
 
 
-SkelCL currently support a fixed set of choices for the out of bound function $h$ motivated by common methods of of bound handling in image processing applications.
+SkelCL currently supports a fixed set of choices for the out-of-bound handling function $h$ motivated by common cases of of bound handling in image processing applications.
 This restriction could easily be lifted in the future.
 The \stencil skeleton can currently be configured to handle out of bound accesses in two possible ways:
 \begin{enumerate}
@@ -389,9 +391,9 @@ The \stencil skeleton can currently be configured to handle out of bound accesse
   \item the nearest valid value inside the container is returned.
 \end{enumerate}
 
-Possible applications for the stencil skeleton are image processing applications or physics simulations (see~\autoref{chapter:skelcl:apps}).
+Possible applications for the stencil skeleton are image processing applications or physics simulations (see~\autoref{sec:imageProcessing} and \autoref{sec:physicsSim}).
 A simple example application is the \emph{discrete Laplacian operator} used in image processing, \eg, for edge detection~\cite{Umbaugh1997}.
-It computes a new value for every pixel of an image by weighting and summing up its direct neighboring pixel values:
+It computes a new value for every pixel of an image by weighting and summing up its direct neighboring pixel values, as follows:
 \begin{align*}
   laplacian&(M) = stencil(\ f,\ 1,\ \overline{0},\ M\ )\\
   \text{where:} \ \ &
@@ -428,7 +430,7 @@ It computes a new value for every pixel of an image by weighting and summing up 
 
 Together with the \stencil skeleton we introduce a new distribution called \emph{overlap} (Figure~\ref{fig:overlap_distribution}).
 The overlap distribution splits the container into one chunk for each device, similarly to the \emph{block} distribution.
-In addition each chunk consists of a number of continuous elements (in case of the vector) or rows (in case of the matrix) which are copied to the neighboring devices, similar to the \emph{copy} distribution.
+In addition, each chunk consists of a number of continuous elements (in case of the vector) or rows (in case of the matrix) which are copied to the neighboring devices, similar to the \emph{copy} distribution.
 Therefore, the overlap distribution can be seen as a combination of the \emph{block} and \emph{copy} distribution.
 The number of elements or rows at the edges of a chunk which are copied to the neighboring devices are called the \emph{overlap size}.
 
@@ -448,7 +450,7 @@ for two sets of entities, the same computation is performed independently for al
 We define the \allpairs skeleton to simplify the development of such applications.
 We represent the entries of both sets as vectors of length $d$, where the cardinality of the first set is $n$ and the cardinality of the second set is $m$.
 We model the first set as a $n\times d$ matrix $A$ and the second set as a $m\times d$ matrix $B$.
-The allpairs computation yields an output matrix $C$ of size $n\times m$ with $c_{i, j} = A_i \oplus B_j$, where $A_i$ and $B_j$ are row vectors of $A$ and $B$, correspondingly
+The allpairs computation yields an output matrix $C$ of size $n\times m$ with $c_{i, j} = A_i \oplus B_j$, where $A_i$ and $B_j$ are row vectors of $A$ and $B$, correspondingly,
 %:
 %$A_i = [A_{i,1}, \cdots, A_{i, d}]$, $B_j = [B_{j,1}, \cdots, B_{j,d}]$,
 and $\oplus$ is a binary operator defined on vectors.
@@ -474,9 +476,9 @@ We formally define the \allpairs skeleton as follows:
   \]
 \end{definition}
 
-\autoref{fig:allpairs:access} illustrates this definition:
+\autoref{fig:allpairs:access:not_transposed} illustrates this definition:
 the element $C_{2,3}$ of matrix $C$ marked as \circled{3} is computed by combining the second row of $A$ marked as \circled{1} with the third row of $B$ marked as \circled{2} using the binary operator $\oplus$.
-\autoref{fig:allpairs:access} shows the same computation with the transposed matrix $B$.
+\autoref{fig:allpairs:access:transposed} shows the same computation with the transposed matrix $B$.
 This visualization shows how the structure of matrix $C$ is determined by the two input matrices $A$ and $B$.
 
 \begin{figure}[tb]
@@ -520,9 +522,9 @@ This computation for arbitrary matrix $A$ can be expressed using the \allpairs s
 The $n\times n$ matrix computed by the customized skeleton contains the Manhattan distance for every pair of rows of the input $n\times d$ matrix $A$.
 
 \paragraph{Example 2:}
-Matrix matrix multiplication is a basic linear algebra operation, which is a building block of many scientific applications.
-An $n\times d$ matrix $A$ is multiplied with a $d\times m$ matrix $B$, producing a $n\times m$ matrix $C=A\times B$ whose element $C_{i,j}$ is computed as the dot product of the $i$th row of $A$ with the $j$th column of $B$.
-The dot product of two vectors $a$ and $b$ of length $d$ is computed as:
+Matrix-matrix multiplication is a basic linear algebra operation, which is a building block of many scientific applications.
+A $n\times d$ matrix $A$ is multiplied with a $d\times m$ matrix $B$, producing a $n\times m$ matrix $C=A\times B$ whose element $C_{i,j}$ is computed as the dot product of the $i$th row of $A$ with the $j$th column of $B$.
+The dot product of two vectors, $a$ and $b$ of length $d$, is computed as follows:
 \begin{equation}
   \dotProduct (a,b) = \sum_{k=1}^d a_k \cdot b_k
 \end{equation}
@@ -556,7 +558,7 @@ where $B^T$ is the transpose of matrix $B$.
 
 \subsubsection{The specialized \allpairs skeleton}
 \label{sec:opt_allpairs_skeleton}
-When targeting \GPU architectures implementing an optimized version of the \allpairs skeleton is possible if certain assumptions about the customizing function $f$ can be made.
+When targeting \GPU architectures, implementing an optimized version of the \allpairs skeleton is possible if certain assumptions about the customizing function $f$ can be made.
 In this section, we will start by discussing the properties of $f$ necessary for an optimized \GPU implementation.
 In particular we will analyze the memory access pattern of the matrix multiplication as the memory accesses turns out to be crucial for the performance.
 We then observe that the identified memory access pattern can also be found in other allpairs computations and, therefore, define a specialized version of the allpairs skeleton, which is suitable for applications having this pattern.
@@ -570,10 +572,10 @@ We then observe that the identified memory access pattern can also be found in o
   \caption{The memory access pattern of the matrix multiplication $A\times B = C$.}
   \label{fig:mm_access_pattern}
 \end{figure}
-Figure~\ref{fig:mm_access_pattern} shows the memory access pattern of the matrix multiplication for a $4\times 4$ matrices.
+Figure~\ref{fig:mm_access_pattern} shows the memory access pattern of the matrix multiplication for $4\times 4$ matrices.
 To compute the element \circled{R} of the result matrix $C$, the first row of matrix $A$ and the first column of matrix $B$ are combined.
-In the skeleton-based code, these two vectors are used by the customizing function $f$, which is the dot product in case of the matrix matrix multiplication.
-The dot product performs a pairwise multiplication of the two vectors and then sums of the intermediate result.
+In the skeleton-based code, these two vectors are used by the customizing function $f$, which is the dot product in case of the matrix multiplication.
+The dot product performs a pairwise multiplication of the two vectors and then sums up the intermediate result.
 In the example, the two elements marked as \circled{1} are multiplied first and the intermediate result is stored;
 then, the next elements (marked as \circled{2}) are multiplied and the result is added to the intermediate result, and so forth.
 % TODO: Moved to impl section ...
@@ -588,19 +590,19 @@ then, the next elements (marked as \circled{2}) are multiplied and the result is
 % By using the fast but small local memory this number of global memory accesses can be reduces and, thus, performance can be improved.
 % Using the local memory for matrix matrix multiplication is a well known optimization.
 
-A key observation is, that other applications share the same memory access pattern as the matrix matrix multiplication shown in \autoref{fig:mm_access_pattern}.
-The customizing function of the pairwise Manhattan distance as defined by \autoref{eq:man_dist} follows obviously the same memory access pattern as the matrix matrix multiplication.
-To find a common representation for a customizing function with this pairwise access pattern, we describe it as a sequentially composition of two basic algorithmic skeletons: \zip and \reduce.
+A key observation is, that other applications share the same memory access pattern as the matrix multiplication shown in \autoref{fig:mm_access_pattern}.
+For example, the customizing function of the pairwise Manhattan distance as defined by \autoref{eq:man_dist} follows obviously the same memory access pattern as the matrix multiplication.
+To find a common representation for a customizing function with this pairwise access pattern, we describe it as a sequential composition of two basic algorithmic skeletons: \zip and \reduce.
 The \emph{sequential composition} composition of two functions (or skeletons) $f$ and $g$ is denoted by $g \circ f$ which means that $f$ is applied first and then $g$ is applied to the result value of $f$ as input, \ie, $(g\circ f)(x) = g(f(x))$.
 
-For the \reduce skeleton customized with $\oplus$ and corresponding identity element $id$ as well as the \zip skeleton customized with $\otimes$ we can sequentially compose them as follows:
+For the \reduce skeleton customized with $\oplus$ and corresponding identity element $id$, and the \zip skeleton customized with $\otimes$ we can sequentially compose them as follows:
 \begin{eqnarray*}
   reduce\ (\oplus, id) \circ zip\big(\ \otimes,\ a,\ b\ \big) &=&\\
   reduce\ (\oplus, id) \big(\ zip\big(\ \otimes,\ \DottedVector{a_1}{a_n},\ \DottedVector{b_1}{b_n}\ \big)\ \big) &=&\\
   (a_1 \otimes b_1)\ \ \oplus &\cdots& \oplus\ \ (a_n \otimes b_n)
 \end{eqnarray*}
 
-This composition of the two customized skeletons yields a function which takes two input vectors and produces a single scalar value:
+This composition of the two customized skeletons yields a function which we denote \zipReduce; it takes two input vectors and produces a single scalar value:
 
 \begin{equation*}
   zipReduce\big(\oplus,\ id,\ \otimes,\ a,\ b\ \big) \eqdef 
@@ -608,7 +610,7 @@ This composition of the two customized skeletons yields a function which takes t
 \end{equation*}
 
 Following the definition of \zipReduce, we can express the customizing function of the Manhattan distance as follows.
-We use the binary operator $a \ominus b = |a - b|$ as customizing function for \zip, and addition as customizing function for the \reduce skeleton:
+We use the binary operator $a \ominus b = |a - b|$ as the customizing function for \zip, and addition as the customizing function for the \reduce skeleton:
 \begin{eqnarray*}
     \ManDist(a, b) &=& \sum_{i=1}^{n} | a_i - b_i | = (a_1 \ominus b_1) + \cdots + (a_n \ominus b_n)\\
     &=& zipReduce\big(+,\ 0,\ \ominus,\ \DottedVector{a_1}{a_n},\ \DottedVector{b_1}{b_n}\big)
@@ -617,12 +619,12 @@ We use the binary operator $a \ominus b = |a - b|$ as customizing function for \
 Similarly, we can express the dot product (which is the customizing function of matrix multiplication) as a \zip-\reduce composition, by using multiplication for customizing the \zip skeleton and addition for customizing the \reduce skeleton:
 \begin{eqnarray*}
   \dotProduct(a, b) &=& \sum_{i = 1}^{n} a_i \cdot b_i = (a_1 \cdot b_1) + \cdots + (a_n \cdot b_n)\\
-  &=& zipReduce\big(+,\ 0,\ \times,\ \DottedVector{a_1}{a_n},\ \DottedVector{b_1}{b_n}\big)
+  &=& zipReduce\big(+,\ 0,\ \times,\ a,\ b\big)
 \end{eqnarray*}
 
 \paragraph{Definition of the specialized \allpairs skeleton}
 
-We can now specialize the generic Definition~\autoref{def:allpairs} by employing the sequential composition of the customized \reduce and \zip skeletons for customizing the \allpairs skeleton.
+We can now specialize the generic Definition~\autoref{def:allpairs} of the \allpairs skeleton by employing the sequential composition of the customized \reduce and \zip skeletons for customizing the \allpairs skeleton.
 From here on, we refer to this specialization as the \allpairs skeleton \emph{customized with \zip-\reduce}.
 
 \begin{definition}
@@ -647,7 +649,7 @@ From here on, we refer to this specialization as the \allpairs skeleton \emph{cu
 \end{definition}
 
 
-While not every allpairs computation can be expressed using the specialization, many real-world problems can.
+While not every allpairs computation can be expressed using this specialization, many real-world problems can.
 In addition to the matrix multiplication and the pairwise Manhattan distance examples are the pairwise computation of the Pearson correlation coefficient~\cite{ChangDeQuRo2009} and estimation of Mutual Informations~\cite{DaubStSeKl2004}.
 The composition of \zip and \reduce is well known in the functional programming world.
 Google's popular \emph{MapReduce} programming model has been inspired by a similar composition of the \map and \reduce skeletons.

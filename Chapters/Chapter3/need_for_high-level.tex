@@ -1,13 +1,13 @@
 \section{The need for high-level abstractions}
-We start the discussion of programming for parallel systems and in particular for \GPU systems by locking thoroughly at an application example.
-By doing so we will identify challenges opposed upon application developers which arise from the parallel hardware architecture.
+We start the discussion of programming for parallel systems and in particular for \GPU systems by looking thoroughly at an application example.
+By doing so we will identify challenges opposed upon application developers which arise from typical features of parallel hardware architectures.
 We will then derive from these challenges requirements to a potential high-level programming model.
 
 
 % ============================================================================ %
 \subsection{Challenges of \GPU programming}
 \label{section:opencl-example}
-We choose to investigate a real-world application rather than a simple benchmark to identify not only fundamental challenges every application developer targeting \GPU systems faces, but also practical programming challenges which become only visible for more complex applications, \eg, managing the execution of multiple compute kernels.
+We choose to investigate a real-world application rather than a simple benchmark, in order to identify not only fundamental challenges every application developer targeting \GPU systems faces, but also practical programming challenges which become only visible for more complex applications, \eg, managing the execution of multiple compute kernels.
 
 Our example application is the LM OSEM algorithm~\cite{ReaderErFlOt1998, SchellmannGoMeKoScWuBu2009} for image reconstruction used in Positron Emission Tomography (PET).
 In PET, a radioactive substance is injected into a human or animal body, which is then placed inside a PET scanner that contains several arrays of detectors.
@@ -31,7 +31,7 @@ Then, for each subset $S_l, l \in {0, \ldots, s-1}$, the following computation i
 \label{equ:lm_osem}
 \end{equation}
 
-Here $f \in \mathbb{R}^n$ is a 3D image in vector form with dimensions $n = (X \times Y \times Z)$, $A$ it the so called system matrix, element $a_{ik}$ of row $A_i$ is the length of intersection of the line between the two detectors of event $i$ with voxel $k$ of the reconstruction image, computed with Siddon's algorithm \cite{Siddon1985}.
+Here $f \in \mathbb{R}^n$ is a 3D image in vector form with dimensions $n = (X \times Y \times Z)$, $A$ it the so-called system matrix, element $a_{ik}$ of row $A_i$ is the length of intersection of the line between the two detectors of event $i$ with voxel $k$ of the reconstruction image, computed with Siddon's algorithm \cite{Siddon1985}.
 $\rfrac{1}{A_N^T \textbf{1}}$ is the so-called normalization vector; since it can be precomputed, we will omit it in the following.
 The multiplication $f_{l}c_{l}$ is performed element-wise.
 Each subset's computation takes its predecessor's output image as input and produces a new, more precise image.
@@ -72,7 +72,7 @@ a typical 3D image reconstruction processing $6 \cdot 10^7$ input events for a $
 Although the iterations of the outer loop in \autoref{lst:lmosem:seq_code} are inherently sequential, we can parallelize the two calculation steps within one iteration as shown in \autoref{fig:lmosem:em_distribution} for a system comprising one CPU and two GPUs.
 Note that these steps require different data distribution patterns:
 \begin{itemize}
-  \item[] \emph{Step 1:} Subset's events are copied from the CPU to all GPUs (\emph{upload}) to compute the summation part of $c_l$ concurrently. This step requires that the complete image estimate $f_l$ is available to all GPUs.
+  \item[] \emph{Step 1:} Subset's events are copied from the CPU to all GPUs (\emph{upload}) to compute the summation parts of $c_l$ concurrently. This step requires that the complete image estimate $f_l$ is available on all GPUs.
   \item[] \emph{Step 2:} For computing the next image estimate $f_{l+1}$ in parallel, the current image estimate $f_l$ and the error image $c_l$ computed in step 1 have to be distributed in disjoint parts (blocks) among all GPUs.
 \end{itemize}
 
@@ -82,8 +82,8 @@ Note that these steps require different data distribution patterns:
   \caption{Parallelization schema of the LM OSEM algorithm.}
   \label{fig:lmosem:em_distribution}
 \end{figure}
-Thus, the parallelization schema in \autoref{fig:lmosem:em_distribution} requires a data \emph{redistribution} phase between the two computation steps.
-During step 1, each GPU computes a partial sum of $c_l$ which are summed up and redistributed disjoinlty to all GPUs after step 1.
+Thus, the parallelization schema in \autoref{fig:lmosem:em_distribution} requires a \emph{data redistribution} phase between the two computation steps.
+During step 1, each GPU computes a partial sum of $c_l$ which are then summed up and redistributed disjoinlty to all GPUs after step 1.
 Note that for step 1, each GPU requires a full copy of the image estimate, while in step 2 all GPUs update disjoint parts of it.
 After step 2, the disjoint parts of the image estimate are copied from all GPUs back to the CPU (\emph{download}).
 
@@ -92,7 +92,7 @@ In the following, we describe how the phases in the parallelization schema in \a
 
 \paragraph{Upload}
 \autoref{lst:lmosem:upload} shows the simplified OpenCL implementation of the upload phase.
-Uploading of the event vector $S$ is performed in lines \autoref{lst:lmosem:upload:1:start}--\autoref{lst:lmosem:upload:1:end}, while lines \autoref{lst:lmosem:upload:2:start}--\autoref{lst:lmosem:upload:2:end} show the upload of the image estimate $f_l$.
+Uploading of the event vector $S$ is performed in lines \autoref{lst:lmosem:upload:1:start}--\autoref{lst:lmosem:upload:1:end}, while lines \autoref{lst:lmosem:upload:2:start}--\autoref{lst:lmosem:upload:2:end} upload the image estimate $f_l$.
 In OpenCL, we have to manage each GPU explicitly, therefore, for each GPU, we create an array of buffers (\texttt{s\_gpu} in line~\autoref{lst:lmosem:upload:1:cl_false} and \texttt{f\_gpu} in line~\autoref{lst:lmosem:upload:2:cl_false}) and we use a loop (line \autoref{lst:lmosem:upload:loop}) to repeat all memory operations for each GPU.
 For performance reasons, we use asynchronous copy operations, specified using the \texttt{CL\_FALSE} flag (lines \autoref{lst:lmosem:upload:1:cl_false} and \autoref{lst:lmosem:upload:2:cl_false}): this allows data transfers to multiple GPUs to overlap.
 We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (copy to each GPU), therefore, there are differences when specifying the amount of bytes to copy (lines \autoref{lst:lmosem:upload:1:amount} and \autoref{lst:lmosem:upload:2:amount}) and the offsets in the CPU memory (lines \autoref{lst:lmosem:upload:1:offset} and \autoref{lst:lmosem:upload:2:offset}).
@@ -122,12 +122,12 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
 The implementation of step 1 performs the operations shown in \autoref{lst:lmosem:seq_code}.
 Because of GPU memory restrictions, the OpenCL implementation is not straightforward, therefore, we will not show the detailed code here.
 An OpenCL kernel is launched where each work item processes multiple events one after another.
-For each event first $A_i$ is computed, then the local error for $A_i$ computed using the current image estimate $f_l$ which is finally added to $c_l$.
+For each event first $A_i$ is computed, then the local error for $A_i$ is computed using the current image estimate $f_l$ which is finally added to $c_l$.
 
-In the formula $A_i$ represents the \emph{path} of a detected line through the 3D image space.
-In mathematics it is convenient to think as this as a sparse vector containing the length of the intersection of the line with a given voxel in the image space.
+In \autoref{equ:lm_osem} $A_i$ represents the \emph{path} of a detected line through the 3D image space.
+In mathematics it is convenient to think of this as a sparse vector containing the length of the intersection of the line with a given voxel in the image space.
 As most voxels are not intersected by the line, most entries in the vector remain zero.
-Therefore, in the OpenCL code $A_i$ is represented as an array of pairs, where the first entry of each pair is the index of an voxel in the image space and the second entry is the length of the intersection with this voxel.
+Therefore, in the OpenCL code $A_i$ is represented as an array of pairs, where the first entry of each pair is the index of a voxel in the image space and the second entry is the length of the intersection with this voxel.
 
 Synchronization between work items in OpenCL is highly restricted, \ie, synchronization is only possible for work items organized in the same work group.
 Therefore, it is not possible to efficiently protect the writing operation to $c_l$ to avoid race conditions.
@@ -226,13 +226,13 @@ The described implementation of the example application reveals the main problem
 Our analysis show that to simplify programming for a system with multiple \GPUs, at least the following three high-level abstraction are desirable:
 
 \paragraph{Parallel container data types}
-Compute intensive applications typically operate on a (possibly big) set of data items.
+Compute-intensive applications typically operate on a (possibly big) set of data items.
 As shown in \autoref{lst:lmosem:upload}, managing memory is error-prone because low-level details, like offset calculations, have to be programmed manually.
 
 A high-level programming model should be able to make collections of data automatically accessible to all processors in a system and it should provide an easy-to-use interface for the application developer.
 
 \paragraph{Recurring patterns of parallelism}
-While each application (of course) performs different concrete operations, the general structure of parallelization resembles parallel patterns that are commonly used in many applications.
+While each application performs (of course) different concrete operations, the general structure of parallelization often resembles parallel patterns that are commonly used in many applications.
 In step~1, for computing the error image~$c_l$, the same sequence of operations is performed for every event from the input subset, which is the well-known \emph{map} pattern of data-parallel programming~\cite{GorlatchCo2011}.
 In step~2, two images (the current image estimate~$f_l$ and the error image~$c_l$) are combined element-wise into the output image~($f_{l+1}$), see line~\autoref{lst:lmosem:step_2:zip} of \autoref{lst:lmosem:step_2}, which is again a well-known pattern of parallelism commonly called \emph{zip}.
 
