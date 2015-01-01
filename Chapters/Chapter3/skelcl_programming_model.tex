@@ -23,19 +23,24 @@ Its implementation as a \Cpp library will be discussed in the next section.
 \label{section:skelcl-programming-model:container}
 \SkelCL offers the application developer two container classes -- vector and matrix -- which are transparently accessible by both, \CPU and \GPUs (or using \OpenCL's terminology, host and devices).
 The \emph{vector} abstracts a one-dimensional contiguous memory area while the \emph{matrix} provides an interface to a two-dimensional memory area.
+The \SkelCL container data types have two major advantages as compared with \OpenCL.
 
+The first advantage is its automatic memory management.
 When a container is created on the host, memory is allocated on the devices automatically;
 when a container on the host is deleted, the memory allocated on the devices is freed automatically.
+In \OpenCL memory has to be allocated and freed manually.
 
-The main advantage of the container data types in \SkelCL as compared with \OpenCL is that the necessary data transfers between the host and devices are performed automatically and implicitly.
+The second advantage is that the necessary data transfers between the host and devices are performed automatically and implicitly.
 Before performing a computation on container types, the \SkelCL system ensures that all input containers' data is available on all participating devices.
-This may result in implicit data transfers from the host to device memory, which in \OpenCL would require explicit programming, as we saw in~\autoref{section:opencl-example}.
+This may result in implicit data transfers from the host to device memory, which in \OpenCL requires explicit programming, as we saw in~\autoref{lst:lmosem:upload} in~\autoref{section:opencl-example}.
 Similarly, before any data is accessed on the host, the implementation of \SkelCL implicitly ensures that this data on the host is up-to-date by performing necessary data transfers automatically.
-Thus, the container classes shield the programmer from low-level operations like memory allocation (on the devices) and data transfers between host and device.
+Using the \code{clEnqueueWriteBuffer} (see lines~\ref{lst:lmosem:upload:1:start}--\ref{lst:lmosem:upload:1:end} in \autoref{lst:lmosem:upload}) and \code{clEnqueueReadBuffer} (see \autoref{lst:lmosem:redistribution}) functions nine arguments have to be specified to perform a single data transfer in \OpenCL.
+The \SkelCL container classes shield the programmer from these low-level operations like memory allocation (on the devices) and data transfers between host and device.
 
 Developing applications on two-dimensional data for modern parallel architectures is cumbersome and challenging, since efficient memory handling is essential for achieving good performance.
 In case of \GPUs, exploiting the memory hierarchy by using the fast but small on-chip memory is key for high performance.
 Therefore, in addition to the vector as a one-dimensional abstract data structure, \SkelCL offers a specific abstract data type for handling two-dimensional data, the matrix.
+We will see later in \autoref{sec:opt_allpairs_skeleton} and \autoref{section:skelcl-library} how \SkelCL automatically exploits the memory hierarchy to improve performance.
 
 % The implementations of the algorithmic skeletons included in \SkelCL differentiate for their input container between vector and matrix, thus, offering optimized implementations for each case.
 
@@ -43,10 +48,12 @@ Therefore, in addition to the vector as a one-dimensional abstract data structur
 \subsection{Algorithmic Skeletons}
 \label{section:skelcl-programming-model:skeletons}
 In original \OpenCL, computations are expressed as compute \emph{kernels} which are executed in a parallel manner on an \OpenCL device, \eg, a \GPU.
-As seen earlier the application developer must explicitly specify the parallelism by indicating how many instances of a kernel (called \emph{work items}) should be launched in parallel.
+As seen earlier in \autoref{section:opencl-example} the application developer must explicitly specify the parallelism by indicating how many instances of a kernel (called \emph{work items}) should be launched in parallel.
+In \autoref{lst:lmosem:step_2} the \code{local\_work\_size} (line~\ref{lst:lmosem:step_2:env:start}) and \code{global\_work\_size} (line~\ref{lst:lmosem:step_2:env:global}) specify the number of work items and how they are organized into groups.
+The programmer must ensure that these numbers match,\ie, that the global size is evenly divisible by the local size.
 Communications between work items are limited and have to be implemented carefully to avoid race conditions and deadlocks.
-In addition, kernels take unsafe pointers to device memory as input and contain program code for reading/writing single data items from/to it.
-These pointers have to be used carefully, because no boundary checks are performed by \OpenCL.
+In addition, kernels take pointers to device memory as input and contain program code for reading/writing single data items from/to it.
+These pointers are unsafe as they have to be used carefully, because no boundary checks are performed by \OpenCL.
 
 To shield the application developer from these low-level programming issues, \SkelCL extends \OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{Cole1991}.
 Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner, thus hiding the details of parallelism and communication from the user~\cite{GorlatchCo2011}.
@@ -71,19 +78,19 @@ We start by formally defining the skeleton on vectors:
   Let $f$ be a unary customizing function defined on elements.
   The algorithmic skeleton \map is then defined as follows:
   \begin{equation*}
-    map \big(\ f,\ [x_1, x_2, \dots, x_n]\ \big) \eqdef [f(x_1), f(x_2), \dots, f(x_n)]
+    \map\ f\ [x_1, x_2, \dots, x_n] \eqdef [f\ x_1, f\ x_2, \dots, f\ x_n]
   \end{equation*}
 \end{definition}
 \noindent
 The definition for matrices is similar:
 \begin{definition}
   \label{definition:map:matrix}
-  Let $M$ be an $n\times m$ matrix with elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
+  Let $M$ be an $n\times m$ matrix with elements $m_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
   Let $f$ be a unary customizing function.
   The algorithmic skeleton \map is defined as follows:
   \begin{equation*}
-    map\big(\ f,\ \DottedMatrix{M_{0,0}}{M_{0,m}}{M_{n,0}}{M_{n,m}} \big)
-      \eqdef \DottedMatrix{f(M_{0,0})}{f(M_{0,m})}{f(M_{n,0})}{f(M_{n,m})}
+    \map\ f\ \DottedMatrix{m_{0,0}}{m_{0,m}}{m_{n,0}}{m_{n,m}}
+      \eqdef \DottedMatrix{f\ m_{0,0}}{f\ m_{0,m}}{f\ m_{n,0}}{f\ m_{n,m}}
   \end{equation*}
 \end{definition}
 \noindent
@@ -91,7 +98,7 @@ The output container of the \map skeleton, either vector or matrix, can be compu
 
 A simple possible application of the \map skeleton is negating all the values in a vector:
 \begin{align*}
-  neg(\vec{x}) &= map(\ -, \vec{x}\ )
+  neg\ \vec{x} &= \map\ (-)\ \vec{x}
 \end{align*}
 
 
@@ -105,7 +112,7 @@ As the \map skeleton it is defined for vectors and matrices as well.
   The algorithmic skeleton \zip is defined as follows:
   \begin{equation*}
     \begin{split}
-    zip \big(\ \oplus,\ [x_1, x_2, \dots, x_n],\ [y_1, y_2, \dots, y_n]\ \big)\\
+      \zip\ \oplus\ [x_1, x_2, \dots, x_n]\ [y_1, y_2, \dots, y_n]\\
       \eqdef [x_1 \oplus y_1, x_2 \oplus y_2, \dots, x_n \oplus y_n]
     \end{split}
   \end{equation*}
@@ -114,14 +121,14 @@ As the \map skeleton it is defined for vectors and matrices as well.
 Again the definition for matrices is similar:
 \begin{definition}
   \label{definition:zip:matrix}
-  Let $A$ and $B$ be $n\times m$ matrices with elements $A_{i,j}$ and $B_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
+  Let $M$ and $N$ be $n\times m$ matrices with elements $m_{i,j}$ and $n_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
   Let $\oplus$ be a binary customizing operator.
   The algorithmic skeleton \zip is defined as follows:
   \begin{equation*}
     \begin{split}
-    zip\big( f,\ {\DottedMatrix{A_{0,0}}{A_{0,m}}{A_{n,0}}{A_{n,m}}},\
-                 {\DottedMatrix{B_{0,0}}{B_{0,m}}{B_{n,0}}{B_{n,m}}}\big) \\
-      \eqdef \DottedMatrix{A_{0,0} \oplus B_{0,0}}{A_{0,m} \oplus B_{0,m}}{A_{n,0} \oplus B_{n,0}}{A_{n,m} \oplus B_{n,m}}
+      \zip\ f\ {\DottedMatrix{m_{0,0}}{m_{0,m}}{m_{n,0}}{m_{n,m}}}\
+            {\DottedMatrix{n_{0,0}}{n_{0,m}}{n_{n,0}}{n_{n,m}}} \\
+      \eqdef \DottedMatrix{m_{0,0} \oplus n_{0,0}}{m_{0,m} \oplus n_{0,m}}{m_{n,0} \oplus n_{n,0}}{m_{n,m} \oplus n_{n,m}}
     \end{split}
   \end{equation*}
 \end{definition}
@@ -131,7 +138,7 @@ The \zip skeleton is parallelizeable in the same manner as \map, as each element
 
 A possible application of the \zip skeleton is performing pairwise addition of two vectors:
 \begin{align*}
-  add(\vec{x},\ \vec{y}) = zip(\ +, \vec{x},\ \vec{y}\ )
+  add\ \vec{x}\ \vec{y} = \zip\ (+)\ \vec{x}\ \vec{y}
 \end{align*}
 
 
@@ -141,21 +148,21 @@ In \SkelCL the \reduce skeleton is only defined on vectors:
 \begin{definition}
   \label{definition:reduce}
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be an associative and commutative, binary customizing operator with the corresponding identity element $id$.
+  Let $\oplus$ be an associative binary customizing operator with the corresponding identity element \id.
   The algorithmic skeleton \reduce is defined as follows:
   \begin{equation*}
-    reduce \big(\ \oplus,\ id,\ [x_1, x_2, \dots, x_n]\ \big)
+    \reduce\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
       \eqdef x_1 \oplus x_2 \oplus \dots \oplus x_n
   \end{equation*}
 \end{definition}
 \noindent
-Requiring the operator to be associative and commutative enables efficient parallel implementations.
-The identity element $id$ can be used by the implementation, \eg, to initialize intermediate buffers.
+Requiring the operator to be associative enables efficient parallel implementations.
+The identity element \id can be used by the implementation, \eg, to initialize intermediate buffers.
 
 A possible application of the \reduce skeleton is to finding the maximum value of a vector:
 \begin{align*}
-  maxValue(\vec{x}) &= reduce(\ max,\ 0,\ \vec{x}\ )\\
-  \text{where:} \qquad max(a, b) &=
+  maxValue\ \vec{x} &= \reduce\ max\ 0\ \vec{x}\\
+  \text{where:} \qquad max\ a\ b &=
     \left\{
       \begin{array}{l l}
       a & \text{if } a \geq b\\
@@ -171,12 +178,12 @@ In \SkelCL, the \scan skeleton is only defined on vectors:
 \begin{definition}
   \label{definition:scan}
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be an associative binary customizing operator with the corresponding identity element $id$.
+  Let $\oplus$ be an associative binary customizing operator with the corresponding identity element \id.
   The algorithmic skeleton \scan is defined as follows:
   \begin{equation*}
     \begin{split}
-    scan \big(&\ \oplus,\ id,\ [x_1, x_2, \dots, x_n]\ \big) \\
-      &\eqdef [id, x_1 \oplus x_2,\ \dots,x_1 \oplus x_2 \oplus \cdots \oplus x_n]
+      \scan&\ \oplus\ \id\ [x_1, x_2, \dots, x_n] \\
+      &\eqdef [\id, x_1 \oplus x_2,\ \dots,x_1 \oplus x_2 \oplus \cdots \oplus x_n]
     \end{split}
   \end{equation*}
 \end{definition}
@@ -186,31 +193,31 @@ Blelloch~\cite{Blelloch1991} studies this parallel pattern in great detail and e
 
 A possible application of the \scan skeleton is the computation of the prefix sum which can be used as part of the counting sort algorithm~\cite{Knuth1998} or for solving the list ranking problem~\cite{ColeVi1989}.
 \begin{align*}
-  prefixSum(\vec{x}) = scan(\ +,\ 0,\ \vec{x}\ )
+  prefixSum\ \vec{x} = \scan\ (+)\ 0\ \vec{x}
 \end{align*}
 
 \paragraph{Parallel Programming with Algorithmic Skeletons}
 In \SkelCL, rather than writing low-level kernels, the application developer customizes suitable skeletons by providing application-specific functions which are often much simpler than kernels as they specify an operation on basic data items rather than containers.
-Skeletons can be executed on both single- and multi-device systems.
-In case of a multi-device system, the calculation specified by a skeleton is performed automatically on all devices available in the system.
 
-Skeletons can be customized and composed to express more complex algorithms.
+Skeletons can be customized and composed to express complex algorithms.
 To demonstrate how to express computations with algorithmic skeletons let us consider three simple linear algebra applications:
 scaling a vector with a constant, computing the sum of absolute values of a vector, and computing the dot product (\aka inner product) of two vectors.
 These three applications are all part of the well-known \emph{Basic Linear Algebra Subprograms (\BLAS)}~\cite{Dongarra2002,Dongarra2002a} library.
 
 For scaling a vector with a constant $\alpha$ we use the \map skeleton:
 \begin{align*}
-  scal(\vec{x}) &= map(\ f_{\alpha}, \vec{x}\ )\\
-  \text{where:} \qquad f_{\alpha}(x_i) &= \alpha \cdot x_i
+  scal\ \vec{x}&= \map\ f_{\alpha}\ \vec{x}\\
+  \text{where:} \qquad f_{\alpha}\ x_i &= \alpha \cdot x_i
 \end{align*}
 
 \noindent
 For computing the sum of absolute values we compose a \map and \reduce skeleton.
-We use the $\circ$ to denote the sequential composition of two functions, \ie\ $(f \circ g)(x) = f(g(x))$.
+%We use the $\circ$ to denote the sequential composition of two functions, \ie\ $(f \circ g)\ x = f(g\ x)$.
 \begin{align*}
-  asum(\vec{x}) &= reduce(\ +,\ 0\ ) \circ map(\ abs, \vec{x}\ )\\
-  \text{where:} \qquad abs(a) &=
+  %asum\ \vec{x} &= \big(\ \reduce\ (+)\ 0\ \circ \map\ abs\ \big)\ \vec{x}\\
+  asum\ \vec{x} &= \reduce\ (+)\ 0\ \big(\ \map\ abs\ \vec{x}\ \big)\\
+  %asum &= \reduce\ (+)\ 0\ \circ \map\ abs\\
+  \text{where:} \qquad abs\ a &=
     \left\{
       \begin{array}{r l}
       a & \text{if } a \geq 0\\
@@ -222,12 +229,13 @@ We use the $\circ$ to denote the sequential composition of two functions, \ie\ $
 \noindent
 To compute the dot product of two vectors we compose a \zip skeleton customized with multiplication and a \reduce skeleton customized with addition:
 \begin{align*}
-  dot(\vec{x}, \vec{y}) &= reduce(\ +,\ 0\ ) \circ zip(\ \times, \vec{x}, \vec{y}\ )
+  %dot\ \vec{x}\ \vec{y} &= \big(\ \reduce\ (+)\ 0\ \circ \zip\ (\times)\ \vec{x}\ \big)\ \vec{y}\\
+  dot\ \vec{x}\ \vec{y} &= \reduce\ (+)\ 0\ \big(\ \zip\ (\times)\ \vec{x}\ \vec{y}\ \big)
 \end{align*}
 
 \noindent
 Algorithmic skeletons are not limited to linear algebra applications, but can be used to implement a boarded range of application types as we will discuss in \autoref{chapter:skelcl-evaluation}.
-Among others, we will see an implementation using algorithmic skeletons of the real-world medial imaging application example discussed at the beginning of this chapter.
+Among others, we will see an algorithmic skeleton based implementation of the real-world medial imaging application example discussed at the beginning of this chapter.
 
 
 % ============================================================================ %
@@ -353,11 +361,11 @@ We now formally define the \stencil skeleton. We start with the definition for v
   The algorithmic skeleton \stencil is defined as follows:
   \begin{equation*}
     \begin{split}
-    &stencil \big(\ f,\  d,\ h,\ [x_1, x_2, \dots, x_n]\ \big) \eqdef [y_1, y_2, \dots, y_n]\\
+    &\stencil\ f\  d\ h\ [x_1, x_2, \ldots, x_n] \eqdef [y_1, y_2, \dots, y_n]\\
     &\text{where}\\[.5em]
-    &\qquad y_i = f(x_{i-d}, \ldots, x_{i+d}) \ \ \forall\ i :  0 < i \leq n\\
+    &\qquad y_i = f\ [x_{i-d}, \ldots, x_{i+d}] \qquad \forall\ i :  0 < i \leq n\\
     &\text{and\hfill}\\
-    &\qquad x_j = h(j) \ \ \forall\ j : -d < j \leq 0\ \vee n < j \leq n+d
+    &\qquad x_j = h\ j \qquad \forall\ j : -d < j \leq 0\ \vee n < j \leq n+d
     \end{split}
   \end{equation*}
 \end{definition}
@@ -366,18 +374,18 @@ We now formally define the \stencil skeleton. We start with the definition for v
 The definition for matrices is similar:
 \begin{definition}
   \label{definition:mapoverlap:matrix}
-  Let $M$ be an $n\times m$ matrix with elements $M_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
+  Let $M$ be an $n\times m$ matrix with elements $m_{i,j}$ where $0 < i \leq n$ and $0 < j \leq m$.
   Let $f$ be a customizing function, $d$ be an positive integer value, and $h$ be a out of bound handling function.
   The algorithmic skeleton \stencil is defined as follows:
   \begin{equation*}
     \begin{split}
-    & stencil \big(\ f,\  d,\ h,\ \DottedMatrix{M_{0,0}}{M_{0,m}}{M_{n,0}}{M_{n,m}}\big)
-               \eqdef \DottedMatrix{N_{0,0}}{N_{0,m}}{N_{n,0}}{N_{n,m}}\\
+    & \stencil\ f\  d\ h\ \DottedMatrix{m_{0,0}}{m_{0,m}}{m_{n,0}}{m_{n,m}}
+               \eqdef \DottedMatrix{n_{0,0}}{n_{0,m}}{n_{n,0}}{n_{n,m}}\\
                &\text{where}\\[.5em]
-    &\qquad N[i,j] = f\left(\DottedMatrix{M_{i-d,j-d}}{M_{i-d,j+d}}{M_{i+d,j-d}}{M_{i+d,j+d}}\right)\ \ \forall\ i,j
+    &\qquad n_{i,j} = f\ \DottedMatrix{m_{i-d,j-d}}{m_{i-d,j+d}}{m_{i+d,j-d}}{m_{i+d,j+d}} \qquad \forall\ i,j
         \begin{array}{r} 0 < i \leq n,\\ 0 < j \leq m \end{array}\\
         &\text{and}\\
-    &\qquad M[i,j] = h(i,j) \qquad \forall\ i,j \begin{array}{r} -d < j \leq 0\ \vee n < j \leq n+d,\\ -d < j \leq 0\ \vee m < j \leq m+d \end{array}
+    &\qquad m_{i,j} = h\ i\ j \qquad \forall\ i,j \begin{array}{r} -d < j \leq 0\ \vee n < j \leq n+d,\\ -d < j \leq 0\ \vee m < j \leq m+d \end{array}
     \end{split}
   \end{equation*}
 \end{definition}
@@ -391,19 +399,19 @@ The \stencil skeleton can currently be configured to handle out of bound accesse
   \item the nearest valid value inside the container is returned.
 \end{enumerate}
 
-Possible applications for the stencil skeleton are image processing applications or physics simulations (see~\autoref{sec:imageProcessing} and \autoref{sec:physicsSim}).
+Possible applications for the \stencil skeleton are image processing applications or physics simulations (see~\autoref{sec:imageProcessing} and \autoref{sec:physicsSim}).
 A simple example application is the \emph{discrete Laplacian operator} used in image processing, \eg, for edge detection~\cite{Umbaugh1997}.
 It computes a new value for every pixel of an image by weighting and summing up its direct neighboring pixel values, as follows:
 \begin{align*}
-  laplacian&(M) = stencil(\ f,\ 1,\ \overline{0},\ M\ )\\
+  laplacian&\ M = \stencil\ f\ 1\ \overline{0}\ M\\
   \text{where:} \ \ &
   \begin{array}{ll}%
-  f &\left(\left[\begin{array}{lll}%
-      \hspace{-.5em} M_{i-1,j-1}& \hspace{-.5em} M_{i-1,j} & \hspace{-.5em}M_{i-1,j+1}\vspace{-.25em}\\%
-      \hspace{-.5em} M_{i,j-1}& \hspace{-.5em} M_{i,j} & \hspace{-.5em}M_{i,j+1}\vspace{-.25em}\\%
-      \hspace{-.5em} M_{i+1,j-1}& \hspace{-.5em} M_{i+1,j} & \hspace{-.5em}M_{i+1,j+1}\vspace{-.25em}
-    \end{array}\right] \right) = \\
-          &\ M_{i-1,j} + M_{i,j-1} - 4 \times M_{i,j} + M_{i,j+1} + M_{i+1,j}
+  f&\ \left[\begin{array}{ccc}%
+      \hspace{-.5em} m_{i-1,j-1}& \hspace{-.5em} m_{i-1,j} & \hspace{-.5em}m_{i-1,j+1}\vspace{-.25em}\\%
+      \hspace{-.5em} m_{i,j-1}  & \hspace{-.5em} m_{i,j}   & \hspace{-.5em}m_{i,j+1}  \vspace{-.25em}\\%
+      \hspace{-.5em} m_{i+1,j-1}& \hspace{-.5em} m_{i+1,j} & \hspace{-.5em}m_{i+1,j+1}
+    \end{array}\right] = \\[2em]
+          &\ m_{i-1,j} + m_{i,j-1} - 4 \times m_{i,j} + m_{i,j+1} + m_{i+1,j}
   \end{array} \\
   \text{and } \overline{0} \text{ is th}&\text{e constant function always returning 0.}
 \end{align*}
@@ -450,29 +458,29 @@ for two sets of entities, the same computation is performed independently for al
 We define the \allpairs skeleton to simplify the development of such applications.
 We represent the entries of both sets as vectors of length $d$, where the cardinality of the first set is $n$ and the cardinality of the second set is $m$.
 We model the first set as a $n\times d$ matrix $A$ and the second set as a $m\times d$ matrix $B$.
-The allpairs computation yields an output matrix $C$ of size $n\times m$ with $c_{i, j} = A_i \oplus B_j$, where $A_i$ and $B_j$ are row vectors of $A$ and $B$, correspondingly,
+The allpairs computation yields an output matrix $C$ of size $n\times m$ with $c_{i, j} = a_i \oplus b_j$, where $a_i$ and $b_j$ are row vectors of $A$ and $B$, correspondingly,
 %:
-%$A_i = [A_{i,1}, \cdots, A_{i, d}]$, $B_j = [B_{j,1}, \cdots, B_{j,d}]$,
+%$a_i = [a_{i,1}, \cdots, a_{i, d}]$, $b_j = [b_{j,1}, \cdots, b_{j,d}]$,
 and $\oplus$ is a binary operator defined on vectors.
 
 We formally define the \allpairs skeleton as follows:
 
 \begin{definition}
   \label{def:allpairs}
-  Let $A$ be a $n\times d$ matrix, $B$ be a $m\times d$ matrix, and $C$ be a $n\times m$ matrix, with their elements $A_{i,j}$, $B_{i,j}$, and $C_{i,j}$ respectively.
+  Let $A$ be a $n\times d$ matrix, $B$ be a $m\times d$ matrix, and $C$ be a $n\times m$ matrix, with their elements $a_{i,j}$, $b_{i,j}$, and $C_{i,j}$ respectively.
   The algorithmic skeleton \allpairs with customizing binary function $\oplus$ is defined as follows:
   \begin{equation*}
     \begin{split}
-    allpairs&(\oplus)\left(%
-      \left[ \begin{array}{ccc} A_{1,1} & \cdots & A_{1,d}\\[.25em] \vdots & & \vdots\\[.25em] A_{n,1} & \cdots & A_{n,d} \end{array}\right], %
-      \left[ \begin{array}{ccc} B_{1,1} & \cdots & B_{1,d}\\[-.25em] \cdot & & \cdot\\[-.75em] \cdot & & \cdot\\[-.25em] B_{m,1} & \cdots & B_{m,d} \end{array}\right]%
-      \right)\\
+    allpairs\ (&\oplus)\
+      \left[ \begin{array}{ccc} a_{1,1} & \cdots & a_{1,d}\\[.25em] \vdots & & \vdots\\[.25em] a_{n,1} & \cdots & a_{n,d} \end{array}\right]\ %
+      \left[ \begin{array}{ccc} b_{1,1} & \cdots & b_{1,d}\\[-.25em] \cdot & & \cdot\\[-.75em] \cdot & & \cdot\\[-.25em] b_{m,1} & \cdots & b_{m,d} \end{array}\right]%
+      \\
     &\eqdef \left[ \begin{array}{ccc} C_{1,1} & \cdots & C_{1,m}\\[.25em] \vdots & & \vdots\\[.25em] C_{n,1} & \cdots & C_{n,m} \end{array} \right]
     \end{split}
   \end{equation*}
   where elements $C_{i,j}$ of the $n\times m$ matrix $C$ are computed as follows:
   \[
-    C_{i,j} = \DottedVector{A_{i,1}}{A_{i,d}} \oplus \DottedVector{B_{j,1}}{B_{j,d}}
+    C_{i,j} = \DottedVector{a_{i,1}}{a_{i,d}} \oplus \DottedVector{b_{j,1}}{b_{j,d}}
   \]
 \end{definition}
 
@@ -511,13 +519,13 @@ The Manhattan distance (or $L_1$ distance) is a measure of distance which is use
 In general, it is defined for two vectors, $x$ and $y$, of equal length $d$, as follows:
 \begin{equation}
   \label{eq:man_dist}
-  \ManDist(x, y) = \sum_{k=1}^d | x_k - y_k |
+  \ManDist\ x\ y = \sum_{k=1}^d | x_k - y_k |
 \end{equation}
 In~\cite{ChangDeQuRo2009}, the so-called Pairwise Manhattan Distance (\emph{PMD}) is studied as a fundamental operation in hierarchical clustering for data analysis.
 \emph{PMD} is obtained by computing the Manhattan distance for every pair of rows of a given matrix.
 This computation for arbitrary matrix $A$ can be expressed using the \allpairs skeleton customized with the Manhattan distance defined in \autoref{eq:man_dist}:
 \begin{equation}
-  \PMD(A) = allpairs(\mbox{\emph{ManDist}})\left(A, A\right)
+  \PMD\ A = allpairs\ \mbox{\emph{ManDist}}\ A\ A
 \end{equation}
 The $n\times n$ matrix computed by the customized skeleton contains the Manhattan distance for every pair of rows of the input $n\times d$ matrix $A$.
 
@@ -526,11 +534,11 @@ Matrix-matrix multiplication is a basic linear algebra operation, which is a bui
 A $n\times d$ matrix $A$ is multiplied with a $d\times m$ matrix $B$, producing a $n\times m$ matrix $C=A\times B$ whose element $C_{i,j}$ is computed as the dot product of the $i$th row of $A$ with the $j$th column of $B$.
 The dot product of two vectors, $a$ and $b$ of length $d$, is computed as follows:
 \begin{equation}
-  \dotProduct (a,b) = \sum_{k=1}^d a_k \cdot b_k
+  \dotProduct\ a\ b = \sum_{k=1}^d a_k \cdot b_k
 \end{equation}
 The matrix multiplication can be expressed using the \allpairs skeleton as:
 \begin{equation}
-  A\times B = allpairs(\dotProduct)\left(A, B^T\right)
+  A\times B = allpairs\ \dotProduct\ A\ B^T
   \label{eq:mat_mult_allpairs}
 \end{equation}
 where $B^T$ is the transpose of matrix $B$.
@@ -593,33 +601,33 @@ then, the next elements (marked as \circled{2}) are multiplied and the result is
 A key observation is, that other applications share the same memory access pattern as the matrix multiplication shown in \autoref{fig:mm_access_pattern}.
 For example, the customizing function of the pairwise Manhattan distance as defined by \autoref{eq:man_dist} follows obviously the same memory access pattern as the matrix multiplication.
 To find a common representation for a customizing function with this pairwise access pattern, we describe it as a sequential composition of two basic algorithmic skeletons: \zip and \reduce.
-The \emph{sequential composition} composition of two functions (or skeletons) $f$ and $g$ is denoted by $g \circ f$ which means that $f$ is applied first and then $g$ is applied to the result value of $f$ as input, \ie, $(g\circ f)(x) = g(f(x))$.
+% The \emph{sequential composition} composition of two functions (or skeletons) $f$ and $g$ is denoted by $g \circ f$ which means that $f$ is applied first and then $g$ is applied to the result value of $f$ as input, \ie, $(g\circ f)\ x = g(f\ x)$.
 
-For the \reduce skeleton customized with $\oplus$ and corresponding identity element $id$, and the \zip skeleton customized with $\otimes$ we can sequentially compose them as follows:
+For the \reduce skeleton customized with $\oplus$ and corresponding identity element \id, and the \zip skeleton customized with $\otimes$ we can sequentially compose them as follows:
 \begin{eqnarray*}
-  reduce\ (\oplus, id) \circ zip\big(\ \otimes,\ a,\ b\ \big) &=&\\
-  reduce\ (\oplus, id) \big(\ zip\big(\ \otimes,\ \DottedVector{a_1}{a_n},\ \DottedVector{b_1}{b_n}\ \big)\ \big) &=&\\
+  \reduce\ (\oplus)\ \id\ \big(\ \zip\ (\otimes)\ a\ b\ \big) &=&\\
+  \reduce\ (\oplus)\ \id\ \big(\ \zip\ (\otimes)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}\ \big) &=&\\
   (a_1 \otimes b_1)\ \ \oplus &\cdots& \oplus\ \ (a_n \otimes b_n)
 \end{eqnarray*}
 
 This composition of the two customized skeletons yields a function which we denote \zipReduce; it takes two input vectors and produces a single scalar value:
 
 \begin{equation*}
-  zipReduce\big(\oplus,\ id,\ \otimes,\ a,\ b\ \big) \eqdef 
-  reduce\ (\oplus,\ id) \circ zip\big(\ \otimes,\ a,\ b\ \big)
+  \zipReduce\ (\oplus)\ \id\ (\otimes)\ a\ b \eqdef 
+  \reduce\ (\oplus)\ \id\ \big(\ \zip\ (\otimes)\ a\ b\ \big)
 \end{equation*}
 
 Following the definition of \zipReduce, we can express the customizing function of the Manhattan distance as follows.
 We use the binary operator $a \ominus b = |a - b|$ as the customizing function for \zip, and addition as the customizing function for the \reduce skeleton:
 \begin{eqnarray*}
-    \ManDist(a, b) &=& \sum_{i=1}^{n} | a_i - b_i | = (a_1 \ominus b_1) + \cdots + (a_n \ominus b_n)\\
-    &=& zipReduce\big(+,\ 0,\ \ominus,\ \DottedVector{a_1}{a_n},\ \DottedVector{b_1}{b_n}\big)
+    \ManDist\ a\ b &=& \sum_{i=1}^{n} | a_i - b_i | = (a_1 \ominus b_1) + \cdots + (a_n \ominus b_n)\\
+    &=& \zipReduce\ (+)\ 0\ (\ominus)\ \DottedVector{a_1}{a_n}\ \DottedVector{b_1}{b_n}
 \end{eqnarray*}
 
 Similarly, we can express the dot product (which is the customizing function of matrix multiplication) as a \zip-\reduce composition, by using multiplication for customizing the \zip skeleton and addition for customizing the \reduce skeleton:
 \begin{eqnarray*}
-  \dotProduct(a, b) &=& \sum_{i = 1}^{n} a_i \cdot b_i = (a_1 \cdot b_1) + \cdots + (a_n \cdot b_n)\\
-  &=& zipReduce\big(+,\ 0,\ \times,\ a,\ b\big)
+  \dotProduct\ a\ b &=& \sum_{i = 1}^{n} a_i \cdot b_i = (a_1 \cdot b_1) + \cdots + (a_n \cdot b_n)\\
+  &=& \zipReduce\ (+)\ 0\ (\times)\ a\ b
 \end{eqnarray*}
 
 \paragraph{Definition of the specialized \allpairs skeleton}
@@ -629,22 +637,22 @@ From here on, we refer to this specialization as the \allpairs skeleton \emph{cu
 
 \begin{definition}
   \label{def:allpairs:specialized}
-  Let $A$ be a $n\times d$ matrix, $B$ be a $m\times d$ matrix, and $C$ be a $n\times m$ matrix, with their elements $A_{i,j}$, $B_{i,j}$, and $C_{i,j}$ respectively.
-  Let $\oplus$ be an associative and commutative, binary customizing operator with the corresponding identity element $id$.
+  Let $A$ be a $n\times d$ matrix, $B$ be a $m\times d$ matrix, and $C$ be a $n\times m$ matrix, with their elements $a_{i,j}$, $b_{i,j}$, and $C_{i,j}$ respectively.
+  Let $\oplus$ be an associative binary customizing operator with the corresponding identity element \id.
   Let $\otimes$ be a binary customizing operator.
   The specialized algorithmic skeleton \allpairs customized with \zip-\reduce is defined as follows:
   \begin{equation*}
     \begin{split}
-    allpairs&(\oplus,\ id,\ \otimes)\left(%
-      \left[ \begin{array}{c} A_{1,1} \cdots A_{1,d}\\[.25em] \vdots \hspace{4em} \vdots\\[.25em] A_{n,1} \cdots A_{n,d} \end{array}\right], %
-      \left[ \begin{array}{c} B_{1,1} \cdots B_{1,d}\\[-.25em] \cdot \hspace{4em} \cdot\\[-.75em] \cdot \hspace{4em} \cdot\\[-.25em] B_{m,1} \cdots B_{m,d} \end{array}\right]%
-      \right)\\
+      \allpairs\ (\oplus)\ \id\ (&\otimes)\ %
+      \left[ \begin{array}{c} a_{1,1} \cdots a_{1,d}\\[.25em] \vdots \hspace{4em} \vdots\\[.25em] a_{n,1} \cdots a_{n,d} \end{array}\right]\ %
+      \left[ \begin{array}{c} b_{1,1} \cdots b_{1,d}\\[-.25em] \cdot \hspace{4em} \cdot\\[-.75em] \cdot \hspace{4em} \cdot\\[-.25em] b_{m,1} \cdots b_{m,d} \end{array}\right]%
+      \\
     &\eqdef \left[ \begin{array}{ccc} C_{1,1} & \cdots & C_{1,m}\\[.25em] \vdots & & \vdots\\[.25em] C_{n,1} & \cdots & C_{n,m} \end{array} \right]
     \end{split}
   \end{equation*}
   where elements $C_{i,j}$ of the $n\times m$ matrix $C$ are computed as follows:
   \[
-    C_{i,j} = zipReduce(\oplus, id, \otimes, \DottedVector{A_{i,1}}{A_{i,d}}, \DottedVector{B_{j,1}}{B_{j,d}})
+    C_{i,j} = \zipReduce\ (\oplus)\ \id\ (\otimes)\ \DottedVector{a_{i,1}}{a_{i,d}}\ \DottedVector{b_{j,1}}{b_{j,d}}
   \]
 \end{definition}
 
@@ -672,7 +680,7 @@ Google's popular \emph{MapReduce} programming model has been inspired by a simil
 % We allocate two arrays in the local memory, one of size $r\times k$ ($r=2$, $k=3$ in Figure~\ref{fig:memory_access}) for elements of $A$ and one of size $k\times c$ ($c=3$ in Figure~\ref{fig:memory_access}) for elements of $B$.
 % A work-group consisting of $c\times r$ work-items computes $s$ blocks ($s=2$ in Figure~\ref{fig:memory_access}) of the result matrix $C$.
 % In Figure~\ref{fig:memory_access}, the two blocks marked as \circled{7} and \circled{8} are computed by the same work-group as follows.
-% In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the zip-reduce pattern.
+% In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the \zip-\reduce pattern.
 % The obtained intermediate result is stored in block \circled{7}.
 % Then, the elements of block \circled{3} are loaded and combined with the elements from \circled{2} which still reside in the local memory.
 % The intermediate result is stored in block \circled{8}.

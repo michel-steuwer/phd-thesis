@@ -1,6 +1,6 @@
 \section{The need for high-level abstractions}
 We start the discussion of programming for parallel systems and in particular for \GPU systems by looking thoroughly at an application example.
-By doing so we will identify challenges opposed upon application developers which arise from typical features of parallel hardware architectures.
+By doing so we will identify challenges faced by application developers which arise from typical features of parallel hardware architectures.
 We will then derive from these challenges requirements to a potential high-level programming model.
 
 
@@ -159,7 +159,7 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
 For such synchronization, OpenCL uses \emph{events}, associated with an operation (line \autoref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
 After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (line \autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
-Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in OpenCL.
+Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in any version of OpenCL.
 
 \paragraph{Step 2}
 \autoref{lst:lmosem:step_2} shows the implementation of step 2.
@@ -205,7 +205,7 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 
   // specify execution environment
   int local_work_size[1]  = { 32 };$\label{lst:lmosem:step_2:env:start}$
-  int global_work_size[1] =
+  int global_work_size[1] =$\label{lst:lmosem:step_2:env:global}$
         { roundUp(32, size_of_f / gpu_count) };$\label{lst:lmosem:step_2:env:stop}$
   // launch the kernel
   clEnqueueNDRangeKernel($\label{lst:lmosem:step_2:kernel:start}$
@@ -233,8 +233,8 @@ A high-level programming model should be able to make collections of data automa
 
 \paragraph{Recurring patterns of parallelism}
 While each application performs (of course) different concrete operations, the general structure of parallelization often resembles parallel patterns that are commonly used in many applications.
-In step~1, for computing the error image~$c_l$, the same sequence of operations is performed for every event from the input subset, which is the well-known \emph{map} pattern of data-parallel programming~\cite{GorlatchCo2011}.
-In step~2, two images (the current image estimate~$f_l$ and the error image~$c_l$) are combined element-wise into the output image~($f_{l+1}$), see line~\autoref{lst:lmosem:step_2:zip} of \autoref{lst:lmosem:step_2}, which is again a well-known pattern of parallelism commonly called \emph{zip}.
+In step~1, for computing the error image~$c_l$, the same sequence of operations is performed for every event from the input subset, which is the well-known \map pattern of data-parallel programming~\cite{GorlatchCo2011}.
+In step~2, two images (the current image estimate~$f_l$ and the error image~$c_l$) are combined element-wise into the output image~($f_{l+1}$), see line~\autoref{lst:lmosem:step_2:zip} of \autoref{lst:lmosem:step_2}, which is again a well-known pattern of parallelism commonly called \zip.
 
 It would be, therefore, desirable to express the high-level structure of an application using pre-defined common patterns, rather than describing the parallelism manually in much detail.
 

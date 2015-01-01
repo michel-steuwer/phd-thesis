@@ -401,7 +401,7 @@ The execution of the \scan skeleton on multi-device systems is visualized in \au
 Here an example is shown where the prefix sum is computed on a four-device system using the \scan skeleton.
 The input vector with the values $[1,\ldots,16]$ is distributed using the \emph{block} distribution by default.
 This is shown in the top line.
-After performing the scan algorithm on all devices (second line of the figure), map skeletons are built implicitly using the marked values and executed on all devices except the first one.
+After performing the scan algorithm on all devices (second line of the figure), \map skeletons are built implicitly using the marked values and executed on all devices except the first one.
 This produces the final result, as shown in the bottom line.
 
 \begin{figure*}[tbp]
@@ -409,7 +409,7 @@ This produces the final result, as shown in the bottom line.
     \includegraphics[width=.9\textwidth]{ASHES/scan}
     \caption{Implementation of the \scan skeleton visualized for four GPUs:
             (1) All GPUs scan their parts independently.
-            (2) map skeletons are created automatically and
+            (2) \map skeletons are created automatically and
              executed to produce the result.}
     \label{fig:scan:impl}
 \end{figure*}
@@ -418,8 +418,8 @@ The \SkelCL implementation of the \scan skeleton assumes the \GPUs to have a fix
 \begin{enumerate}
  \item Every \GPU executes a local scan algorithm for its local part of data;
  \item The results of all \GPUs are downloaded to the \CPU;
- \item For each \GPU (except the first one), a map skeleton is implicitly created that combines the result of the \GPU's predecessors with all elements of its part using the user-defined operation of the \scan skeleton;
- \item The newly created map skeletons compute the final results on all \GPUs.
+ \item For each \GPU (except the first one), a \map skeleton is implicitly created that combines the result of the \GPU's predecessors with all elements of its part using the user-defined operation of the \scan skeleton;
+ \item The newly created \map skeletons compute the final results on all \GPUs.
 \end{enumerate}
 The output vector is block-distributed among all \GPUs.
 
@@ -560,7 +560,7 @@ On execution of the skeleton, the number of iterations to be performed is specif
 This could be extended in the future, so that the user specifies a function to check if a application specific condition is met and stop the iteration.
 
 The OpenCL kernel created by the \code{Stencil} implementation looks similar to the \code{MapOverlap} implementation presented in \autoref{lst:mapoverlap:impl}.
-The \code{Stencil} implementation uses a different strategy than the \code{MapOverlap} implementation in order to enable the usage of different padding modes and stencil shapes when using several Stencil skeletons in a sequence, which we discuss in the next paragraph.
+The \code{Stencil} implementation uses a different strategy than the \code{MapOverlap} implementation in order to enable the usage of different padding modes and stencil shapes when using several \stencil skeletons in a sequence, which we discuss in the next paragraph.
 To understand why the strategy used by the \code{MapOverlap} implementation is not sufficient for stencil sequences let us consider a situation where two stencil computations are performed one after another and the two stencil shapes used are different.
 This cannot be implemented efficiently using \code{MapOverlap}'s implementation strategy, as the input matrix is extended on the \CPU conforming to the stencil shape.
 Therefore, data would have to be downloaded to the \CPU between executions and the data layout would have to be changed.
@@ -723,14 +723,14 @@ By loading data needed by multiple work-items of the same work-group into the lo
 \begin{figure}[b]
   \centering
   \includegraphics[width=.4\textwidth]{HLPP/memory_access}
-  \caption{Implementation schema of the specialized allpairs skeleton.}
+  \caption{Implementation schema of the specialized \allpairs skeleton.}
   \label{fig:memory_access}
 \end{figure}
 For the \allpairs skeleton with the \zip-\reduce customizing function, we can adopt the implementation schema for \GPUs~\cite{SarjeAl2013}, as shown in Figure~\ref{fig:memory_access}.
 We allocate two arrays in the local memory, one of size $r\times k$ ($r=2$, $k=3$ in Figure~\ref{fig:memory_access}) for elements of $A$ and one of size $k\times c$ ($c=3$ in Figure~\ref{fig:memory_access}) for elements of $B$.
 A work-group consisting of $c\times r$ work-items computes $s$ blocks ($s=2$ in Figure~\ref{fig:memory_access}) of the result matrix $C$.
 In Figure~\ref{fig:memory_access}, the two blocks marked as \circled{7} and \circled{8} are computed by the same work-group as follows.
-In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the zip-reduce pattern.
+In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the \zip-\reduce pattern.
 The obtained intermediate result is stored in block \circled{7}.
 Then, the elements of block \circled{3} are loaded and combined with the elements from \circled{2} which still reside in the local memory.
 The intermediate result is stored in block \circled{8}.

@@ -24,12 +24,12 @@ Therefore, in \SkelCL the \allpairs skeleton can be used to express matrix multi
 \autoref{eq:skelcl:mm} shows how matrix multiplication can be expressed using the \allpairs skeleton in \SkelCL.
 \begin{align}
   \label{eq:skelcl:mm}
-  mm(A, B) &= allpairs(f)(A, B^T)\\
-  \text{where:} \qquad f(a, b) &= \sum_{k=0}^d a_k \times b_k \nonumber
+  mm\ A\ B &= allpairs\ f\ A\ B^T\\
+  \text{where:} \qquad f\ \vec{a}\ \vec{b} &= \sum_{k=0}^d a_k \times b_k \nonumber
 \end{align}
 When looking back at \autoref{sec:dot} we can see, that $f$ is actually the definition of the dot product computation, therefore, we can write:
 \begin{align}
-  mm(A, B) &= allpairs(dotProduct)(A, B^T)
+  mm\ A\ B &= allpairs\ dotProduct\ A\ B^T
   \label{eq:skelcl:mm:dot}
 \end{align}
 We know, that we can express the dot product as a sequential composition of the \zip and \reduce skeletons.

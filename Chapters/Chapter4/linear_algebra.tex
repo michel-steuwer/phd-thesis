@@ -7,7 +7,7 @@ BLAS ... important building blocks ...
 \label{sec:asum}
 \autoref{eq:asum} shows the mathematical definition of the sum of absolute values (short \emph{asum}) for a vector $\vec{x}$ of length $n$ with elements $x_i$.
 \begin{equation}
-  asum(\vec{x}) = \sum_{i=0}^{n} | x_i |
+  asum\ \vec{x} = \sum_{i=0}^{n} | x_i |
   \label{eq:asum}
 \end{equation}
 For all elements of the vector the absolute values are added up to produce the final scalar result.
@@ -15,8 +15,8 @@ For all elements of the vector the absolute values are added up to produce the f
 \subsubsection*{\SkelCL Implementation}
 In \SkelCL we can express \emph{asum} using the \map and \reduce skeletons as follows:
 \begin{align}
-  asum(\vec{x}) &= reduce(\ +,\ 0\ ) \circ map(\ abs, \vec{x}\ )\\
-  \text{where:} \qquad abs(a) &=
+  asum\ \vec{x} &= reduce\ (+)\ 0\ \big(\ map\ abs\ \vec{x}\ \big)\\
+  \text{where:} \qquad abs\ a &=
     \left\{
       \begin{array}{r l}
       a & \text{if } a \geq 0\\
@@ -65,14 +65,14 @@ This technique supports the generation of a single efficient OpenCL kernel for i
 \label{sec:dot}
 The computation of the dot product, \aka scalar product, is a common mathematical operation performed on two input vectors $\vec{x}$ and $\vec{y}$ of identical length $n$ as defined in \autoref{eq:dot_product}.
 \begin{equation}
-  dotProduct(\vec{x}, \vec{y}) = \sum_{i=0}^{n} x_i \times y_i
+  dotProduct\ \vec{x}\ \vec{y} = \sum_{i=0}^{n} x_i \times y_i
   \label{eq:dot_product}
 \end{equation}
 
 \subsubsection*{\SkelCL Implementation}
 In \SkelCL we can express $dotProduct$ using the \zip and \reduce skeletons as follows:
 \begin{equation}
-  dotProduct(\vec{x}, \vec{y}) = reduce(\ +,\ 0\ ) \circ zip(\ \times, \vec{x}, \vec{y}\ )
+  dotProduct\ \vec{x}\ \vec{y} = reduce\ (+)\ 0\ \big(\ zip\ (\times)\ \vec{x}\ \vec{y}\ \big)
 \end{equation}
 
 The \zip skeleton performs the pairwise multiplication of the input vectors before the \reduce skeleton is used to sum up the intermediate results.

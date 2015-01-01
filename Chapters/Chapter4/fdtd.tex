@@ -58,7 +58,7 @@ The shown field distribution can be found also in~\cite{Cao2000, Sebbah2002, Yam
 Map<float4(float4)>     updateEnergyDist(...);
 Stencil<float4(float4)> updateEField(...);
 Stencil<float4(float4)> updateHField(
-  "float4 func(float4_matrix_t E, float4_matrix_t H) { ... }");
+ "float4 func(float4_matrix_t E, float4_matrix_t H) {...}");
 
 Matrix<float4> N; // energy distribution in the medium
 Matrix<float4> E; // E (electric) field

@@ -55,17 +55,17 @@ Using \SkelCL this application can easily be expressed using the \stencil skelet
 \autoref{eq:gauss} shows the implementation in \SkelCL using the \stencil skeleton.
 \begin{align}
   \label{eq:gauss}
-  gauss&(M) = stencil(\ f,\ 1,\ \overline{0},\ M\ ) \qquad\text{where:}\\
+  gauss&\ M = stencil\ f\ 1\ \overline{0}\ M \qquad\text{where:}\\
   &
   \begin{array}{ll}%
-  f &\left(\left[\begin{array}{lll}%
+  f\ &\left[\begin{array}{lll}%
       \hspace{-.5em} M_{i-1,j-1}& \hspace{-.5em} M_{i-1,j} & \hspace{-.5em}M_{i-1,j+1}\vspace{-.25em}\\%
       \hspace{-.5em} M_{i,j-1}& \hspace{-.5em} M_{i,j} & \hspace{-.5em}M_{i,j+1}\vspace{-.25em}\\%
-      \hspace{-.5em} M_{i+1,j-1}& \hspace{-.5em} M_{i+1,j} & \hspace{-.5em}M_{i+1,j+1}\vspace{-.25em}
-    \end{array}\right] \right) = \\[2em]
-          &\qquad \displaystyle\frac{\displaystyle\sum_{k=-1}^{1} \sum_{l=-1}^{1} G(k, l)\cdot M_{i+k, j+k}}{9}
+      \hspace{-.5em} M_{i+1,j-1}& \hspace{-.5em} M_{i+1,j} & \hspace{-.5em}M_{i+1,j+1}
+    \end{array}\right]  = \\[2em]
+          &\qquad \displaystyle\frac{\displaystyle\sum_{k=-1}^{1} \sum_{l=-1}^{1} (G\ k\ l)\cdot M_{i+k, j+k}}{9}
   \end{array} \nonumber\\[1em]
-  &G(x, y) = \frac{1}{2\pi \sigma^{2}} e^{-\frac{x^2 + y^2}{2\sigma^2}} \nonumber\\
+  &G\ x\ y = \frac{1}{2\pi \sigma^{2}} e^{-\frac{x^2 + y^2}{2\sigma^2}} \nonumber\\
   \text{and } \overline{0} \text{ is th}&\text{e constant function always returning 0.}\nonumber
 \end{align}
 $G$ is the two dimensional Gaussian function used in the customizing function $f$ to weight the neighboring values $M_{i,j}$.
@@ -200,12 +200,12 @@ Therefore, the \stencil skeleton is a perfect fit for implementing the Sobel edg
 \autoref{eq:sobel} shows the implementation of the Sobel edge detection in \SkelCL.
 \begin{align}
   \label{eq:sobel}
-  sobel(M)& = stencil(\ f,\ 1,\ \overline{0},\ M\ ) \qquad\text{where:}\\
-  f&\left(\left[\begin{array}{lll}%
+  sobel\ M& = stencil\ f\ 1\ \overline{0}\ M \qquad\text{where:}\\
+  f\ &\left[\begin{array}{lll}%
       \hspace{-.5em} M_{i-1,j-1}& \hspace{-.5em} M_{i-1,j} & \hspace{-.5em}M_{i-1,j+1}\vspace{-.25em}\\%
       \hspace{-.5em} M_{i,j-1}& \hspace{-.5em} M_{i,j} & \hspace{-.5em}M_{i,j+1}\vspace{-.25em}\\%
-      \hspace{-.5em} M_{i+1,j-1}& \hspace{-.5em} M_{i+1,j} & \hspace{-.5em}M_{i+1,j+1}\vspace{-.25em}
-    \end{array}\right] \right) = \displaystyle\sqrt{ h^2 + v^2 }\nonumber\\
+      \hspace{-.5em} M_{i+1,j-1}& \hspace{-.5em} M_{i+1,j} & \hspace{-.5em}M_{i+1,j+1}
+    \end{array}\right] = \displaystyle\sqrt{ h^2 + v^2 }\nonumber\\
   h & = \sum_{k=0}^2 \sum_{l=0}^2 Gx_{k, l}\cdot M_{i+k-1,j+k-1}\nonumber\\
   v & = \sum_{k=0}^2 \sum_{l=0}^2 Gy_{k, l}\cdot M_{i+k-1,j+k-1}\nonumber\\
   Gx& = \left[\begin{array}{ccc}%
