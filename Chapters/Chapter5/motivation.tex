@@ -1,0 +1,19 @@
+\section{The need for a pattern-based code generator}
+
+Our goal in this chapter is to achieve \emph{performance portability}, \ie, to achieve high-performance for a given application across a set of different parallel processors.
+Achieving performance portability with traditional approaches is hard, as there is a tension between achieving the highest performance possible and code portability and maintainability.
+Traditionally, \eg, in \OpenCL, programmers tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
+This reduces portability, maintainability, and clarity of the code:
+multiple versions have to be maintained and non-obvious optimizations make the code hard to understand and reason about.
+
+We argue that parallel pattern can overcome this fundamental conflict as they declaratively specify the wanted algorithmic behavior rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
+The parallel pattern can be implemented in different ways optimized towards particular hardware architectures.
+If the underlying hardware for an application implemented with parallel patterns is changed, the most optimized implementation for the new hardware can be chosen.
+
+This approach imposes challenges
+
+1) optimized implementation of every pattern on every new hardware
+2) composition and nesting
+
+example (?), simple map
+ 

@@ -1,0 +1,26 @@
+Version,Comparison,Type,Platform,Bandwidth
+Nvidia A, Low-level Expressions, Hand-written, Nvidia, 22.1649
+Nvidia A, Low-level Expressions, Generated, Nvidia, 25.3886
+Nvidia B, Low-level Expressions, Hand-written, Nvidia, 41.5486
+Nvidia B, Low-level Expressions, Generated, Nvidia, 48.6003
+Nvidia C, Low-level Expressions, Hand-written, Nvidia, 115.3737
+Nvidia C, Low-level Expressions, Generated, Nvidia, 137.6170
+AMD, Low-level Expressions, Hand-written, Nvidia, 86.9886
+AMD, Low-level Expressions, Generated, Nvidia, 76.1936
+Thrust, Automatic Exploration, Library, Nvidia, 109.4220
+cuBlas, Automatic Exploration, Library, Nvidia, 139.3827
+clBlas, Automatic Exploration, Library, Nvidia, 140.0000
+auto-expl, Automatic Exploration, Generated, Nvidia, 130.2700
+
+Nvidia A, Low-level Expressions, Hand-written, AMD, 81.8189
+Nvidia A, Low-level Expressions, Generated, AMD, 85.9227
+Nvidia B, Low-level Expressions, Hand-written, AMD, 141.2493
+Nvidia B, Low-level Expressions, Generated, AMD, 161.6070
+Nvidia C, Low-level Expressions, Hand-written, AMD, 58.74529
+Nvidia C, Low-level Expressions, Generated, AMD, 175.4400
+AMD, Low-level Expressions, Hand-written, AMD, 213.3686
+AMD, Low-level Expressions, Generated, AMD, 212.869
+Thrust, Automatic Exploration, Library, AMD, 0
+cuBlas, Automatic Exploration, Library, AMD, 0
+clBlas, Automatic Exploration, Library, AMD, 206.000
+auto-expl, Automatic Exploration, Generated, AMD, 204.461809
