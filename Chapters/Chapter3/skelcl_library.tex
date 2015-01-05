@@ -24,12 +24,12 @@ We then shift the focus to the implementations of the memory management, algorit
 \autoref{lst:skelcl:dotproduct} shows the implementation of the dot product computation, discussed in the previous section, in \SkelCL.
 After including the appropriate \SkelCL headers (lines~\autoref{lst:skelcl:dotproduct:inc:start}--\autoref{lst:skelcl:dotproduct:inc:end}) the \SkelCL library can be initialized as shown in line~\autoref{lst:skelcl:dotproduct:init}.
 This will perform the initializations required by \OpenCL.
-It is possible to provide arguments to the \code{init} function to specify which \OpenCL devices should be used by \SkelCL.
+The argument provided to the \code{init} function specifies how many and which \OpenCL devices should be used by \SkelCL.
+Here a single device should be used which can be of any type, \ie, it can be either a \CPU or a \GPU.
 The dot product is specified using the \zip and \reduce skeletons.
-The skeletons are created using \code{zipVector} (line~\autoref{lst:skelcl:dotproduct:zip}) and \code{reduce} (line~\autoref{lst:skelcl:dotproduct:reduce}) functions which expect the customizing functions of the skeletons as arguments.
-By using the \code{zipVector} function we specify that the \zip skeleton operates on two input vectors, rather than on two input matrices.
+The skeletons are created using \code{zip} (line~\autoref{lst:skelcl:dotproduct:zip}) and \code{reduce} (line~\autoref{lst:skelcl:dotproduct:reduce}) functions which expect the customizing functions of the skeletons as arguments.
 In this example we use \Cpp lambda expressions (lines~\autoref{lst:skelcl:dotproduct:zip:lambda} and \autoref{lst:skelcl:dotproduct:reduce:lambda}) to specify the customizing functions of the skeletons.
-We create the two input \code{Vector}s from C style pointers (lines~\autoref{lst:skelcl:dotproduct:vecA} and \autoref{lst:skelcl:dotproduct:vecB}).
+We create the two input \code{Vector}s from C style pointers (line~\autoref{lst:skelcl:dotproduct:vecAB}).
 In line~\autoref{lst:skelcl:dotproduct:apply} we perform the computation by applying the customized skeletons to the data, before we finally return the computed result in line~\autoref{lst:skelcl:dotproduct:return}.
 
 \begin{lstlisting}[%                                                             
@@ -43,24 +43,22 @@ label={lst:skelcl:dotproduct}]
 #include <SkelCL/Vector.h>$\label{lst:skelcl:dotproduct:inc:end}$
 
 float dotProduct(const float* a, const float* b, int n) {
-  skelcl::init();$\label{lst:skelcl:dotproduct:init}$
+  using namespace skelcl;
+  skelcl::init( 1_device.type(deviceType::ANY) );$\label{lst:skelcl:dotproduct:init}$
 
-  auto mult = skelcl::zipVector( $\label{lst:skelcl:dotproduct:zip}$
-      [](float x, float y) { return x*y; } );$\label{lst:skelcl:dotproduct:zip:lambda}$
-  auto sum  = skelcl::reduce($\label{lst:skelcl:dotproduct:reduce}$
-      [](float x, float y) { return x+y; }, 0 );$\label{lst:skelcl:dotproduct:reduce:lambda}$
+  auto mult = zip([](float x, float y) { return x*y; });$\label{lst:skelcl:dotproduct:zip}$$\label{lst:skelcl:dotproduct:zip:lambda}$
+  auto sum = reduce([](float x, float y){ return x+y; }, 0);$\label{lst:skelcl:dotproduct:reduce}$$\label{lst:skelcl:dotproduct:reduce:lambda}$
 
-  skelcl::Vector<float> A(a, a+n);$\label{lst:skelcl:dotproduct:vecA}$
-  skelcl::Vector<float> B(b, b+n);$\label{lst:skelcl:dotproduct:vecB}$
+  Vector<float> A(a, a+n); Vector<float> B(b, b+n);$\label{lst:skelcl:dotproduct:vecAB}$
 
-  skelcl::Vector<float> C = sum( mult(A, B) );$\label{lst:skelcl:dotproduct:apply}$
+  Vector<float> C = sum( mult(A, B) );$\label{lst:skelcl:dotproduct:apply}$
 
   return C.front();$\label{lst:skelcl:dotproduct:return}$
 }
 \end{lstlisting}
 
 \autoref{lst:skelcl:dotproduct} shows that the \SkelCL library integrates nicely with \Cpp:
-the interface of the \code{Vector} class looks familiar to \Cpp programmers and the usage of modern \Cpp features like lambda expressions and type deduction (\code{auto}) simplify the programming as functions can be defined directly inline and type information can be omitted.
+the interface of the \code{Vector} class looks familiar to \Cpp programmers and the usage of modern \Cpp features like lambda expressions, type deduction (\code{auto}), and user-defined literals simplify the programming as functions can be defined directly inline, type information can be omitted, and the specification of which devices to use can be written intuitively.
 
 We will discuss how our implementation enables this comfortable level of integrating \SkelCL with \Cpp in the next section.
 
@@ -88,7 +86,7 @@ This allows ourselves to free the users from writing strings in their applicatio
 Furthermore, we implemented type inference capabilities in our source-to-source compiler to free the application developer from specifying type information explicitly.
 Our two-step design also allows application developers to compile their application code into a form which then can be deployed on systems where it might be difficult to install a custom compiler.
 
-In the next paragraph, we will start the discussion of our source-to-source compiler tool.
+In the next paragraph, we will start the discussion of our source-to-source compiler.
 We will discuss how our custom compiler, together with our template-based implementation, helps to maintain strong type safety at compile time.
 Finally, we will look at issues regarding the integration with \Cpp like sharing code between host and device code.
 
@@ -100,18 +98,17 @@ In particular the \emph{LibTooling} API allows for writing tools which search fo
 The \code{skelclc} custom compiler does exactly this.
 For example, the custom compiler searches for expressions like this:
 \begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={Code snippet before transformation.}]
-auto mult = skelcl::zipVector(
-              [](float x, float y){ return x*y; } );
+auto mult = zip( [](float x, float y){ return x*y; } );
 \end{lstlisting}
 and replaces it with:
 \begin{lstlisting}[numbers=none,label={lst:skelclc:after},caption={Code snippet after transformation.}]
-auto mult = skelcl::Zip<Vector<float>(Vector<float>,
-                                      Vector<float>)>(
-              skelcl::Source("float func(float x, float y)"\
-                             " { return x*y; }"), "func");
+auto mult = Zip<Container<float>(Container<float>,
+                                 Container<float>)>(
+              Source("float func(float x, float y)"
+                     " { return x*y; }"), "func");
 \end{lstlisting}
 
-In this example, the \code{zipVector} function has been transformed into a call of the constructor of the \code{Zip} class and the lambda expression has been transformed into a string.
+In this example, the \code{zip} function has been transformed into a call of the constructor of the \code{Zip} class and the lambda expression has been transformed into a string.
 Furthermore, type information that has been inferred from the lambda expression, has been added to the templated \code{Zip} class.
 
 The user is free to write the expression in \autoref{lst:skelclc:after} explicitly, but it is arguably more convenient to write the expression as in \autoref{lst:skelclc:before} and let our custom compiler perform the transformation automatically.
@@ -123,7 +120,7 @@ Each skeleton in \SkelCL is represented by a templated class, as seen in \autore
 The template arguments of the skeleton define the types which can be used when executing the skeleton.
 When executing a skeleton \code{skeleton<T(U)>}, an object of type \code{U} has to be provided to receive an object of type \code{T}.
 In this respect skeletons behave exactly like functions in \Cpp which can be represented using the \code{std::function<T(U)>} template class.
-Skeletons taking more then one argument (like the \code{zip} skeleton) are represented as \code{skeleton<T(U, V)>} using the \emph{variadic template} feature of \Cpp.
+Skeletons taking more then one argument (like the \code{zip} skeleton) are represented as \code{skeleton<T(U, V)>}.% using the \emph{variadic template} feature of \Cpp.
 
 When performing the transformations, \code{skelclc} infers the types used as template arguments of the skeleton class.
 To do so, it determines the types of the lambda expression arguments and skeleton's result type.
@@ -138,7 +135,7 @@ For each of these skeletons there exist three kinds of factory functions:
 3)~for creating a skeleton capable of operating on both vectors and matrices, \eg, \code{map}.
 To allow the latter case, the templated class \code{Container} was introduced.
 Using the template specialization mechanism, the mentioned skeletons have a special implementation when \code{Container} is used as a template argument.
-In this case, the classes provide two distinct overloaded member functions for execution using either \code{Vector} or \code{Matrix}.
+In this case, the classes provide a templated function call operator which can be used either with \code{Vector} or \code{Matrix}.
 
 Type safety is guaranteed, as the templated skeleton classes can only be executed with a container of compatible type and the type inference ensures that the user function has exactly the same type as the template argument of the skeleton class.
 Therefore, applying the user function to the input data is always a type-safe operation.
@@ -152,6 +149,7 @@ The \code{skelclc} compiler detects these behaviors and ensures that the definit
 This frees the user from providing type definitions and source code twice, which would be required when using OpenCL directly or using \SkelCL without the \code{skelclc} compiler.
 Code duplication should almost always be avoided as it can easily lead to hardly maintainable code and subtle bugs.
 
+\textbf{Additional Arguments:}
 In real-world applications (\eg, the LM OSEM discussed in detail in Section~\ref{section:medical-imaging}), user-defined functions often work not only on a skeleton's input vector, but may also take additional inputs.
 With only a fixed number of input arguments, traditional skeletons would not be applicable for the implementation of such applications.
 In \SkelCL, skeletons can accept an arbitrary number of additional arguments which are passed to the skeleton's customizing function.
@@ -164,8 +162,8 @@ In \SkelCL, skeletons can accept an arbitrary number of additional arguments whi
 float a = initScalar();
 
 /* create skeleton Y <- a * X + Y */
-auto saxpy = skelcl::zipVector(
-      [](float x, float y, float a) { return a*x+y; });
+auto saxpy = zip(
+      [](float x, float y, float a) { return a*x+y; } );
 
 /* create input vectors */
 Vector<float> X(SIZE); initVector(X);
@@ -183,6 +181,7 @@ If the container is only used for reading, it is guaranteed that no race conditi
 
 The additional argument feature is implemented in SkelCL using the variadic template feature from \Cpp.
 
+\textbf{Lambda captures:}
 In \Cpp, lambda expressions can make use of variables which have been accessible at the time the lambda expression is created.
 The user has to explicitly indicate how these variable are \emph{captured}, \ie, how they will be accessed once the lambda is executed.
 A variable can either be captured \emph{by-value} or \emph{by-reference}.
@@ -203,7 +202,7 @@ We can rewrite the $saxpy$ example using a lambda expression capturing the varia
 float a = initScalar();
 
 /* create skeleton Y <- a * X + Y */
-auto saxpy = skelcl::zipVector(
+auto saxpy = skelcl::zip(
       [a](float x, float y) { return a*x+y; }); $\label{lst:saxpy:capture:capture}$
 
 /* create input vectors */
@@ -216,9 +215,10 @@ Y = saxpy( X, Y );      /* execute skeleton */ $\label{lst:saxpy:capture:execute
 The variable $a$ is now captured by the lambda expression in line~\ref{lst:saxpy:capture:capture}.
 Note that $a$ is no longer passed as an argument when executing the skeleton in line~\ref{lst:saxpy:capture:execute}.
 
+\vspace{1em}
 
-
-
+By supporting the capturing feature of lambda expressions \SkelCL source code becomes more \Cpp idiomatic.
+\todo{Short conclusion: additional args vs. lambda capture}
 
 
 
@@ -314,8 +314,8 @@ kernel void ZIP(const global T0* left,
 Performing the adaption of the source code involves parsing the code and building an abstract syntax tree for it by the Clang compiler library.
 Performing this every time a skeleton is created is wasteful as this task can take up to several hundreds of milliseconds, which can be a considerable overhead for small kernels.
 Therefore, the \SkelCL library implements a caching of already transformed kernels to disk.
-If the same kernel is used again, the transformed code is loaded from the cache.
-We observed that loading kernels from disk is at least five times faster than creating them from the source.
+If the same kernel is used again, the transformed code is loaded from the cache.%
+\footnote{We observed that loading kernels from disk is in some cases at least five times faster than creating them from the source.}
 
 
 \paragraph{Execute a Skeleton on an \OpenCL Device}
@@ -358,7 +358,7 @@ The \OpenCL kernel implementing the \map skeleton is straightforward and similar
 After a boundary check is performed, the customizing function is called with an item of the input container.
 The return value is stored in the output container.
 On execution, the size of the input container determines the number of work items launched for executing the kernel code.
-The same kernel code is used on single and multi device systems.
+The same kernel code is used on single- and multi-device systems.
 If the input container has no distribution declared for it, the block distribution is used as default, ensuring that all devices participate in the execution of the \map skeleton.
 
 %TODO: There exists special implementations of the \map Skeleton ... IndexVector
@@ -371,7 +371,7 @@ If the input container has no distribution declared for it, the block distributi
 The \OpenCL kernel of the \zip skeleton was presented in the previous section in \autoref{lst:zip:impl}.
 For multi-device systems the block distribution is used as default.
 The \SkelCL library implementation enforces that the distributions of the two input vectors are the same.
-If this is not the case, the distribution of one input is changed to meet this requirement.
+If this is not the case, the distribution of the second input is changed to meet this requirement.
 
 
 
@@ -380,7 +380,7 @@ If this is not the case, the distribution of one input is changed to meet this r
 \subsubsection{The \reduce Skeleton}
 The \reduce skeleton is implemented as a parallel tree-based reduction.
 Two \OpenCL kernels are used for the implementation.
-The first kernel implements a reduction where each work group reduces a large number of elements to a single element.
+The first kernel implements a reduction where each work group independently reduces, depending on the input size, a large number of several hundred thousand elements to a single element.
 This kernel is executed by multiple work groups in parallel to fully exploit the \GPU.
 The second kernel is only executed by a single work group and continues the reduction of the intermediate results from the first kernel.
 This two-kernel strategy is required for an efficient implementation in \OpenCL as no synchronization between work items from different work groups is possible.
@@ -446,12 +446,17 @@ Finally, we will discuss the implementation of the \stencil skeleton for multi-d
 
 \paragraph{The \code{MapOverlap} implementation}
 
+We will use the Gaussian blur as an example application to discuss the \code{MapOverlap} implementation.
+The Gaussian blur is a standard image processing algorithm used, among other things, for noise reduction.
+The color of every pixel of an image is modified by computing a weighted average of the neighboring pixel color values.
+The application will be discussed in more detail in \autoref{sec:gauss}.
+
 \begin{lstlisting}[%
 caption={Implementation of Gaussian blur using the \code{MapOverlap} implementaion of the \stencil skeleton.},%
 float={tb},
 label={lst:mapoverlap}]
-auto gauss = skelcl::mapOverlap(
-  [](Neighborhood<char>& in_img) {
+auto gauss = mapOverlap($\label{lst:mapoverlap:factory}$
+  [](Neighborhood<char>& in_img) {$\label{lst:mapoverlap:neighborhood}$
       char ul = in_img[{-1, -1}];
       ...
       char lr = in_img[{+1, +1}];
@@ -460,7 +465,7 @@ auto gauss = skelcl::mapOverlap(
 \end{lstlisting}
 
 \autoref{lst:mapoverlap} shows how the \code{MapOverlap} skeleton implementation is used to express the Gaussian blur.
-The \code{mapOverlap} factory function is customized with a lambda expression which is passed a \code{Neighborhood} object used to access the neighboring elements with relative indices.
+The \code{mapOverlap} function in line~\ref{lst:mapoverlap:factory} is customized with a lambda expression which uses its argument, a \code{Neighborhood} object (line~\ref{lst:mapoverlap:neighborhood}), to access the neighboring elements with relative indices.
 The second and third argument of the factory function define the range of the stencil shape and the border handling method.
 The actual computation of the Gaussian blur is omitted from \autoref{lst:mapoverlap} for brevity reasons.
 
@@ -517,8 +522,11 @@ To avoid out-of-bound accesses for these regions, the boundary checks are perfor
 
 \paragraph{The \code{Stencil} implementation}
 
-\autoref{lst:stencil:first} shows the implementation of an iterative stencil application simulating heat transfer.
-This application simulates heat spreading from one location and flowing throughout a two-dimensional simulation space.
+We use an iterative stencil application simulating heat flow to discuss the \code{Stencil} implementation.
+The application simulates heat spreading from one location and flowing throughout a two-dimensional simulation space.
+Let us assume that the heat flows from left to right as indicated by the arrows in \autoref{fig:stencil:first:shape}.
+The heat value of a cell is updated based on its (left) neighboring cells.
+Multiple iteration steps are required to simulate the flow of heat over a longer distance.
 
 \begin{figure}[t]
   \begin{minipage}[b]{.55\textwidth}
@@ -533,6 +541,8 @@ auto heatSim = skelcl::stencil(
   return computeHeat(lt,lm,lb);},$\label{lst:stencil:first:func:end}$
  StencilShape(1, 0, 1, 1),$\label{lst:stencil:first:shape}$
  BorderHandling::NEUTRAL(255));$\label{lst:stencil:first:border}$
+heatSim(100_iterations,$\label{lst:stencil:first:iterations}$
+        simulationSpace);
     \end{lstlisting}
   \end{minipage}%
   \hfill%\hspace{.05\textwidth}
@@ -544,6 +554,7 @@ auto heatSim = skelcl::stencil(
   \end{minipage}
 \end{figure}
 
+\autoref{lst:stencil:first} shows the implementation of an iterative stencil application simulating heat transfer in \SkelCL.
 The application developer specifies the customizing function (line~\ref{lst:stencil:first:func:start}--\ref{lst:stencil:first:func:end}), as well as the extents of the stencil shape (line~\ref{lst:stencil:first:shape}) and the out-of-bound handling (line~\ref{lst:stencil:first:border}).
 The \code{Stencil} implementation allows the stencil shape's extents to be specified using four values for each of the directions:
 up, right, down, and left.
@@ -555,14 +566,14 @@ In future work, the stencil shape could be inferred from the customizing functio
 This would help to avoid inconsistencies and free the user from specifying this information explicitly.
 
 Stencil applications often perform stencil computations iteratively, like the heat transfer example which performs multiple iterations steps in order to simulate the transfer of heat over time.
-The \code{Stencil} implementation supports the iterative execution, which is especially challenging to implement on multi device systems as we will see later.
-On execution of the skeleton, the number of iterations to be performed is specified by the user.
+The \code{Stencil} implementation supports the iterative execution, which is especially challenging to implement on multi-device systems as we will see later.
+On execution of the skeleton, the number of iterations to be performed is specified by the user as the first argument (line~\ref{lst:stencil:first:iterations}).
 This could be extended in the future, so that the user specifies a function to check if a application specific condition is met and stop the iteration.
 
-The OpenCL kernel created by the \code{Stencil} implementation looks similar to the \code{MapOverlap} implementation presented in \autoref{lst:mapoverlap:impl}.
+The \OpenCL kernel created by the \code{Stencil} implementation looks similar to the \code{MapOverlap} implementation presented in \autoref{lst:mapoverlap:impl}.
 The \code{Stencil} implementation uses a different strategy than the \code{MapOverlap} implementation in order to enable the usage of different padding modes and stencil shapes when using several \stencil skeletons in a sequence, which we discuss in the next paragraph.
 To understand why the strategy used by the \code{MapOverlap} implementation is not sufficient for stencil sequences let us consider a situation where two stencil computations are performed one after another and the two stencil shapes used are different.
-This cannot be implemented efficiently using \code{MapOverlap}'s implementation strategy, as the input matrix is extended on the \CPU conforming to the stencil shape.
+This cannot be implemented efficiently using \code{MapOverlap}'s implementation strategy, as the input matrix is extended on the \CPU as specified by the first stencil shape.
 Therefore, data would have to be downloaded to the \CPU between executions and the data layout would have to be changed.
 To avoid this problem, the \code{Stencil} implementation does not append padding elements on the \CPU, but rather manages all out-of-bounds accesses on the \GPU, which slightly increases branching in the code, but enables a more flexible usage of the skeleton.
 
@@ -606,7 +617,7 @@ As the \code{MapOverlap} implementation does not explicitly supports iterations,
 
 The \code{Stencil} implementation explicitly supports iterations and, therefore, only exchanges elements from the border region and does not perform a full down- and upload of the matrix, as the \code{MapOverlap} implementation does.
 \autoref{fig:syncDevices} shows the \textit{device synchronizations}, \ie, the data exchange performed between two iterations by the \code{Stencil} implementation.
-Only the appropriate elements in the inner border region are downloaded and stored as \texttt{std::vector}s in a \texttt{std::vector}.
+Only the appropriate elements in the \emph{inner border region}, \ie, the border regions adjacent to two \OpenCL devices, are downloaded and stored as \texttt{std::vector}s in a \texttt{std::vector}.
 Within the outer vector, the inner vectors are swapped pair-wise on the host, so that the inner border regions can be uploaded in order to replace the out-of-date border regions.
 
 \begin{figure}[tb]
@@ -627,12 +638,12 @@ For the investigated applications, the effect of choosing different numbers of i
 
 \subsubsection{The \allpairs Skeleton}
 The \allpairs skeleton defined in \autoref{section:skelcl-programming-model} applies a customizing function to all pairs of vectors from two matrices.
-There exist two version of the skeleton: the generic \allpairs skeleton and the specialized \allpairs skeleton.
+There exist two version of the skeleton: the generic \allpairs skeleton introduced in \autoref{sec:allpairs_skeleton} and the specialized \allpairs skeleton introduced in \autoref{sec:opt_allpairs_skeleton}.
 In the specialized version the customizing function is expressed as a composition of the \zip and \reduce skeleton.
 
 In this subsection, we will first discuss the generic and then the specialized implementation.
 We will also estimate the performance benefit gained by the specialized implementation.
-Finally, we will discuss the implementation of the \allpairs skeleton on multi device systems.
+Finally, we will discuss the implementation of the \allpairs skeleton on multi-device systems.
 
 \paragraph{The Generic \allpairs Skeleton}
 \begin{lstlisting}[%                                                             
@@ -701,7 +712,7 @@ Therefore,
   \label{eq:mm:accesses}
 \end{equation}
 global memory accesses are performed in total, where $n$ and $m$ are the height and width of matrix $C$ and $d$ is the width of $A$ and the height of $B$.
-By using the fast but small local memory, this number of global memory accesses can be reduced and, thus, performance can be improved.
+By using the fast but small local memory, this number of global memory accesses can be reduced and, thus, performance can be improved, as we will see in the next paragraph.
 Using the local memory for matrix multiplication is a well-known optimization which we systematically apply to a generic skeleton, rather than to a particular application as usually done in the literature.
 
 \paragraph{The Specialized \allpairs Skeleton}
@@ -711,7 +722,7 @@ caption={Matrix multiplication expressed using the specialized \allpairs skeleto
 float=b,%                                                                       
 numbers=left,%
 label={lst:allpairs:special:impl}]
-auto mult  = zipVector([](float x, float y){return x*y;});
+auto mult  = zip([](float x, float y){return x*y;});
 auto sumUp = reduce([](float x, float y){return x+y;}, 0);
 auto mm    = allpairs(sumUp, mult);
 \end{lstlisting}
@@ -808,9 +819,9 @@ This \emph{lazy copying} in \SkelCL defers data transfers as long as possible or
 While all data transfers are performed implicitly by \SkelCL, we understand that advanced application developers may want to have a fine-grained control over the data transfers between host and devices.
 For that purpose, \SkelCL offers a set of \APIs which developers can use to explicitly initiate and control the data transfer to and from the devices.
 
-Implementing such data transfers in OpenCL manually is a cumbersome task:
-data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
-this results in a lot of low-level code which is completely hidden when using \SkelCL.
+% Implementing such data transfers in OpenCL manually is a cumbersome task:
+% data has to be downloaded to the host before it can be uploaded to other devices, including the corresponding length and offset calculations;
+% this results in a lot of low-level code which is completely hidden when using \SkelCL.
 
 
 \paragraph{The SkelCL Matrix}
@@ -835,14 +846,14 @@ This frees the application developer from performing cumbersome index calculatio
 The data distributions determine how the data of a container is distributed across multiple devices.
 In the \SkelCL library implementation, there exists a class for each data distribution encapsulating the behavior of the distribution.
 Every container stores its current data distribution as a member variable.
-When the data of the container has to be transferred to or from the devices, the data distribution object is invoked to perform the operation.
+When the data of the container has to be transferred to or from the devices, the data distribution object is invoked to perform the data transfer operation.
 
-The data distribution of a container can be changed at runtime either explicitly by the programmer or implicitly by the \SkelCL implementation.
-A change of distribution implies data exchanges between multiple devices and the host, which are performed implicitly by \SkelCL.
-These implicit data exchanges are also performed lazily, \ie, only if really necessary, as described in the previous subsection.
+% The data distribution of a container can be changed at runtime either explicitly by the programmer or implicitly by the \SkelCL implementation.
+% A change of distribution implies data exchanges between multiple devices and the host, which are performed implicitly by \SkelCL.
+% These implicit data exchanges are also performed lazily, \ie, only if really necessary, as described in the previous subsection.
 
-A special situation arises when the distribution is changed from the \emph{copy} distribution, where each device holds its own full copy of the data.
-In such a case, each device may hold a different version of the container as data modifications are only performed locally on the device.
-In order to maintain \SkelCL's concept of a self-contained container, these different versions must be combined using a user-specified function when the distribution is changed.
-If no function is specified, the copy of the first device is taken as the new version of the container; the copies of the other devices are discarded.
+% A special situation arises when the distribution is changed from the \emph{copy} distribution, where each device holds its own full copy of the data.
+% In such a case, each device may hold a different version of the container as data modifications are only performed locally on the device.
+% In order to maintain \SkelCL's concept of a self-contained container, these different versions must be combined using a user-specified function when the distribution is changed.
+% If no function is specified, the copy of the first device is taken as the new version of the container; the copies of the other devices are discarded.
 
