@@ -1,4 +1,133 @@
-\section{Patterns}
+\section{Patterns: Design and Implementation}
+\label{section:patterns}
+
+In this section we will introduce the \emph{patterns} which form the expressions used for code generation.
+As we saw in the previous section there exist two type of patterns: high-level algorithmic patterns and low-level \OpenCL patterns.
+Some of the high-level algorithmic patterns directly correspond to algorithmic skeletons we have introduced in \autoref{chapter:skelcl}.
+As we will also introduce patterns which we have not seen so far and which do not confirm to the common definition of algorithmic skeletons we will use the more generic term \emph{pattern} throughout this and the next chapter.
+
+The key idea of our approach is to expose algorithmic choices and hardware-specific program optimizations as patterns that are systematically derived using a rule rewriting system (discussed later in \autoref{section:rules}).
+The high-level algorithmic patterns represent structured parallelism.
+They can either be used by the programmer directly as a stand-alone language (or embedded DSL) or used as an intermediate representation targeted by another language.
+Once a program is represented with our high-level patterns, we automatically transform the program into low-level patterns.
+The low-level hardware patterns represent hardware specific concepts expressed by a programming model such as \OpenCL, the target chosen for this paper.
+Following the same approach, a different set of low-level patterns could be designed to target other low-level programming models such as Pthreads or MPI.
+
+
+\subsection{High-level Algorithmic Patterns}
+
+We define our patterns as functions.
+To simplify our implementation we encode all types as arrays with primitives represented with arrays of length 1.
+The only exceptions are the user-provided functions such as the \code{mul3} function in \autoref{fig:codeex:map} that operates on a primitive type.
+
+\autoref{tab:hlskel} presents our high-level patterns used to define programs at the algorithmic level.
+Most of the patterns are well known in functional programming, like \pat{map} and \pat{reduce}.
+The \pat{zip}, \pat{split} and \pat{join} patterns transform the shape of the data.
+We store this information, \ie number of dimensions and size of each dimension, in the type system.
+The \pat{iterate} pattern iteratively applies a function multiple times, \eg $f^3 = f \circ f \circ f$. % \ie {$f^0 = id$} and {$f^{n+1} = f^n \circ f$}.
+Finally, the \pat{reorder} pattern lets our system know it is safe to
+reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later.
+
+%% \paragraph{Map}
+%% The \pat{map} pattern is well known in functional programming and applies a given function $f$ to all elements of its input array.
+%% 
+%% \paragraph{Reduce}
+%% The \pat{reduce} pattern (a.k.a. fold or accumulate) uses a given binary function $f$ to combine all elements of the input array.
+%% We require the function $f$ to be associative and commutative which allows for an efficient parallel implementation.
+%% 
+%% \paragraph{Zip and Split/Join}
+%% These patterns transform the shape of the data and we store this information, \ie number of dimensions and size of each dimension, in the type system.
+%% The \pat{zip} pattern fuses two arrays into an array of pairs.
+%% The \pat{split} pattern, which is most often combined with a \pat{join}, partitions an array into chunks of specific size resulting in an extra dimension.
+%% The corresponding \pat{join} pattern does the opposite; it reassembles arrays of arrays by merging dimensions.
+%% These two patterns used together are similar to the split-join concept from data flow languages such as StreamIt~\cite{thies02streamit}.
+%%  
+%% \paragraph{Iterate}
+%% The \pat{iterate} pattern corresponds to the mathematical definition of iteratively applying a function.
+%% It is defined as: {$f^0 = id$} and {$f^{n+1} = f^n \circ f$}.
+%% In terms of implementation, our code generator emits a for-loop to perform the iteration, and two pointers for input and output.
+%% After each iteration, we swap the pointers, so that the output of the last iteration becomes the input for the next one.
+%% % We automatically allocated and calculate memory requirements based on the information from the input and output type.
+%% 
+%% 
+%% \paragraph{Reorder}
+%% 
+%% The \pat{reorder} pattern is used to specify that the ordering of the elements of an array does not matter.
+%% This allows our system to reorder arbitrarily the elements of an array and might enable optimizations, as we will see later.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{p{.2\textwidth}p{.75\textwidth}}
+\toprule
+\tabhead{Pattern} & \tabhead{Type}\\
+\midrule
+  \pat{map}
+    & $\forall a . \forall b .\ (a \rightarrow b) \rightarrow [a] \rightarrow [b]$
+    \\
+
+  \pat{reduce}
+    & $\forall a .\ (a \rightarrow a \rightarrow a) \rightarrow a \rightarrow [a] \rightarrow a$
+    \\
+
+  \pat{zip} 
+    & $\forall a . \forall b .\ [a] \rightarrow [b] \rightarrow [(a, b)]$
+    \\
+
+  \pat{split} 
+    & $\forall a . \forall M .\ N \rightarrow [a, M] \rightarrow \big[[a, N], M/N\big]$
+    \\
+
+  \pat{join} 
+    & $\forall a . \forall M . \forall N .\ \big[[a, M], N\big] \rightarrow [a, M*N]$
+    \\
+
+  \pat{iterate}
+    & $\forall a .\ N \rightarrow (a \rightarrow a) \rightarrow a \rightarrow a$
+    \\
+
+  \pat{reorder}
+    & $\forall a.\ [a] \rightarrow [a]$
+    \\
+
+ %\pat{map(f: $T \rightarrow U$, xs: $T[n]$) $\longrightarrow U[n]$}
+ %    & Apply function $f$ to every element of the input array $xs$.\\
+ %\pat{reduce(f: $(T, T) \rightarrow T$, z: $T$, xs: $T[n]$)} $\longrightarrow T[1]$
+ %    & Perform a reduction on $xs$ using function $f$ and initial value $z$.\\
+ %\pat{zip(xs: $T[n]$, ys: $U[n]$) $\longrightarrow \langle T,U \rangle [n]$}
+ %    & Zip two arrays into an array of pairs.\\
+ %\pat{split}$^n$\pat{(xs: $T[m]$) $\longrightarrow T[n][m/n]$}
+ %    & Splits the outer most dimension of an array in chunks of size n.\\
+ %\pat{join(xs: $T[m][n]$) $\longrightarrow T[m*n]$}
+ %    & Joins the two outer most dimensions of an array.\\
+ %\pat{iterate$^n$(f: $T \rightarrow T$, x: $T$) $\longrightarrow T$}
+ %    & Iterate the function $f$ over the input $n$ times.\\
+ %\pat{reorder(xs: $T[n]$) $\longrightarrow T[n]$}
+ %    & Reorder the element of the input array $xs$.\\
+\bottomrule
+\end{tabular}
+\caption{High-level algorithmic patterns used by the programmer.
+  $T\rightarrow U$ indicates that the function input type is $T$ and the output type is $U$.
+  We write $T[n]$ for an array of type $T$ with size $n$.\vspace{-1em}}
+\label{tab:hlskel}
+\end{table}
+
+
+
+
+
+\pagebreak
+
+
+
+
+
+
+
+
+
+
+
+
 
 \from{PACT begin}
 \paragraph{Patterns Design and Implementation (PACT)}

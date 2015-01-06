@@ -1,19 +1,33 @@
 \section{The need for a pattern-based code generator}
 
-Our goal in this chapter is to achieve \emph{performance portability}, \ie, to achieve high-performance for a given application across a set of different parallel processors.
+Our goal in this chapter is to achieve \emph{performance portability}, \ie, to achieve high performance for a given application across a set of different parallel processors.
 Achieving performance portability with traditional approaches is hard, as there is a tension between achieving the highest performance possible and code portability and maintainability.
-Traditionally, \eg, in \OpenCL, programmers tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
+Traditionally, \eg, in C or \OpenCL, programmers tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
 This reduces portability, maintainability, and clarity of the code:
-multiple versions have to be maintained and non-obvious optimizations make the code hard to understand and reason about.
+multiple versions have to be maintained and non-obvious optimizations make the code hard to understand and to reason about.
 
-We argue that parallel pattern can overcome this fundamental conflict as they declaratively specify the wanted algorithmic behavior rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
+We argue that parallel pattern can overcome this fundamental conflict as they declaratively specify the desired algorithmic behavior rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
 The parallel pattern can be implemented in different ways optimized towards particular hardware architectures.
 If the underlying hardware for an application implemented with parallel patterns is changed, the most optimized implementation for the new hardware can be chosen.
 
-This approach imposes challenges
+\todo{...}
+- This approach imposes challenges
 
 1) optimized implementation of every pattern on every new hardware
-2) composition and nesting
 
-example (?), simple map
+2) composition and nesting is difficult to handle.
+
+3) optimal implementation might be application and context specific
+
+- examples, simple map, reduce also, in dot prod, in matrix mult
+
+- Hard or impossible to overcome with library approach.
+
+% what is our approach
+The root of the problem lies in a gap in the system stack between high-level algorithmic concepts on the one hand and low-level hardware paradigms on the other hand.
+Previous work has proposed ad-hoc solutions to target specific hardware architectures.
+We propose to bridge this gap by defining a set of rewrite rules which systematically translates high-level algorithmic concepts into low-level hardware paradigms, both expressed as functional patterns.
+The rewrite rules are used to systematically derive semantically equivalent low-level expressions from high-level algorithm expressions written by the application developer.
+Once derived, we can automatically generate high performance code based on these expressions.
+The next section introduces on overview of our approach.
  
