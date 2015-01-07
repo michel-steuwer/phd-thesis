@@ -23,14 +23,34 @@ The only exceptions are the user-provided functions such as the \code{mul3} func
 \autoref{tab:hlskel} presents our high-level patterns used to define programs at the algorithmic level.
 Most of the patterns are well known in functional programming, like \pat{map} and \pat{reduce}.
 The \pat{zip}, \pat{split} and \pat{join} patterns transform the shape of the data.
-We store this information, \ie number of dimensions and size of each dimension, in the type system.
-The \pat{iterate} pattern iteratively applies a function multiple times, \eg $f^3 = f \circ f \circ f$. % \ie {$f^0 = id$} and {$f^{n+1} = f^n \circ f$}.
-Finally, the \pat{reorder} pattern lets our system know it is safe to
-reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later.
+For arrays we store the number of dimensions and size of each dimension in the type system, as we will see.
+The \pat{iterate} pattern iteratively applies a function multiple times, \ie, {$f^0 = id$} and {$f^{n+1} = f^n \circ f$}.
+Finally, the \pat{reorder} pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{ }.
 
-%% \paragraph{Map}
-%% The \pat{map} pattern is well known in functional programming and applies a given function $f$ to all elements of its input array.
-%% 
+In the following we discuss each high-level algorithmic pattern in more detail including their formal definitions.
+We use the Bird-Meertens formalism as our syntax for the patterns.
+
+In this chapter we are especially interested in how patterns can be composed and nested.
+As \emph{types} formally specify which compositions and nesting of patterns are legal, we will give the type of each pattern.
+For expressing types we use the syntax established by J. Roger Hindley, Robin Miler, and Luis Damas as part of the Hindley---Milner type system~\cite{}.
+
+
+\paragraph{Map}
+The \pat{map} pattern is well known in functional programming and applies a given function $f$ to all elements of its input array.
+In \autoref{chapter:skelcl} we defined the \pat{map} pattern as an algorithmic skeleton (see \autoref{definition:map}).
+Here is \pat{map}'s type:
+
+\code{map :: (a -> b) -> [a] -> [b]}
+
+\begin{align}
+  f\ :\ (\alpha \rightarrow \beta),\ xs\ :\ [\alpha]_n\ \vdash\ map\ f\ xs\ :\ [\beta]_n
+\end{align}
+
+\begin{prooftree}
+  \AxiomC{$f:\ (\alpha \rightarrow \beta),\ xs:\ [\alpha]_n \in \Gamma$}
+  \UnaryInfC{$\Gamma \vdash\ map\ f\ xs\ :\ [\beta]_n$}
+\end{prooftree}
+
 %% \paragraph{Reduce}
 %% The \pat{reduce} pattern (a.k.a. fold or accumulate) uses a given binary function $f$ to combine all elements of the input array.
 %% We require the function $f$ to be associative and commutative which allows for an efficient parallel implementation.
@@ -57,57 +77,27 @@ reorder the elements of an array arbitrarily, which enables optimizations -- as 
 
 \begin{table}[t]
 \centering
-\begin{tabular}{p{.2\textwidth}p{.75\textwidth}}
+\begin{tabular}{p{.1\textwidth}p{.85\textwidth}}
 \toprule
-\tabhead{Pattern} & \tabhead{Type}\\
+\tabhead{Pattern} & \tabhead{Description}\\
 \midrule
-  \pat{map}
-    & $\forall a . \forall b .\ (a \rightarrow b) \rightarrow [a] \rightarrow [b]$
-    \\
-
-  \pat{reduce}
-    & $\forall a .\ (a \rightarrow a \rightarrow a) \rightarrow a \rightarrow [a] \rightarrow a$
-    \\
-
-  \pat{zip} 
-    & $\forall a . \forall b .\ [a] \rightarrow [b] \rightarrow [(a, b)]$
-    \\
-
-  \pat{split} 
-    & $\forall a . \forall M .\ N \rightarrow [a, M] \rightarrow \big[[a, N], M/N\big]$
-    \\
-
-  \pat{join} 
-    & $\forall a . \forall M . \forall N .\ \big[[a, M], N\big] \rightarrow [a, M*N]$
-    \\
-
-  \pat{iterate}
-    & $\forall a .\ N \rightarrow (a \rightarrow a) \rightarrow a \rightarrow a$
-    \\
-
-  \pat{reorder}
-    & $\forall a.\ [a] \rightarrow [a]$
-    \\
-
- %\pat{map(f: $T \rightarrow U$, xs: $T[n]$) $\longrightarrow U[n]$}
- %    & Apply function $f$ to every element of the input array $xs$.\\
- %\pat{reduce(f: $(T, T) \rightarrow T$, z: $T$, xs: $T[n]$)} $\longrightarrow T[1]$
- %    & Perform a reduction on $xs$ using function $f$ and initial value $z$.\\
- %\pat{zip(xs: $T[n]$, ys: $U[n]$) $\longrightarrow \langle T,U \rangle [n]$}
- %    & Zip two arrays into an array of pairs.\\
- %\pat{split}$^n$\pat{(xs: $T[m]$) $\longrightarrow T[n][m/n]$}
- %    & Splits the outer most dimension of an array in chunks of size n.\\
- %\pat{join(xs: $T[m][n]$) $\longrightarrow T[m*n]$}
- %    & Joins the two outer most dimensions of an array.\\
- %\pat{iterate$^n$(f: $T \rightarrow T$, x: $T$) $\longrightarrow T$}
- %    & Iterate the function $f$ over the input $n$ times.\\
- %\pat{reorder(xs: $T[n]$) $\longrightarrow T[n]$}
- %    & Reorder the element of the input array $xs$.\\
+ \pat{map}
+     & Apply a given function to every element of an input array.\\ 
+ \pat{reduce}
+     & Perform a reduction of an input array using a user-defined binary function and an initial value.\\
+ \pat{zip}
+     & Builds an array of pairs by pairwise combining two arrays.\\
+ \pat{split}
+     & Produces a multi-dimensional array by splitting an array in chunks of a given size.\\
+ \pat{join}
+     & Joins the two outer most dimensions of an multi-dimensional array.\\
+ \pat{iterate}
+     & Iterate a given function over an input array a fixed number of times.\\
+ \pat{reorder}
+     & Reorder the element of the input array.\\
 \bottomrule
 \end{tabular}
-\caption{High-level algorithmic patterns used by the programmer.
-  $T\rightarrow U$ indicates that the function input type is $T$ and the output type is $U$.
-  We write $T[n]$ for an array of type $T$ with size $n$.\vspace{-1em}}
+\caption{High-level algorithmic patterns used by the programmer.}
 \label{tab:hlskel}
 \end{table}
 

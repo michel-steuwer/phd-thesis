@@ -30,8 +30,8 @@ These are systematically transformed into low-level \OpenCL patterns using a rul
 
 \begin{subfigure}[b]{.85\linewidth}
 \begin{lstlisting}[mathescape,numbers=left]
-def mul3(x)    = x * 3    // user-defined function
-def vectorScal = map(mul3)          // map pattern
+mul3 x     = x * 3    // user-defined function
+vectorScal = map mul3          // map pattern
 \end{lstlisting}
 \caption{\textbf{High-level expression} written by the programmer.}
 \label{fig:codeex:map}
@@ -61,12 +61,12 @@ def vectorScal = map(mul3)          // map pattern
 \centering
 \begin{minipage}{.85\linewidth}%{0.85\textwidth}
 \begin{lstlisting}[mathescape,numbers=left]
-def mul3(x)    = x * 3
-def vectorScal = join $\circ$ map-workgroup($\label{fig:codeex:impl:map-wg}$
-                    asScalar $\circ$ map-local($\label{fig:codeex:impl:map-wg:start}$
-                      vect-4(mul3)$\label{fig:codeex:impl:vec}$
-                    ) $\circ$ asVector-4$\label{fig:codeex:impl:map-wg:stop}$$\label{fig:codeex:impl:asVec}$
-                 ) $\circ$ split-1024
+mul3 x     = x * 3
+vectorScal = join $\circ$ map-workgroup ($\label{fig:codeex:impl:map-wg}$
+                    asScalar $\circ$ map-local ($\label{fig:codeex:impl:map-wg:start}$
+                      vect 4 mul3$\label{fig:codeex:impl:vec}$
+                    ) $\circ$ asVector 4$\label{fig:codeex:impl:map-wg:stop}$$\label{fig:codeex:impl:asVec}$
+                 ) $\circ$ split 1024
 \end{lstlisting}
 \end{minipage}
 \caption{\textbf{Low-level expression} derived using rewrite rules.}
