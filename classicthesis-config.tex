@@ -355,7 +355,14 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \newcommand{\pat}[1]{\textit{#1}}
 \newcommand{\bench}[1]{\textit{#1}}
 
-\usepackage[backgroundcolor=rulesbgcolor,linecolor=ruleslncolor,innerleftmargin=0pt,innerbottommargin=0pt, innertopmargin=1pt]{mdframed}
+\usepackage[framemethod=tikz,
+            backgroundcolor=rulesbgcolor,
+            linecolor=ruleslncolor,
+            innerleftmargin=10pt,
+            innerrightmargin=10pt,
+            innerbottommargin=5pt,
+            innertopmargin=5pt]{mdframed}
+
 \usepackage{subcaption}
 
 \usepackage{booktabs}
