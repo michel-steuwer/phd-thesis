@@ -31,3 +31,221 @@ The rewrite rules are used to systematically derive semantically equivalent low-
 Once derived, we can automatically generate high performance code based on these expressions.
 The next section introduces on overview of our approach.
  
+\begin{lstlisting}[%                                                             
+caption={Interleaved Addressing, interleaved work items active, perf: 2.083 GB/s},%
+numbers=left,%
+float=tb,
+label={lst:reduce0}]
+kernel
+  void reduce0(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    unsigned int i   = get_global_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // do reduction in local memory
+    for(unsigned int s=1; s < get_local_size(0); s *= 2) {
+      if ((tid % (2*s)) == 0) {
+        l_data[tid] += l_data[tid + s]; }
+      barrier(CLK_LOCAL_MEM_FENCE); }
+
+    // write result for this work group to global memory
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Interleaved Addressing, contiguous work items active, perf: 4.854 GB/s},%
+numbers=left,%
+float=tb,
+label={lst:reduce1}]
+kernel
+  void reduce1(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    unsigned int i   = get_global_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for(unsigned int s=1; s < get_local_size(0); s *= 2) {
+        // continuous work items remain active
+        int index = 2 * s * tid;
+        if (index < get_local_size(0)) {
+            l_data[index] += l_data[index + s]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Sequential Addressing, perf: 9.741 GB/s},%
+numbers=left,%
+float=tb,
+label={lst:reduce2}]
+kernel
+  void reduce2(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    unsigned int i   = get_global_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // process elements in different order
+    // requires commutativity!
+    for(unsigned int s=get_local_size(0)/2; s>0; s>>=1) {
+        if (tid < s) {
+            l_data[tid] += l_data[tid + s]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={First Add During Load, perf: 17.377 GB/s},%
+numbers=left,%
+float=tb,
+label={lst:reduce3}]
+kernel
+  void reduce3(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
+                                     + get_local_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    // performs first addition during loading
+    if (i + get_local_size(0) < n) 
+        l_data[tid] += g_idata[i+get_local_size(0)];  
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for(unsigned int s=get_local_size(0)/2; s>0; s>>=1) {
+        if (tid < s) {
+            l_data[tid] += l_data[tid + s]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Unroll the Last Warp, perf: 31.289 GB/s},%
+numbers=left,%
+float=tb,
+label={lst:reduce5}]
+kernel
+  void reduce4(global float* g_idata, global float* g_odata,
+               unsigned int n,local volatile float* l_data){
+    unsigned int tid = get_local_id(0);
+    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
+                                     + get_local_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    if (i + get_local_size(0) < n) 
+        l_data[tid] += g_idata[i+get_local_size(0)];  
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // prevent further unrolling
+    #pragma unroll 1
+    for(unsigned int s=get_local_size(0)/2; s>32; s>>=1) {
+        if (tid < s) {
+            l_data[tid] += l_data[tid + s]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    // unroll for last 32 active work items
+    // no synchronization required on NVIDIA GPUs
+    // this is not protable!
+    if (tid < 32) {
+      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
+      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
+      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
+      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
+      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
+      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; }
+    }
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Completely Unrolled, perf: 43.996 GB/s},%
+numbers=left,%
+float=tb,
+label={lst:reduce5}]
+kernel
+  void reduce5(global float* g_idata, global float* g_odata,
+               unsigned int n,local volatile float* l_data){
+    unsigned int tid = get_local_id(0);
+    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
+                                     + get_local_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    if (i + get_local_size(0) < n) 
+        l_data[tid] += g_idata[i+get_local_size(0)];  
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // unroll for loop entirely
+    if (wgSize >= 512) {
+        if (tid < 256) { l_data[tid] += l_data[tid+256]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    if (wgSize >= 256) {
+        if (tid < 128) { l_data[tid] += l_data[tid+128]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    if (wgSize >= 128) {
+        if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    
+    if (tid < 32) {
+      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
+      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
+      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
+      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
+      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
+      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; } }
+    
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Multiple Adds / Thread, perf: 62.671 GB/s},%
+numbers=left,%
+float=tb,
+label={lst:reduce6}]
+kernel
+  void reduce6(global float* g_idata, global float* g_odata,
+               unsigned int n,local volatile float* l_data){
+    unsigned int tid = get_local_id(0);
+    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
+                                     + get_local_id(0);
+    unsigned int gridSize = wgSize*2*get_num_groups(0);
+    l_data[tid] = 0;
+
+    // multiple elements are reduced per work item
+    while (i < n) { l_data[tid] += g_idata[i];
+                    if (i + wgSize < n)
+                      l_data[tid] += g_idata[i+wgSize];  
+                    i += gridSize; } 
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    if (wgSize >= 512) {
+        if (tid < 256) { l_data[tid] += l_data[tid+256]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    if (wgSize >= 256) {
+        if (tid < 128) { l_data[tid] += l_data[tid+128]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    if (wgSize >= 128) {
+        if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    
+    if (tid < 32) {
+      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
+      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
+      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
+      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
+      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
+      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; } }
+    
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+%\begin{lstlisting}[%                                                             
+%caption={},%
+%numbers=left,%
+%float=tb,
+%label={lst:}]
+%\end{lstlisting}
