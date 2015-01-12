@@ -24,18 +24,19 @@ Computing a Mandelbrot fractal is easily parallelizable, as all pixels of the fr
 
 \subsubsection*{\SkelCL Implementation}
 \label{sec:mandelbrot:implementation}
-The implementation of the Mandelbrot set computations uses the \map skeleton as shown in \autoref{eq:skelcl:mandelbrot}.
+The \SkelCL implementation of the Mandelbrot set computations uses the \map skeleton as shown in \autoref{eq:skelcl:mandelbrot}.
 \begin{align}
   mandelbrot\ w\ h =&  \nonumber\\
          map\ compute&ColorOfPixel\ (generateIndex\ w\ h)
   \label{eq:skelcl:mandelbrot}
 \end{align}
-Here a function $mandelbrot$ is defined taking two arguments the width $w$ and height $h$ of the image to compute.
-The function is defined in terms of the \map skeleton customized with a function computing the color of a single pixel of the image (not shown here) and operating on an input matrix of size $w\times h$ consisting of indices.
+\todo{Explain $generateIndex$ and connection to \ref{eq:mandelbrot}}
+Here function $mandelbrot$ is defined taking two arguments -- the width $w$ and height $h$ of the image to compute.
+The function is defined in terms of the \map skeleton customized with $computeColorOfPixel$ computing the color of a single pixel of the image (not shown here) and operating on an input matrix of size $w\times h$ consisting of indices.
 
 The implementation using the \SkelCL library is shown in \autoref{lst:skelcl:mandelbrot}.
-A user defined data type is defined to represent the color of a pixel (line~\ref{lst:skelcl:mandelbrot:pixel}).
-An instance of the \map skeleton is created in line~\ref{lst:skelcl:mandelbrot:map} and applied to an \code{IndexMatrix} (line~\ref{lst:skelcl:mandelbrot:apply}).
+A user-defined data type is introduced to represent the color of a pixel (line~\ref{lst:skelcl:mandelbrot:pixel}).
+An instance of the \map skeleton is created in line~\ref{lst:skelcl:mandelbrot:map} and applied to \code{IndexMatrix} (line~\ref{lst:skelcl:mandelbrot:apply}).
 The \code{IndexMatrix} represents all indices up to a given width and height.
 It is implemented as a special representation of the generic \code{Matrix} class to avoid explicitly storing the indices in memory.
 Instead when accessing an element the index value is computed on the fly.
@@ -57,13 +58,13 @@ void mandelbrot(const int width, const int height) {
   writeToDisk(image); }
 \end{lstlisting}
 
-We created two similar parallel implementations for computing a Mandelbrot fractal using CUDA and OpenCL.
+We created two similar parallel implementations for computing a Mandelbrot fractal using CUDA and OpenCL.\todo{Show in appendix?}
 We compare the programming effort and performance for these implementations against our \SkelCL implementation.
 
 \subsubsection*{Programming effort}
 \label{sec:mandelbrot:programming}
 
-CUDA and \SkelCL require a single line of code for initialization in the host code, whereas OpenCL requires a lengthy initialization of different data structures which take about 20 lines of code.
+CUDA and \SkelCL require a single line of code for initialization in the host code, whereas OpenCL requires a lengthy initialization of different data structures which takes about 20 lines of code.
 
 The host code differs significantly between all implementations.
 In CUDA, the kernel is called like an ordinary function.
@@ -75,7 +76,7 @@ Specifying the work group size is mandatory in CUDA and OpenCL, whereas this is 
 
 \paragraph{Program size}
 The OpenCL-based implementation has 118 lines of code (kernel: 28~lines, host program: 90~lines) and is thus more than twice as long as the CUDA and \SkelCL versions with 49 lines (28, 21) and 57 lines (26, 31), respectively (see \autoref{fig:mandelbrot_runtime}).
-The length of the CUDA- and \SkelCL-based implementations differs by only a few lines.
+The lengths of the CUDA- and \SkelCL-based implementations differ by only a few lines.
 
 \paragraph{Kernel size}
 The kernel function is similar in all implementations: it takes a pixel's position (\ie, a complex number) as input, performs the iterative calculation for this pixel, and returns the pixel's color.
@@ -95,8 +96,9 @@ The positions are implicitly determined based on the work item's index.
 
 We tested our implementations on a single \GPU of our test system to compute a Mandelbrot fractal of size 4096$\times$3072 pixels.
 In CUDA and OpenCL, work groups of 16$\times$16 are used; \SkelCL uses its default work group size of~256 work items.
+
 The results are shown in \autoref{fig:mandelbrot_runtime}.
-As compared to the runtime of the \SkelCL-based implementation (26 seconds), the implementation based on OpenCL (25 seconds) and CUDA (18 seconds) are faster by 4\% or 31\%, respectively.
+As compared to the runtime of the \SkelCL-based implementation (26 seconds), the implementation based on OpenCL (25 seconds) and CUDA (18 seconds) are faster by 4\% and 31\%, respectively.
 Since \SkelCL is built on top of OpenCL, the performance difference of \SkelCL and OpenCL can be regarded as the overhead introduced by SkelCL.
 Previous work~\cite{KongDiYaLiCaStMaZh2010} also reported that CUDA was usually faster than OpenCL, which also explains the higher performance of the implementation based on CUDA.
 The Mandelbrot application demonstrates that \SkelCL introduces a tolerable overhead of less than 5\% as compared to OpenCL.

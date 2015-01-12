@@ -1,13 +1,12 @@
 \section{Medical Imaging}
 \label{section:medical-imaging}
-
-We used the LM OSEM medical imaging application as our motivational example and application study to identify requirements for a high-level programming model at the beginning of \autoref{chapter:skelcl}.
-In this section we will now see how we can express the LM OSEM application using algorithmic skeletons and how the parallel container data types and \SkelCL's redistribution feature simplify the programming of multi GPU systems.
-We will start by briefly reintroducing the application and its sequential implementation before moving to the parallel implementation using traditional OpenCL and \SkelCL in comparison.
-A particular focus of this section will be on multi GPU systems and how \SkelCL radically simplifies their programming.
+At the beginning of \autoref{chapter:skelcl} we used the LM OSEM medical imaging application as our motivational example and application study to identify requirements for a high-level programming model.
+In this section we will now study how we can express the LM OSEM application using algorithmic skeletons and how the parallel container data types and \SkelCL's redistribution feature simplify the programming of multi-GPU systems.
+We will start by briefly reintroducing the application and its sequential implementation before moving to the parallel implementation using first traditional \OpenCL and then \SkelCL for comparison.
+A particular focus of this section will be on multi-GPU systems and how \SkelCL radically simplifies their programming.
 
 \subsubsection*{The LM OSEM Algorithm}
-\emph{List-Mode Ordered Subset Expectation Maximization} (LM OSEM) is a time-intensive, production-quality algorithm from a real-world application in medical image reconstruction.
+\emph{List-Mode Ordered Subset Expectation Maximization} (LM OSEM)~\cite{ReaderErFlOt1998, SchellmannGoMeKoScWuBu2009} is a time-intensive, production-quality algorithm for medical image reconstruction.
 LM OSEM takes a set of events from a PET scanner and splits them into $s$ equally sized subsets.
 Then, for each subset $S_l, l \in {0, \ldots, s-1}$, the following computation is performed:
 \begin{equation}
@@ -17,11 +16,11 @@ Then, for each subset $S_l, l \in {0, \ldots, s-1}$, the following computation i
 \label{eq:lm_osem2}
 \end{equation}
 Here $f$ is the 3D reconstruction image which is refined over time.
-$A$ is a matrix where element $a_{ik}$ of row $A_i$ represents the length of intersection of the line between two detectors for a measured event $i$ with voxel $k$ of the reconstruction image.
+$A$ is a matrix where element $a_{ik}$ of row $A_i$ represents the length of intersection of the line between two PET detectors for a measured event $i$ with voxel $k$ of the reconstruction image.
 The factor in front of the sum can be precomputed and is, therefore, omitted from here on.
 
 \paragraph{Sequential implementation}
-\autoref{lst:lmosem:seq_code:2} shows the sequential code for LM OSEM as already shown in \autoref{section:opencl-example}.
+\autoref{lst:lmosem:seq_code:2} shows the sequential code for LM OSEM as already presented in \autoref{section:opencl-example}.
 %
 \begin{figure}
 \begin{lstlisting}[
@@ -45,8 +44,7 @@ for (int l = 0; l < subsets; l++) {$\label{lst:lmosem:seq_core:2:loop}$
 \end{lstlisting}
 \end{figure}
 %
-The LM OSEM is an iterative algorithm refining the reconstruction image $f$ over time.
-In each iteration two major steps are performed:
+The sequential LM OSEM is an iterative algorithm refining the reconstruction image $f$ over time, at each iteration two major steps are performed:
 \begin{itemize}
   \item[] \emph{Step 1:} the error image $c_l$ is computed by performing three sub-steps: 1) computation of the row $A_i$; 2) computing the local error for row $A_i$; 3) adding the local error to $c_l$;
   \item[] \emph{Step 2:} update the reconstruction image $f$ using the error image $c_l$ computed in Step 1.
@@ -66,13 +64,13 @@ On a multi-\GPU system, the whole subset $S_l$ has to be copied to each \GPU in 
 ISD requires large amounts of memory (up to several GB in practically relevant cases) to save all paths computed in \emph{Step~1}.
 Summarizing, it is hard to implement \emph{Step~1} on the \GPU, while \emph{Step~2} can be parallelized easily.
 
-Therefore, we decided to use a hybrid strategy for implementing LM OSEM:
+Therefore, we use a hybrid strategy for implementing LM OSEM:
 \emph{Step~1} is parallelized using the PSD approach, while we use ISD for \emph{Step~2}.
 This results in the sequence of five phases shown in \autoref{fig:lmosem:em_distribution2}:
 \begin{enumerate}
 \item \emph{Upload:} the subset ($S$) is divided into sub-subsets, one sub-subset per \GPU.
       One sub-subset and the reconstruction image ($f$) are uploaded to each \GPU;
-\item \emph{Step 1:} each \GPU computes a local error image ($c_l$) for its sub-subset;
+\item \emph{Step 1:} each \GPU computes the local error image ($c_l$) for its sub-subset;
 \item \emph{Redistribution:} the local error images that are distributed on all \GPUs are downloaded and combined into a single error image on the host by performing element-wise addition.
       Afterwards, the combined error image and reconstruction image are partitioned, in order to switch the parallelization strategy from PSD to ISD.
       The corresponding parts of both images are distributed to the \GPUs again;
@@ -132,21 +130,21 @@ for (l = 0; l < subsets; l++) {
 \end{lstlisting}
 The redistribution phase is implemented by changing the distributions of the corresponding \SkelCL containers (lines~\ref{lst:em:skelcl:redistribute:start} and~\ref{lst:em:skelcl:redistribute:end}).
 
-The two computational steps are implemented using the \map and \zip skeleton from \SkelCL.
+The two computational steps are implemented using the \map and \zip skeleton from \SkelCL, correspondingly, as follows.
 
 The first step -- the computation of the error image $c_l$ -- is implemented using the \map skeleton.
-For each event \code{e} of the currently processed subset the row $A_i$ is computed (line~\ref{lst:em:skelcl:computeAi}).
+For each event \code{e} of the currently processed subset, the row $A_i$ is computed (line~\ref{lst:em:skelcl:computeAi}).
 As $A_i$ is sparsely populated it is stored as a special data structure, called \code{Path}, to reduce its memory footprint.
 Next, the local error is computed using $A_i$ together with the current reconstruction image $f$ which is passed to the \map skeleton as an additional argument.
 Finally, the error image \code{cl} is updated with the local error.
-The error image is also provided as additional argument, but when executing the \map skeleton \code{cl} is wrapped using the \code{out} helper function (line~\ref{lst:em:skelcl:execute}).
+The error image is also provided as an additional argument, but when executing the \map skeleton \code{cl} is wrapped using the \code{out} helper function (line~\ref{lst:em:skelcl:execute}).
 This marks the additional argument as output parameter, \ie, the \SkelCL implementation is notified that this argument will be modified by the customizing function.
 It is interesting to point out that the \map skeleton does not return a value, \ie, its return type is \code{void}.
 The skeleton is only executed for its side effects on \code{cl}.
 
 The second step -- the update of the reconstruction image $f$ -- is implemented using the \zip skeleton.
 Here the customizing function operates on pairs of the voxels of the reconstruction and the error image, following the image space decomposition (ISD) strategy.
-If the voxel of the error image is greater than zero the voxel of the reconstruction image is updated with their product.
+If the voxel of the error image is greater than zero, the voxel of the reconstruction image is updated with the product of the pair of voxels from the reconstruction and the error image.
 
 
 
@@ -155,8 +153,8 @@ If the voxel of the error image is greater than zero the voxel of the reconstruc
 
 
 \subsubsection*{Programming effort}
-The lengthy and cumbersome OpenCL implementation of the LM OSEM was already discussed in \autoref{chapter:skelcl}.
-We also compare against a CUDA-based implementation using multiple \GPUs which has already been implemented~\cite{SchellmannGoMeKoScWuBu2009}.
+The lengthy and cumbersome \OpenCL implementation of the LM OSEM was already discussed in \autoref{chapter:skelcl}.
+We also compare our \SkelCL-based implementation against a CUDA-based implementation using multiple \GPUs which has already been implemented by~\citeauthor{SchellmannGoMeKoScWuBu2009} and presented in a research paper~\cite{SchellmannGoMeKoScWuBu2009}.
 Both, \CUDA and \OpenCL, require a considerable amount of boilerplate code for running a kernel on multiple \GPUs, in particular for uploading and downloading data to and from the \GPUs.
 
 The parallelization strategies are the same for all three versions.
@@ -195,22 +193,22 @@ These lines are easily recognizable in the \SkelCL program (lines~\ref{lst:em:sk
 
 
 \subsubsection*{Performance experiments}
-We evaluated the runtimes of our three implementations of LM OSEM, by reconstructing an image of $150\times 150\times 280$ voxels from a real-world PET data set with about $10^8$ events.
+We evaluated the runtimes of our three implementations of LM OSEM by reconstructing an image of $150\times 150\times 280$ voxels from a real-world PET data set with about $10^8$ events.
 From this data set, about $10^2$ equally sized subsets are created.
 In our experiments, we measured the average runtime of processing one subset.
-In a full reconstruction application, all subsets are processed multiple times, thus making LM OSEM a time-intensive application that runs several hours on a single-core \CPU.
+To perform a full reconstruction producing a detailed reconstruction image, all subsets are processed multiple times, making LM OSEM a time-intensive application that runs several hours on a single-core \CPU.
 Unlike \CUDA, both \OpenCL and \SkelCL compile kernels at runtime.
 As compilation is only required once, when launching the implementation, but not during the subset iterations, we excluded compilation time from our runtime measurements.
 
 \autoref{fig:list-mode_OSEM:runtime} shows the runtime of our three implementations of LM OSEM using up to four \GPUs.
 We observe that \CUDA always provides best performance, being about 20\% faster than \OpenCL and \SkelCL on the same number of \GPUs.
-As \SkelCL is built on top of \OpenCL we consider the difference to \OpenCL the overhead introduced by \SkelCL.
-While the differences in the programming effort to implement the \SkelCL and \OpenCL versions are significant, the differences in runtime are very small.
+As \SkelCL is built on top of \OpenCL, we consider the difference to \OpenCL as the overhead introduced by \SkelCL.
+While the differences in the programming effort to implement the \SkelCL and \OpenCL versions are significant, the differences in runtime are quite small.
 When running on a single \GPU, both implementations take the same time (3.66 seconds) to complete.
 With two and four \GPUs, the \OpenCL implementation slightly outperforms the \SkelCL implementation, being 1.2\% and 4.7\% faster.
-We presume that the increasing overhead is caused by the more complex data distribution performed when using more \GPUs.
+We presume that the increasing overhead of \SkelCL is caused by the more complex data distribution performed when using more \GPUs.
 Comparing to the significant reduction in programming effort (50\%), the runtime overhead of less than 5\% is arguably a moderate one.
-In conclusion, this example shows that \SkelCL is suitable for implementing a real-world application and provides performance close to a native \OpenCL implementations.
+In conclusion, this example shows that \SkelCL is suitable for implementing a real-world application and provides performance close to a native \OpenCL implementation.
 
 \begin{figure}
   \centering
