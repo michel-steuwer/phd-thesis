@@ -12,7 +12,9 @@ We will present a novel approach for generating efficient and specialized code f
 This systematic, rule-based approach provides performance portability across different types of modern parallel processors. 
 In the following \autoref{chapter:codeGeneration-evaluation} we will show that this approach generates code matching the performance of highly tuned implementations on \CPUs and \GPUs using a set of example application.
 
-We will start the chapter by motivating the necessity, when aiming for performance portability, for generating code from a pattern-based high-level representation.
+We will start the chapter by looking at common optimizations in \OpenCL and how applying them changes the source code of applications.
+We will show how these optimizations can be hardware specific breaking portability and, furthermore, how optimizations for one particular hardware architecture can lead to poor performance on other hardware architectures.
+All of this will motivate the necessity, when aiming for performance portability, for generating code from a pattern-based high-level representation.
 We will discuss the benefits an approach using code generation offers over a library based approach, like \SkelCL presented in \autoref{chapter:skelcl}.
 Then we will give an overview of our approach and present it in more detail in the following sections.
 \autoref{chapter:codeGeneration-evaluation} will present an evaluation of the approach using a set of application studies.

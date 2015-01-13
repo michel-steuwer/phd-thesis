@@ -1,3 +1,305 @@
+\section{A case study of OpenCL optimizations}
+To understand the problems of performance and portability in the context of modern parallel processors we will study a simple application example: parallel reduction.
+This discussed is based on the presentation \emph{``Optimizing Parallel Reduction in CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
+Optimization guidelines like this exist from every hardware vendor giving application developers advice on how to exploit their hardware~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide}.
+
+In \autoref{chapter:skelcl} we saw that we can express a parallel reduction using a single algorithmic skeleton: \reduce.
+Here we look at how efficient \OpenCL implementation of this algorithm look like.
+We are especially interested in gradually optimizing this application to see how beneficial the single optimization steps are.
+
+For implementing the parallel reduction, or more precisely the parallel summation of an array, an approach using two \OpenCL kernels is used.
+The first \OpenCL kernel is executed in parallel by multiple \OpenCL work groups, each producing a temporary result, then the second \OpenCL kernel is executed by a single \OpenCL work group producing the final result.
+This strategy is applied as global synchronization, \ie, synchronization across work groups, is prohibited in \OpenCL.
+By using the two kernel approach massive parallelism can be exploited in the first phase as multiple work groups operate concurrently on independent parts of the input array.
+The synchronization inside the second work group ensures correctness when computing the final result.
+
+We will follow the methodology in~\cite{Harris2007} and evaluate the performance of the different versions using the measured memory bandwidth as our metric.
+This is reasonable as the reduction has a very low arithmetic intensity and its performance is, therefore, bound by the available memory bandwidth.
+
+\paragraph{First OpenCL implementation}
+\autoref{lst:reduce0} shows the first, basic version of the parallel reduction in \OpenCL.
+This will be our starting point for the following optimizations.
+In this implementation each work item first loads an element into the local memory (line~\ref{lst:reduce0:load}).
+After a synchronization (line~\ref{lst:reduce0:firstBarrier}) all work items of a work group execute a for loop (lines~\ref{lst:reduce0:for:start}--\ref{lst:reduce0:for:end}) to perform a collective tree-based reduction.
+In every iteration the if statement (line~\ref{lst:reduce0:if}) ensures that a declining number of work items remain active performing partial reductions in the shrinking reduction tree.
+The second barrier in line~\ref{lst:reduce0:for:end} ensures that no race conditions occurs when accessing the shared local memory.
+Finally, the work item in the work group with id 0 writes back the computed result to the global memory in line~\ref{lst:reduce0:writeBack}.
+
+The implementation presented in \autoref{lst:reduce0} is not straightforward to implement.
+The application developer has to be familiar with the parallel execution model of \OpenCL to avoid race conditions and deadlocks.
+For example, it is important that the second barrier in line~\ref{lst:reduce0:for:end} is placed \emph{after} and not \emph{inside} the if statement.
+This is true, even though, work items not entering the if statement will never read from or write to memory and, therefore, can never be influenced by a race condition.
+\OpenCL requires every work item from a work group to execute all barrier statements in a kernel exactly the same number of times.
+It it the application developers responsibility to ensure that this condition is met, otherwise a deadlock will occur.
+
+Putting the programming difficulties aside this implementation does not provide high performance.
+\citeauthor{Harris2007} reports that only 2.41\% of the theoretical peak memory bandwidth are utilized. 
+
+\begin{lstlisting}[%                                                             
+caption={First \OpenCL implementation of the parallel reduction. This implementation achieves 2.41\% of the theoretical peak memory bandwith performance.},%
+numbers=left,%
+float=tb,
+label={lst:reduce0}]
+kernel
+  void reduce0(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    unsigned int i   = get_global_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;$\label{lst:reduce0:load}$
+    barrier(CLK_LOCAL_MEM_FENCE);$\label{lst:reduce0:firstBarrier}$
+
+    // do reduction in local memory
+    for(unsigned int s=1; s < get_local_size(0); s *= 2) {$\label{lst:reduce0:for:start}$
+      if ((tid \% (2*s)) == 0) {$\label{lst:reduce0:if}$
+        l_data[tid] += l_data[tid + s]; }
+      barrier(CLK_LOCAL_MEM_FENCE); }$\label{lst:reduce0:for:end}$
+
+    // write result for this work group to global memory
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }$\label{lst:reduce0:writeBack}$
+\end{lstlisting}
+
+\paragraph{Avoid divergent branching}
+
+\autoref{lst:reduce1} shows the second implementation.
+The differences from the previous implementation are highlighted in the code.
+
+When performing the collective tree-based reduction in a work group a shrinking number of work items remains active until the last remaining work item computes the result of the entire work group.
+In the previous version the modulo operator was used to determine which work item remains active (see line~\ref{lst:reduce0:if} in \autoref{lst:reduce0}).
+This leads to a situation were not consecutive work items remain active, but work items which id is divisible by 2, then by 4, then by 8, and so on.
+In Nvidia's \GPU architecture 32 work items are grouped into a \emph{warps} and executed together, as described in \autoref{chapter:background}.
+It is highly beneficial to program in a style where all 32 work items of a warp perform the same instructions, especially, to avoid divergent branching between work items of a warp.
+Using the modulo operator to determine the active work items leads to highly divergent branching.
+The second implementation in \autoref{lst:reduce1}, therefore, uses a different formula (line~\ref{lst:reduce1:index}) to determine the active work items which avoids divergent branching.
+
+The performance improves by a factor of 2.33 as compared to the first implementation.
+Still only 5.62\% of the theoretically available memory bandwidth are used by this version.
+
+\begin{lstlisting}[%                                                             
+caption={\OpenCL implementation of the parallel reduction avoiding divergent branching.
+         This implementation achieves 5.62\% of the theoretical peak memory bandwidth performance.},%
+numbers=left,%
+float=tb,
+label={lst:reduce1}]
+kernel
+  void reduce1(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    unsigned int i   = get_global_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for(unsigned int s=1; s < get_local_size(0); s *= 2) {
+        // continuous work items remain active
+        $\strut$@int index = 2 * s * tid;@$\label{lst:reduce1:index}$
+        if (@index < get_local_size(0)@) {$\label{lst:reduce1:if}$
+            l_data[index] += l_data[index + s]; }$\label{lst:reduce1:read}$
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+
+\paragraph{Avoid interleaved addressing}
+
+\autoref{lst:reduce2} shows the third implementation.
+The differences from the previous implementation are highlighted in the code.
+
+On modern \GPUs the fast local memory is organized in multiple \emph{banks}.
+When two, or more, work items simultaneously access memory locations in the same bank a \emph{bank conflict} occurs which means that all memory requests are answered sequentially and not in parallel as usual.
+This is described in more detail in~\autoref{chapter:background}.
+The previous two implementation use an access pattern for the local memory which makes bank conflicts likely.
+When reading memory from the local memory in line~\ref{lst:reduce1:read} of \autoref{lst:reduce1} each work item reads interleaved from two locations: \lstinline!index! and \lstinline!index+s!.
+The third implementation in \autoref{lst:reduce2} avoids this problematic local memory access pattern.
+Instead a sequential access pattern is used where consecutive work items access consecutive memory locations.
+This is achieved by directly using the local id as index together with a different definition of \lstinline!s! in line~\ref{lst:reduce2:s}.
+
+The performance improves by a factor of 2.01 as compared to the previous implementation and 4.68 to the initial implementation.
+With this version 11.27\% of the theoretically available memory bandwidth are used.
+
+
+\begin{lstlisting}[%                                                             
+caption={\OpenCL implementation of the parallel reduction avoiding local memory bank conflicts.
+         This implementation achieves 11.27\% of the theoretical peak memory bandwidth performance.},%
+numbers=left,%
+float=tb,
+label={lst:reduce2}]
+kernel
+  void reduce2(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    unsigned int i   = get_global_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // process elements in different order
+    // requires commutativity!
+    for(@unsigned int s=get_local_size(0)/2; s>0; s>>=1@) {$\label{lst:reduce2:s}$
+        if (@tid < s@) {
+            l_data[@tid@] += l_data[@tid@ + s]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\paragraph{Increase computational intensity per work item}
+
+\autoref{lst:reduce3} shows the fourth implementation.
+The differences from the previous implementation are highlighted in the code.
+
+For the previous versions each work item loads one element from global into local memory before the work group collectively performs a tree-based reduction.
+That means that half of the work items are idle after performing a single copy operation, which is highly wasteful.
+The fourth implementation in \autoref{lst:reduce3} avoids this by letting each work item load two elements from global memory, perform an addition, and store the computed result in local memory.
+Assuming the same input size this reduces the number of work items to start by half and, therefore, increases the computational intensity for every work item.
+
+The performance improves by a factor of 1.78 as compared to the previous implementation and 8.34 to the initial implementation.
+With this version 20.11\% of the theoretically available memory bandwidth are used.
+
+
+\begin{lstlisting}[%                                                             
+caption={\OpenCL implementation of the parallel reduction. Each work item performs an addition when loading data from global memory.
+         This implementation achieves 20.11\% of the theoretical peak memory bandwidth performance.},%
+numbers=left,%
+float=tb,
+escapechar=\`,
+label={lst:reduce3}]
+kernel
+  void reduce3(global float* g_idata, global float* g_odata,
+               unsigned int n, local float* l_data) {
+    unsigned int tid = get_local_id(0);
+    $\strut$@unsigned int i = get_group_id(0) * (get_local_size(0)*2)@
+                                     $\strut$@+ get_local_id(0);@
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    // performs first addition during loading
+    $\strut$@if (i + get_local_size(0) < n)@
+    $\strut$@    l_data[tid] += g_idata[i+get_local_size(0)];@
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for(unsigned int s=get_local_size(0)/2; s>0; s>>=1) {
+        if (tid < s) {
+            l_data[tid] += l_data[tid + s]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Unroll the Last Warp, perf: 36.21\%},%
+numbers=left,%
+float=tb,
+label={lst:reduce4}]
+kernel
+  void reduce4(global float* g_idata, global float* g_odata,
+               unsigned int n,local volatile float* l_data){
+    unsigned int tid = get_local_id(0);
+    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
+                                     + get_local_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    if (i + get_local_size(0) < n) 
+        l_data[tid] += g_idata[i+get_local_size(0)];  
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // prevent further unrolling
+    $\strut$@#pragma unroll 1@
+    for(unsigned int s=get_local_size(0)/2; s>32; s>>=1) {
+        if (tid < s) {
+            l_data[tid] += l_data[tid + s]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+
+    // unroll for last 32 active work items
+    // no synchronization required on NVIDIA GPUs
+    // this is not protable!
+    $\strut$@if (tid < 32) {@
+    $\strut$@  if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }@
+    $\strut$@  if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }@
+    $\strut$@  if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }@
+    $\strut$@  if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }@
+    $\strut$@  if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }@
+    $\strut$@  if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; }@
+    $\strut$@}@
+
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Completely Unrolled, perf: 56.92\%},%
+numbers=left,%
+float=tb,
+label={lst:reduce5}]
+kernel
+  void reduce5(global float* g_idata, global float* g_odata,
+               unsigned int n,local volatile float* l_data){
+    unsigned int tid = get_local_id(0);
+    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
+                                     + get_local_id(0);
+    l_data[tid] = (i < n) ? g_idata[i] : 0;
+    if (i + get_local_size(0) < n) 
+        l_data[tid] += g_idata[i+get_local_size(0)];  
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // unroll for loop entirely
+    $\strut$@if (wgSize >= 512) {@
+    $\strut$@    if (tid < 256) { l_data[tid] += l_data[tid+256]; }@
+    $\strut$@    barrier(CLK_LOCAL_MEM_FENCE); }@
+    $\strut$@if (wgSize >= 256) {@
+    $\strut$@    if (tid < 128) { l_data[tid] += l_data[tid+128]; }@
+    $\strut$@    barrier(CLK_LOCAL_MEM_FENCE); }@
+    $\strut$@if (wgSize >= 128) {@
+    $\strut$@    if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }@
+    $\strut$@    barrier(CLK_LOCAL_MEM_FENCE); }@
+    
+    if (tid < 32) {
+      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
+      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
+      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
+      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
+      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
+      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; } }
+    
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
+\begin{lstlisting}[%                                                             
+caption={Multiple Adds / Thread, perf: 72.53\%},%
+numbers=left,%
+float=tb,
+label={lst:reduce6}]
+kernel
+  void reduce6(global float* g_idata, global float* g_odata,
+               unsigned int n,local volatile float* l_data){
+    unsigned int tid = get_local_id(0);
+    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
+                                     + get_local_id(0);
+    $\strut$@unsigned int gridSize = wgSize*2*get_num_groups(0);@
+    $\strut$@l_data[tid] = 0;@
+
+    // multiple elements are reduced per work item
+    $\strut$@while (i < n) { l_data[tid] += g_idata[i];@
+    $\strut$@                if (i + wgSize < n)@
+    $\strut$@                  l_data[tid] += g_idata[i+wgSize];@
+    $\strut$@                i += gridSize; }@
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    if (wgSize >= 512) {
+        if (tid < 256) { l_data[tid] += l_data[tid+256]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    if (wgSize >= 256) {
+        if (tid < 128) { l_data[tid] += l_data[tid+128]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    if (wgSize >= 128) {
+        if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }
+        barrier(CLK_LOCAL_MEM_FENCE); }
+    
+    if (tid < 32) {
+      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
+      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
+      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
+      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
+      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
+      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; } }
+    
+    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
+\end{lstlisting}
+
 \section{The need for a pattern-based code generator}
 
 Our goal in this chapter is to achieve \emph{performance portability}, \ie, to achieve high performance for a given application across a set of different parallel processors.
@@ -31,221 +333,3 @@ The rewrite rules are used to systematically derive semantically equivalent low-
 Once derived, we can automatically generate high performance code based on these expressions.
 The next section introduces on overview of our approach.
  
-\begin{lstlisting}[%                                                             
-caption={Interleaved Addressing, interleaved work items active, perf: 2.083 GB/s},%
-numbers=left,%
-float=tb,
-label={lst:reduce0}]
-kernel
-  void reduce0(global float* g_idata, global float* g_odata,
-               unsigned int n, local float* l_data) {
-    unsigned int tid = get_local_id(0);
-    unsigned int i   = get_global_id(0);
-    l_data[tid] = (i < n) ? g_idata[i] : 0;
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // do reduction in local memory
-    for(unsigned int s=1; s < get_local_size(0); s *= 2) {
-      if ((tid % (2*s)) == 0) {
-        l_data[tid] += l_data[tid + s]; }
-      barrier(CLK_LOCAL_MEM_FENCE); }
-
-    // write result for this work group to global memory
-    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
-\end{lstlisting}
-
-\begin{lstlisting}[%                                                             
-caption={Interleaved Addressing, contiguous work items active, perf: 4.854 GB/s},%
-numbers=left,%
-float=tb,
-label={lst:reduce1}]
-kernel
-  void reduce1(global float* g_idata, global float* g_odata,
-               unsigned int n, local float* l_data) {
-    unsigned int tid = get_local_id(0);
-    unsigned int i   = get_global_id(0);
-    l_data[tid] = (i < n) ? g_idata[i] : 0;
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    for(unsigned int s=1; s < get_local_size(0); s *= 2) {
-        // continuous work items remain active
-        int index = 2 * s * tid;
-        if (index < get_local_size(0)) {
-            l_data[index] += l_data[index + s]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-
-    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
-\end{lstlisting}
-
-\begin{lstlisting}[%                                                             
-caption={Sequential Addressing, perf: 9.741 GB/s},%
-numbers=left,%
-float=tb,
-label={lst:reduce2}]
-kernel
-  void reduce2(global float* g_idata, global float* g_odata,
-               unsigned int n, local float* l_data) {
-    unsigned int tid = get_local_id(0);
-    unsigned int i   = get_global_id(0);
-    l_data[tid] = (i < n) ? g_idata[i] : 0;
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // process elements in different order
-    // requires commutativity!
-    for(unsigned int s=get_local_size(0)/2; s>0; s>>=1) {
-        if (tid < s) {
-            l_data[tid] += l_data[tid + s]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-
-    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
-\end{lstlisting}
-
-\begin{lstlisting}[%                                                             
-caption={First Add During Load, perf: 17.377 GB/s},%
-numbers=left,%
-float=tb,
-label={lst:reduce3}]
-kernel
-  void reduce3(global float* g_idata, global float* g_odata,
-               unsigned int n, local float* l_data) {
-    unsigned int tid = get_local_id(0);
-    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
-                                     + get_local_id(0);
-    l_data[tid] = (i < n) ? g_idata[i] : 0;
-    // performs first addition during loading
-    if (i + get_local_size(0) < n) 
-        l_data[tid] += g_idata[i+get_local_size(0)];  
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    for(unsigned int s=get_local_size(0)/2; s>0; s>>=1) {
-        if (tid < s) {
-            l_data[tid] += l_data[tid + s]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-
-    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
-\end{lstlisting}
-
-\begin{lstlisting}[%                                                             
-caption={Unroll the Last Warp, perf: 31.289 GB/s},%
-numbers=left,%
-float=tb,
-label={lst:reduce5}]
-kernel
-  void reduce4(global float* g_idata, global float* g_odata,
-               unsigned int n,local volatile float* l_data){
-    unsigned int tid = get_local_id(0);
-    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
-                                     + get_local_id(0);
-    l_data[tid] = (i < n) ? g_idata[i] : 0;
-    if (i + get_local_size(0) < n) 
-        l_data[tid] += g_idata[i+get_local_size(0)];  
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // prevent further unrolling
-    #pragma unroll 1
-    for(unsigned int s=get_local_size(0)/2; s>32; s>>=1) {
-        if (tid < s) {
-            l_data[tid] += l_data[tid + s]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-
-    // unroll for last 32 active work items
-    // no synchronization required on NVIDIA GPUs
-    // this is not protable!
-    if (tid < 32) {
-      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
-      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
-      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
-      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
-      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
-      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; }
-    }
-
-    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
-\end{lstlisting}
-
-\begin{lstlisting}[%                                                             
-caption={Completely Unrolled, perf: 43.996 GB/s},%
-numbers=left,%
-float=tb,
-label={lst:reduce5}]
-kernel
-  void reduce5(global float* g_idata, global float* g_odata,
-               unsigned int n,local volatile float* l_data){
-    unsigned int tid = get_local_id(0);
-    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
-                                     + get_local_id(0);
-    l_data[tid] = (i < n) ? g_idata[i] : 0;
-    if (i + get_local_size(0) < n) 
-        l_data[tid] += g_idata[i+get_local_size(0)];  
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // unroll for loop entirely
-    if (wgSize >= 512) {
-        if (tid < 256) { l_data[tid] += l_data[tid+256]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-    if (wgSize >= 256) {
-        if (tid < 128) { l_data[tid] += l_data[tid+128]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-    if (wgSize >= 128) {
-        if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-    
-    if (tid < 32) {
-      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
-      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
-      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
-      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
-      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
-      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; } }
-    
-    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
-\end{lstlisting}
-
-\begin{lstlisting}[%                                                             
-caption={Multiple Adds / Thread, perf: 62.671 GB/s},%
-numbers=left,%
-float=tb,
-label={lst:reduce6}]
-kernel
-  void reduce6(global float* g_idata, global float* g_odata,
-               unsigned int n,local volatile float* l_data){
-    unsigned int tid = get_local_id(0);
-    unsigned int i = get_group_id(0) * (get_local_size(0)*2)
-                                     + get_local_id(0);
-    unsigned int gridSize = wgSize*2*get_num_groups(0);
-    l_data[tid] = 0;
-
-    // multiple elements are reduced per work item
-    while (i < n) { l_data[tid] += g_idata[i];
-                    if (i + wgSize < n)
-                      l_data[tid] += g_idata[i+wgSize];  
-                    i += gridSize; } 
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    if (wgSize >= 512) {
-        if (tid < 256) { l_data[tid] += l_data[tid+256]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-    if (wgSize >= 256) {
-        if (tid < 128) { l_data[tid] += l_data[tid+128]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-    if (wgSize >= 128) {
-        if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }
-        barrier(CLK_LOCAL_MEM_FENCE); }
-    
-    if (tid < 32) {
-      if (wgSize >= 64) { l_data[tid] += l_data[tid+32]; }
-      if (wgSize >= 32) { l_data[tid] += l_data[tid+16]; }
-      if (wgSize >= 16) { l_data[tid] += l_data[tid+ 8]; }
-      if (wgSize >=  8) { l_data[tid] += l_data[tid+ 4]; }
-      if (wgSize >=  4) { l_data[tid] += l_data[tid+ 2]; }
-      if (wgSize >=  2) { l_data[tid] += l_data[tid+ 1]; } }
-    
-    if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
-\end{lstlisting}
-
-%\begin{lstlisting}[%                                                             
-%caption={},%
-%numbers=left,%
-%float=tb,
-%label={lst:}]
-%\end{lstlisting}

@@ -197,6 +197,7 @@
   aboveskip=\baselineskip,
   captionpos=b,
   mathescape=true,
+  moredelim=**[is][{\btHL[fill=RoyalBlue!50,draw=none]}]{@}{@},
 }
 
 %----------------------------------------------------------------------------------------
@@ -409,4 +410,38 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 
 \usepackage[section]{placeins}
 \usepackage{bussproofs}
+\usepackage{transparent}
+
+\usepackage{newverbs}
+
+\newcommand{\highlightbox}[1]{\colorbox{RoyalBlue!50}{#1}}
+\makeatletter
+\newcommand\highlightcode[1][RoyalBlue!50]{%
+  \Collectverb{\@highlightcode{#1}}%
+}
+\def\@highlightcode#1#2{%
+  \colorbox{#1}{\lstinline|#2|}%
+}
+\makeatother
+
+\makeatletter
+\newenvironment{btHighlight}[1][]
+{\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\bt@HL@box[bt@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\btHL[1][]{%
+  \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
+}
+\def\bt@HL@endenv{%
+  \end{btHighlight}%   
+  \egroup
+}
+\newcommand{\bt@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=orange!30,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+\makeatother
 
