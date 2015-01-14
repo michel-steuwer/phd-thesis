@@ -1,0 +1,184 @@
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --device=2 --kernel=0
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type int.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 0.4749 GB/s, Time = 0.14130 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 2139353471
+ CPU result = 2139353471
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --device=2 --kernel=1
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type int.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 0.7325 GB/s, Time = 0.09162 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 2139353471
+ CPU result = 2139353471
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --device=2 --kernel=2
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type int.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 0.9490 GB/s, Time = 0.07072 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 2139353471
+ CPU result = 2139353471
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --device=2 --kernel=3
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type int.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 1.8093 GB/s, Time = 0.03709 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 2139353471
+ CPU result = 2139353471
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --device=2 --kernel=4
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type int.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 2.3393 GB/s, Time = 0.02869 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 2794212
+ CPU result = 2139353471
+
+FAILED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --device=2 --kernel=5
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type int.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 3.2639 GB/s, Time = 0.02056 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 2794212
+ CPU result = 2139353471
+
+FAILED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: ^[[A3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --device=2 --kernel=6
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type int.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz
+ 16777216 elements
+ 128 threads (max)
+ 64 blocks
+
+oclReduction, Throughput = 0.6114 GB/s, Time = 0.10976 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 43768385
+ CPU result = 2139353471
+
+FAILED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> 
+

@@ -7,12 +7,12 @@ In \autoref{chapter:skelcl} we saw that we can express a parallel reduction usin
 Here we look at how efficient \OpenCL implementation of this algorithm look like.
 We are especially interested in gradually optimizing this application to see how beneficial the single optimization steps are.
 
-We will first start by looking at the implementation and optimizations on one particular hardware architecture, using Nvidia's \GPU architecture as our example.
+We will first start by looking at the implementation and optimizations on one particular hardware architecture, using Nvidia's Fermi \GPU architecture as our example.
 Then we will see how the optimized implementations perform on an AMD \GPU and Intel \CPU, to evaluate their portability.
 Finally, we will use our observations to motivate the need for a pattern-based code generator for achieving performance portability.
 
 
-\subsection{Optimizing parallel reduction for Nvidia's \GPU architecture}
+\subsection{Optimizing parallel reduction for Nvidia's \GPU architectures}
 For implementing the parallel reduction, or more precisely the parallel summation of an array, an approach using two \OpenCL kernels is used.
 The first \OpenCL kernel is executed in parallel by multiple \OpenCL work groups, each producing a temporary result, then the second \OpenCL kernel is executed by a single \OpenCL work group producing the final result.
 This strategy is applied as global synchronization, \ie, synchronization across work groups, is prohibited in \OpenCL.
@@ -75,7 +75,7 @@ The differences from the previous implementation are highlighted in the code.
 When performing the collective tree-based reduction in a work group a shrinking number of work items remains active until the last remaining work item computes the result of the entire work group.
 In the previous version the modulo operator was used to determine which work item remains active (see line~\ref{lst:reduce0:if} in \autoref{lst:reduce0}).
 This leads to a situation were not consecutive work items remain active, but work items which id is divisible by 2, then by 4, then by 8, and so on.
-In Nvidia's \GPU architecture 32 work items are grouped into a \emph{warps} and executed together, as described in \autoref{chapter:background}.
+In Nvidia's \GPU architectures 32 work items are grouped into a \emph{warps} and executed together, as described in \autoref{chapter:background}.
 It is highly beneficial to program in a style where all 32 work items of a warp perform the same instructions, especially, to avoid divergent branching between work items of a warp.
 Using the modulo operator to determine the active work items leads to highly divergent branching.
 The second implementation in \autoref{lst:reduce1}, therefore, uses a different formula (line~\ref{lst:reduce1:index}) to determine the active work items which avoids divergent branching.
@@ -375,7 +375,7 @@ void reduce6(global float* g_idata, global float* g_odata,
 We can draw valuable conclusions from studying these \OpenCL source codes.
 
 The first conclusion is, that implementing these optimizations is not intuitive and straightforward.
-It requires experience as well as knowledge and reasoning about the target hardware architecture, in this case Nvidia's \GPU architecture:
+It requires experience as well as knowledge and reasoning about the target hardware architecture, in this case Nvidia's Fermi \GPU architecture:
 \autoref{lst:reduce1} requires the understanding of the problem of \emph{branch divergence}, \autoref{lst:reduce2} requires knowledge about the organization of local memory and \emph{bank conflicts}, \autoref{lst:reduce3} and \autoref{lst:reduce6} require reasoning about the \emph{computational intensity} of work items, \autoref{lst:reduce4} requires understanding of \emph{warps} and their execution by the hardware, \autoref{lst:reduce5} requires experience with \emph{loop unrolling} techniques, and, finally, \autoref{lst:reduce6} required knowledge about the organization of global memory and \emph{memory coalescing}.
 The author wants to empathize that these are \emph{additional} burdens for the application developer on top of implementing a functionally correct version facing widely recognized problems of parallel programming like dealing with race conditions and deadlocks.
 
@@ -390,8 +390,19 @@ Turning the theoretical performance into practical performance by applying these
 
 
 \subsection{Portability of the optimized parallel reduction}
+After we have established how crucial but hard to achieve optimizations are, we now will investigate their portability.
+To do so, we run the code shown in \autoref{lst:reduce0}--\ref{lst:reduce6} on three different hardware architectures:
+Nvidia's Fermi \GPU architecture~\cite{} which we have used in our analysis in the last section, AMD's Tahiti \GPU architecture~\cite{}, and Intel's Nehalem \CPU architecture~\cite{}.
+\autoref{fig:reduce:overview} shows the performance numbers separated for each architecture.
+We use, as before, the memory bandwidth as our performance metric and show percentages of the theoretical memory bandwidth of each respective hardware architecture.
+As a practical comparison we also show performance numbers for the parallel reduction using highly tuned, architecture specific implementations of the BLAS library.
+We use the cuBLAS library~\cite{} for the Nvidia \GPU, the clBLAS library~\cite{} for the AMD \GPU, and the MKL library~\cite{} for the Intel \CPU.
+Each library implementation is provided by the corresponding hardware vendor.
 
-
+The results in \autoref{fig:reduce:overview} show that the optimizations discussed in the previous section are not portable. 
+On each architecture a different version performs best.
+Some versions actually produce incorrect results on the \CPU due to the warp specific optimization.
+This optimization happens to be valid on AMD's \GPU architecture as well, as there exists a similar concept to warps called \emph{wavefront}~\cite{}.
 
 
 

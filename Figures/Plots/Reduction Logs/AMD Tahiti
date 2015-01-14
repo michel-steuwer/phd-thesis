@@ -1,0 +1,186 @@
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> 
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> 
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=0
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Tahiti
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 15.7111 GB/s, Time = 0.00427 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214092
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: ^[[13...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=1
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Tahiti
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 45.6598 GB/s, Time = 0.00147 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214092
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=2
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Tahiti
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 55.5002 GB/s, Time = 0.00121 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=3
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Tahiti
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 74.8920 GB/s, Time = 0.00090 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=4
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Tahiti
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 74.9950 GB/s, Time = 0.00089 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: ^[[A3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=5
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Tahiti
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 85.6967 GB/s, Time = 0.00078 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=6
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+WARNING: NVIDIA OpenCL platform not found - defaulting to first platform!
+
+Tahiti
+ 16777216 elements
+ 128 threads (max)
+ 64 blocks
+
+oclReduction, Throughput = 55.8785 GB/s, Time = 0.00120 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214092
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@monza:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> 
+

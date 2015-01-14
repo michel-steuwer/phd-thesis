@@ -1,0 +1,171 @@
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> 
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> 
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=0
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+GeForce GTX 480
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 11.7820 GB/s, Time = 0.00570 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214092
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=1
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+GeForce GTX 480
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 17.2590 GB/s, Time = 0.00389 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214092
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=2
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+GeForce GTX 480
+ 16777216 elements
+ 128 threads (max)
+ 131072 blocks
+
+oclReduction, Throughput = 22.3654 GB/s, Time = 0.00300 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=3
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+GeForce GTX 480
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 42.0613 GB/s, Time = 0.00160 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=4
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+GeForce GTX 480
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 57.8074 GB/s, Time = 0.00116 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=5
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+GeForce GTX 480
+ 16777216 elements
+ 128 threads (max)
+ 65536 blocks
+
+oclReduction, Throughput = 65.2252 GB/s, Time = 0.00103 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214151
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+FAILED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+msteuwer@bob:~/afs/NVIDIA GPU Computing SDK/OpenCL/bin/linux/release> ./oclReduction --n=16777216 --type=float --kernel=6
+[oclReduction] starting...
+
+./oclReduction Starting...
+
+Reducing array of type float.
+GeForce GTX 480
+ 16777216 elements
+ 128 threads (max)
+ 64 blocks
+
+oclReduction, Throughput = 116.0875 GB/s, Time = 0.00058 s, Size = 16777216 Elements, NumDevsUsed = 1, Workgroup = 128
+
+Comparing against Host/C++ computation...
+ GPU result = 0.996214092
+ CPU result = 0.996214092
+
+PASSED
+
+[oclReduction] test results...
+PASSED
+
+> exiting in 3 seconds: 3...2...1...done!
+
+
