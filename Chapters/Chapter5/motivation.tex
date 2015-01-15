@@ -393,32 +393,90 @@ Turning the theoretical performance into practical performance by applying these
 After we have established how crucial but hard to achieve optimizations are, we now will investigate their portability.
 To do so, we run the code shown in \autoref{lst:reduce0}--\ref{lst:reduce6} on three different hardware architectures:
 Nvidia's Fermi \GPU architecture~\cite{} which we have used in our analysis in the last section, AMD's Tahiti \GPU architecture~\cite{}, and Intel's Nehalem \CPU architecture~\cite{}.
-\autoref{fig:reduce:overview} shows the performance numbers separated for each architecture.
-We use, as before, the memory bandwidth as our performance metric and show percentages of the theoretical memory bandwidth of each respective hardware architecture.
+\autoref{fig:reduce:overview} shows the performance numbers for each architecture.
+We use, as before, the memory bandwidth as our performance metric and show the hardware memory bandwidth limit of each respective hardware architecture.
 As a practical comparison we also show performance numbers for the parallel reduction using highly tuned, architecture specific implementations of the BLAS library.
 We use the cuBLAS library~\cite{} for the Nvidia \GPU, the clBLAS library~\cite{} for the AMD \GPU, and the MKL library~\cite{} for the Intel \CPU.
-Each library implementation is provided by the corresponding hardware vendor.
+Each of these libraries is implementation and provided by the corresponding hardware vendor.
 
-The results in \autoref{fig:reduce:overview} show that the optimizations discussed in the previous section are not portable. 
-On each architecture a different version performs best.
-Some versions actually produce incorrect results on the \CPU due to the warp specific optimization.
-This optimization happens to be valid on AMD's \GPU architecture as well, as there exists a similar concept to warps called \emph{wavefront}~\cite{}.
+\begin{figure}[p]
+  \centering
+\begin{subfigure}{\linewidth}
+  \includegraphics[width=.85\linewidth]{Plots/Reduction/reduce_nv}
+  \caption{Nvidia's GTX 480 \GPU.}
+  \label{fig:reduce:nvidia}
+\end{subfigure}\\
+\begin{subfigure}{\linewidth}
+  \includegraphics[width=.85\linewidth]{Plots/Reduction/reduce_amd}
+  \caption{AMD's HD 7970 \GPU.}
+  \label{fig:reduce:amd}
+\end{subfigure}\\
+\begin{subfigure}{\linewidth}
+  \includegraphics[width=.85\linewidth]{Plots/Reduction/reduce_intel}
+    \caption{Dual-socket machine using Intel's E5530 \CPU.}
+  \label{fig:reduce:intel}
+\end{subfigure}
+  \caption{Performance of differently optimized implementations of the parallel reduction.}
+  \label{fig:reduce:overview}
+\end{figure}
 
 
+\paragraph{Portability of Optimizations}
+The results show that the optimizations discussed in the previous section are not portable. 
+On each architecture a different of the optimized implementations performs best:
+Implementation~7 (shown in \autoref{lst:reduce6}) on the Nvidia \GPU, Implementation~6 (shown in \autoref{lst:reduce5}) on the AMD \GPU, and Implementation~4 (shown in \autoref{lst:reduce3}) on the Intel \CPU.
+Some implementations actually produce incorrect results on the Intel \CPU due to the warp specific optimization introduced in Implementation~5 (shown in \autoref{lst:reduce4}).
+Interestingly this optimization happens to be valid on AMD's \GPU architecture as well, as there exists a similar concept to warps called \emph{wavefronts}~\cite{}.
 
+\paragraph{Portability of Relative Performance}
+The achieved \emph{relative performance} differs widely across architectures as well.
+\emph{Relative performance} refers to ...\todo{...}
 
+On the Nvidia \GPU the best optimized implementation achieves 83.3\% of the performance of the vendor provided cuBLAS implementation and utilizes 65.4\% of the theoretical peak memory bandwidth.
+
+On the AMD \GPU the gap between the manual and library implementation is much larger:
+the manually optimized implementation achieves only 41.3\% of the clBLAS library implementation.
+Only 32.4\% of the theoretical peak memory bandwidth is achieved.
+
+On the Intel \CPU Implementation~4 achieves just 16.6\% of the MKL performance.
+That means, that MKL is over 5 times faster than the best of the presented optimized implementations.
+The hardware bandwidth limit is only utilized to 8.6\%.
+Interestingly, does the MKL implementation also only provides 43.8\% of the maximum memory bandwidth.
+This is due to the combination of the implementation of the parallel reduction in MKL and the particular machine used in this experiment.
+The test machine used is configures as a dual-socket machine, \ie, two E5530 \CPUs each with their own memory controller are available.
+Therefore, the hardware bandwidth available is doubled as compared to a single E5530 \CPU.
+While the implementation of the parallel reduction in the MKL library is optimized using vector instructions it does not exploit thread-level parallelism.
+Therefore, the second E5530 \CPU can not be used by the implementation, thus, limiting the available bandwidth by a factor of 2.
+
+\paragraph{Conclusions}
+Studying the performance of these optimizations on different hardware architectures gained some interesting insides.
+First, optimizations are not portable across hardware architectures and can even result in incorrect programs on some architectures.
+Second, the relative performance achieved with optimizations on the one architecture is not achieved on other hardware architectures as well.
+This let us conclude, that using \OpenCL or similar low-level approaches performance is \emph{not} portable.
+
+As a positive result we can see from the results shown in \autoref{fig:reduce:overview}, that there exists implementations on the other hardware architectures which offer similar relative performance as the most optimized implementation on the Nvidia \GPU.
+For the AMD \GPU the clBLAS implementation achieves 78.5\% of the hardware bandwidth limit and Intel's MKL implementation achieves 87.6\% of the hardware limit, considering just the bandwidth of a single \CPU socket.
+
+We aim for developing an approach which can systematically apply optimizations and generate code matching the performance on all three architectures, thus, offering performance portability.
+
+% In the following we aim for developing an approach where we can systematically describe and apply optimizations to eventually automatically generate highly efficient, hardware specific code.
+% This will ultimately lead to performance portable code.
 
 \subsection{The need for a pattern-based code generator}
 
-Our goal in this chapter is to achieve \emph{performance portability}, \ie, to achieve high performance for a given application across a set of different parallel processors.
-Achieving performance portability with traditional approaches is hard, as there is a tension between achieving the highest performance possible and code portability and maintainability.
-Traditionally, \eg, in C or \OpenCL, programmers tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
+Our goal in this chapter is to develop an systematic approach to achieve \emph{performance portability}, \ie, to achieve high relative performance for a given application across a set of different parallel processors.
+As we saw in the previous section traditional approaches, like \OpenCL or C, are not performance portable.
+Currently, programmers often tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
 This reduces portability, maintainability, and clarity of the code:
 multiple versions have to be maintained and non-obvious optimizations make the code hard to understand and to reason about.
 
-We argue that parallel pattern can overcome this fundamental conflict as they declaratively specify the desired algorithmic behavior rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
+We argue that parallel pattern can help overcome the tension between achieving the highest possible and code portability and maintainability.
+Parallel patterns declaratively specify the desired algorithmic behavior rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
 The parallel pattern can be implemented in different ways optimized towards particular hardware architectures.
 If the underlying hardware for an application implemented with parallel patterns is changed, the most optimized implementation for the new hardware can be chosen.
+
+While a compelling idea in theory, existing approaches have felt short of providing and selecting highly optimized implementations on different architectures.
+This has multiple reasons:
 
 \todo{...}
 - This approach imposes challenges
