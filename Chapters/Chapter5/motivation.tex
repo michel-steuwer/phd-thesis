@@ -1,4 +1,5 @@
 \section{A case study of OpenCL optimizations}
+\label{sec:reduce:case-study}
 To understand the problems of performance and portability in the context of modern parallel processors we will study a simple application example: parallel reduction.
 This discussed is based on the presentation \emph{``Optimizing Parallel Reduction in CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
 Optimization guidelines like this exist from every hardware vendor giving application developers advice on how to exploit their hardware~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide}.
@@ -430,7 +431,16 @@ Interestingly this optimization happens to be valid on AMD's \GPU architecture a
 
 \paragraph{Portability of Relative Performance}
 The achieved \emph{relative performance} differs widely across architectures as well.
-\emph{Relative performance} refers to ...\todo{...}
+\emph{Relative performance} refers to the performance of an implementation relative to the best theoretical or practical performance possible on the same hardware architecture.
+The theoretical performance of an architecture is given by its hardware limitations, like the number of arithmetic logical units, the width of the memory bus, or the maximum clock frequency.
+Practical issues like work load and utilization or the cache miss rate are ignored.
+Possible metrics for measuring the theoretical performance are number of floating point operation in GFLOP/s or the memory bandwidth in GB/s.
+
+The best practical performance can be measured by comparison with the best possible implementation available for a particular hardware platform.
+It is, obviously, not always possible to determine which implementation is the best.
+Here we consider library implementations tuned by the respective hardware vendors as the best available.
+
+By looking at the relative performance we can compare how well optimizations apply across different hardware architectures.
 
 On the Nvidia \GPU the best optimized implementation achieves 83.3\% of the performance of the vendor provided cuBLAS implementation and utilizes 65.4\% of the theoretical peak memory bandwidth.
 
@@ -476,26 +486,36 @@ The parallel pattern can be implemented in different ways optimized towards part
 If the underlying hardware for an application implemented with parallel patterns is changed, the most optimized implementation for the new hardware can be chosen.
 
 While a compelling idea in theory, existing approaches have felt short of providing and selecting highly optimized implementations on different architectures.
-This has multiple reasons:
+Previous work has proposed ad-hoc solutions to target specific hardware architectures.
+This has three main reasons:
 
-\todo{...}
-- This approach imposes challenges
+First, providing optimized implementations of pattern on every new hardware platform is a challenging task.
+Nowadays, dozens of parallel architectures and hundreds of variations of them exist and new architectures are released every year.
+Therefore, it is often not feasible to provide optimized implementations for all available hardware architectures and existing library approaches have focused on particular hardware architectures.
+For example, Nvidia \GPUs have been the main target for the \SkelCL library.
+An approach using code generation could overcome this issue, where instead of fixed implementations possible optimizations are described systematically and automatically applied by the code generator.
 
-1) optimized implementation of every pattern on every new hardware
+Second, most existing approaches are library based, which makes the optimization of composition and nesting of patterns extremely complex.
+In \SkelCL, for example, each pattern is implemented as a separate \OpenCL kernel.
+When composing patterns multiple \OpenCL kernels are executed, but often the most optimized solution would be to fuse multiple \OpenCL kernels into a single \OpenCL kernel avoiding costly operations to write and read the intermediate result into global memory.
+As fusion of \OpenCL kernel in general is complicated \SkelCL currently does not execute a fused, and, thus, fully optimized, implementation of pattern compositions.
+An approach using code generation could overcome this issue, as the code generator processes the entire pattern-based expression instead of focusing on individual patterns.
 
-2) composition and nesting is difficult to handle.
+Finally, the optimal implementation of a parallel pattern usually depends very much on the application and context the pattern is used in.
+Let us consider the algorithmic skeleton \reduce as an example for a parallel pattern.
+\reduce can be used on its own to implement a parallel summation, as we just discussed in \autoref{sec:reduce:case-study}, but it can also be used in different contexts, \eg, as part of the dot product computation which itself is a building block of matrix multiplication, as we saw in \autoref{chapter:skelcl}.
+The most optimal implementation of \reduce most certainly differs across these use cases:
+On the one hand, for the parallel summation the entire parallel processor should be exploited using many \OpenCL work items simultaneously.
+On the other hand, when being executed as part of the matrix multiplication \reduce should only exploit thread level parallelism to a limited degree -- if at all.
+An approach using code generation could overcome this issue, as optimized code can be generated for patterns in different contexts instead of providing a single fixed implementation.
 
-3) optimal implementation might be application and context specific
-
-- examples, simple map, reduce also, in dot prod, in matrix mult
-
-- Hard or impossible to overcome with library approach.
+\bigskip
 
 % what is our approach
-The root of the problem lies in a gap in the system stack between high-level algorithmic concepts on the one hand and low-level hardware paradigms on the other hand.
-Previous work has proposed ad-hoc solutions to target specific hardware architectures.
-We propose to bridge this gap by defining a set of rewrite rules which systematically translates high-level algorithmic concepts into low-level hardware paradigms, both expressed as functional patterns.
+The root of the problem lies in a gap in the system stack between the high-level algorithmic patterns on the one hand and low-level hardware optimizations on the other hand.
+We propose to bridge this gap using a novel pattern-based code generation technique.
+A set of rewrite rules systematically translates high-level algorithmic patterns into low-level hardware patterns describing optimizations.
 The rewrite rules are used to systematically derive semantically equivalent low-level expressions from high-level algorithm expressions written by the application developer.
-Once derived, we can automatically generate high performance code based on these expressions.
+Once derived, high performance code based on these expressions can be automatically generated.
 The next section introduces on overview of our approach.
  
