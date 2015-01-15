@@ -10,7 +10,7 @@ The key idea of our approach is to expose algorithmic choices and hardware-speci
 The high-level algorithmic patterns represent structured parallelism.
 They can either be used by the programmer directly as a stand-alone language (or embedded DSL) or used as an intermediate representation targeted by another language.
 Once a program is represented with our high-level patterns, we automatically transform the program into low-level patterns.
-The low-level hardware patterns represent hardware specific concepts expressed by a programming model such as \OpenCL, the target chosen for this paper.
+The low-level hardware patterns represent hardware specific concepts expressed by a programming model such as \OpenCL, the target chosen for this thesis.
 Following the same approach, a different set of low-level patterns could be designed to target other low-level programming models such as Pthreads or MPI.
 
 
@@ -24,8 +24,8 @@ The only exceptions are the user-provided functions such as the \code{mul3} func
 Most of the patterns are well known in functional programming, like \pat{map} and \pat{reduce}.
 The \pat{zip}, \pat{split} and \pat{join} patterns transform the shape of the data.
 For arrays we store the number of dimensions and size of each dimension in the type system, as we will see.
-The \pat{iterate} pattern iteratively applies a function multiple times, \ie, {$f^0 = id$} and {$f^{n+1} = f^n \circ f$}.
-Finally, the \pat{reorder} pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{ }.
+The \pat{iterate} pattern iteratively applies a function multiple times.
+Finally, the \pat{reorder} pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
 
 In the following we discuss each high-level algorithmic pattern in more detail including their formal definitions.
 As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism as our syntax for the patterns.
