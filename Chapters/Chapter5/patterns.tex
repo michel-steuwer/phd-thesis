@@ -21,23 +21,23 @@ To simplify our implementation we encode all types as arrays with primitives rep
 The only exceptions are the user-provided functions such as the \code{mul3} function in \autoref{fig:codeex:map} that operates on a primitive type.
 
 \autoref{tab:hlskel} presents our high-level patterns used to define programs at the algorithmic level.
-Most of the patterns are well known in functional programming, like \pat{map} and \pat{reduce}.
-The \pat{zip}, \pat{split} and \pat{join} patterns transform the shape of the data.
+Most of the patterns are well known in functional programming, like \map and \reduce.
+The \zip, \splitN and \join patterns transform the shape of the data.
 For arrays we store the number of dimensions and size of each dimension in the type system, as we will see.
-The \pat{iterate} pattern iteratively applies a function multiple times.
-Finally, the \pat{reorder} pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
+The \iterate pattern iteratively applies a function multiple times.
+Finally, the \reorder pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
 
 In the following we discuss each high-level algorithmic pattern in more detail including their formal definitions.
 As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism as our syntax for the patterns.
 
 In this chapter we are especially interested in how patterns can be composed and nested.
 As \emph{types} formally specify which compositions and nesting of patterns are legal, we will give the type of each pattern.
-For expressing types we base our syntax on the syntax established by J. Roger Hindley, Robin Miler, and Luis Damas as part of the Hindley---Milner type system~\cite{}.
+% For expressing types we base our syntax on the syntax established by J. Roger Hindley, Robin Miler, and Luis Damas as part of the Hindley---Milner type system~\cite{}.
 We write $e : \sigma$ to denote that expression $e$ has type $\sigma$.
-To make typing judgments we write $e_0 : \sigma_0,\ \ldots,\ e_n : \sigma_n\ \vdash e : \sigma$ to denote that under the assumptions that $e_0,\ \ldots,\ e_n$ have types $\sigma_0,\ \ldots,\ \sigma_n$ the expression $e$ has type $\sigma$.
+% To make typing judgments we write $e_0 : \sigma_0,\ \ldots,\ e_n : \sigma_n\ \vdash e : \sigma$ to denote that under the assumptions that $e_0,\ \ldots,\ e_n$ have types $\sigma_0,\ \ldots,\ \sigma_n$ the expression $e$ has type $\sigma$.
 For function types mapping values of type $\alpha$ to values of type $\beta$ we write $(\alpha \rightarrow \beta)$.
 Tuple types are written as $\langle\alpha, \beta\rangle$.
-Finally, arrays have a fixed length which is part of their type, therefore, for an array with elements of type $\alpha$ and length $n$ we write $[\alpha]_n$.
+Finally, arrays have their length denoted as part of their type, therefore, for an array with elements of type $\alpha$ and length $n$ we write $[\alpha]_n$.
 
 \begin{table}[t]
 \centering
@@ -45,19 +45,19 @@ Finally, arrays have a fixed length which is part of their type, therefore, for 
 \toprule
 \tabhead{Pattern} & \tabhead{Description}\\
 \midrule
- \pat{map}
+ \map
      & Apply a given function to every element of an input array.\\ 
- \pat{reduce}
+ \reduce
      & Perform a reduction of an input array using a user-defined binary function and an initial value.\\
- \pat{zip}
+ \zip
      & Builds an array of pairs by pairwise combining two arrays.\\
- \pat{split}
+ \splitN
      & Produces a multi-dimensional array by splitting an array in chunks of a given size.\\
- \pat{join}
+ \join
      & Joins the two outer most dimensions of an multi-dimensional array.\\
- \pat{iterate}
+ \iterate
      & Iterate a given function over an input array a fixed number of times.\\
- \pat{reorder}
+ \reorder
      & Reorder the element of the input array.\\
 \bottomrule
 \end{tabular}
@@ -67,49 +67,144 @@ Finally, arrays have a fixed length which is part of their type, therefore, for 
 
 
 \paragraph{Map}
-The \pat{map} pattern is well known in functional programming and applies a given function $f$ to all elements of its input array.
-In \autoref{chapter:skelcl} we defined the \pat{map} pattern as an algorithmic skeleton (see \autoref{definition:map}).
-For a function $f$ of type $(\alpha \rightarrow \beta)$ and an array $xs$ of type $[\alpha]_n$, the \pat{map} pattern computes an array of type $[\beta]_n$.
-Formally we can write the type of \pat{map} as a typing judgment:
+The \map pattern is well known in functional programming and applies a given function $f$ to all elements of its input array.
+In \autoref{chapter:skelcl} we defined the \map pattern as an algorithmic skeleton (see \autoref{definition:map}).
+The same definition holds here.
+We repeat it here for completeness and add type information:
+\begin{definition}
+  \label{definition:patter:map}
+  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $f$ be a unary customizing function defined in elements.
+  The \map pattern is then defined as follows:
+  \begin{equation*}
+    \map\ f\ [x_1, x_2, \dots, x_n] \eqdef [f\ x_1, f\ x_2, \dots, f\ x_n]
+  \end{equation*}
+  The types of $f$, $\vec{x}$, and \map are as follows:
+  \begin{align*}
+    f &: (\alpha \rightarrow \beta),\\
+    \vec{x} &: [\alpha]_n,\\
+    \map\ f\ xs &: [\beta]_n
+  \end{align*}
+\end{definition}
 
-\begin{align}
-  f : (\alpha \rightarrow \beta),\ xs : [\alpha]_n\ \vdash\ map\ f\ xs : [\beta]_n
-  \label{eq:type:map}
-\end{align}
+\noindent
+In \autoref{chapter:skelcl} we also defined the \map skeleton for operating on matrices (see \autoref{definition:map:matrix}).
+In this chapter we represent matrices as nested arrays, therefore, performing an operation on each element of a matrix can be represented by nesting two \map patterns:
+\begin{align*}
+  mapMatrix\ f\ X &= \map\ (\map\ f)\ X
+\end{align*}
+If $X$ represents a $n\times m$ matrix with elements of type $\alpha$, its type is $\big[[\alpha]_m\big]_n$.
+The outer \map applies its customizing function to every row of matrix $X$.
+The customizing function is defined by \emph{currying} \map and $f$, thus, producing a function which applies $f$ to every element of its argument vector.
+Therefore, $f$ will be applied to every element of matrix $X$.
 
 \paragraph{Reduce}
-The \pat{reduce} pattern (a.k.a. fold or accumulate) uses a given binary function $f$ to combine all elements of the input array.
-We require the function $f$ to be associative which allows for an efficient parallel implementation.
-By additionally requiring commutativity our system can generate vectorized implementations of the reduction.
-The formal type of our \pat{reduce} pattern is:
-
-\begin{align}
-  f : (\alpha \rightarrow \alpha \rightarrow \alpha),\ z : \alpha,\ xs : [\alpha]_n\ \vdash\ reduce\ f\ z\ xs : [\alpha]_1
-  \label{eq:type:reduce}
-\end{align}
+The \reduce pattern (\aka, fold or accumulate) uses a given binary function $f$ to combine all elements of the input array.
+We require the function $f$ to be associative and commutativity which allows for an efficient parallel implementation.
+By requiring commutativity our system can also generate vectorized implementations of the reduction.
+In \autoref{chapter:skelcl} we defined \reduce as an algorithmic skeleton (see \autoref{definition:reduce}).
+The same definition holds here.
+We repeat it here for completeness and add type information:
+\begin{definition}
+  \label{definition:pattern:reduce}
+  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\oplus$ be an associative and commutative binary customizing operator with the corresponding identity element \id.
+  The \reduce pattern is then defined as follows:
+  \begin{equation*}
+    \reduce\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
+      \eqdef x_1 \oplus x_2 \oplus \dots \oplus x_n
+  \end{equation*}
+  The types of $\oplus$, $\id$, $\vec{x}$, and \reduce are as follows:
+  \begin{align*}
+    \oplus &: ((\alpha, \alpha) \rightarrow \alpha),\\
+    \id &: \alpha,\\
+    \vec{x} &: [\alpha]_n,\\
+    \reduce\ \oplus\ \id\ \vec{x} &: [\alpha]_1
+  \end{align*}
+\end{definition}
 
 
 \paragraph{Zip}
-The \pat{zip} pattern and the following \pat{split}/\pat{join} patterns transform the shape of the data which we store in the type system, \ie, number of dimensions and size of each dimension.
-The \pat{zip} pattern fuses two arrays into an array of pairs.
-The type of the \pat{zip} pattern is:
+The \zip pattern and the following \splitN/\join patterns transform the shape of the data. %which we store in the type system, \ie, number of dimensions and size of each dimension.
+The \zip pattern fuses two arrays into a single array of pairs.
 
-\begin{align}
-  xs : [\alpha]_n,\ ys : [\beta]_n\ \vdash\ zip\ xs\ ys : [\langle\alpha, \beta\rangle]_n
-\end{align}
+\begin{definition}
+  \label{definition:pattern:zip}
+  Let $\vec{x}$ and $\vec{y}$ be vectors of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
+  The \zip pattern is then defined as follows:
+  \begin{equation*}
+    \zip\ [x_1, x_2, \dots, x_n]\ [y_1, y_2, \dots, y_n]\\
+      \eqdef [\langle x_1, y_1\rangle, \langle x_2, y_2\rangle, \dots, \langle x_n, y_n\rangle]
+  \end{equation*}
+  The types of $\vec{x}$, $\vec{y}$, and \zip are as follows:
+  \begin{align*}
+    \vec{x} &: [\alpha]_n,\\
+    \vec{y} &: [\beta]_n,\\
+    \zip\ \vec{x}\ \vec{y} &: [\langle\alpha, \beta\rangle]_n
+  \end{align*}
+\end{definition}
+
+\noindent
+This definition significantly differs from the definition of the \zip skeleton in \autoref{chapter:skelcl} (see \autoref{definition:zip}).
+Where in \autoref{definition:zip} \zip applies a given function to a pair of elements, there is no function to be applied in \autoref{definition:pattern:zip}.
+The behavior of the \zip skeleton can be achieved by composing \zip with the \map pattern:
+\begin{align*}
+  zipWith\ f\ \vec{x}\ \vec{y} &= \map\ f\ (\zip\ \vec{x}\ \vec{y})
+\end{align*}
 
 
 \paragraph{Split and Join}
-The \pat{split} pattern, which is most often combined with a \pat{join}, partitions an array into chunks of specific size resulting in an extra dimension.
-The formal type of the \pat{split} pattern is:
-\begin{align}
-  n : int,\ xs : [\alpha]_m\ \vdash\ split\ n\ xs : \big[[\alpha]_n\big]_{{}^m/_n}
-\end{align}
+The \splitN pattern, which is most often combined with a \join, partitions an array into chunks of specific size resulting in an extra dimension.
+
+We start with the definition of the \splitN pattern.
+\begin{definition}
+  \label{definition:pattern:split}
+  Let $n$ be an integer value.
+  Let $\vec{x}$ be a vector of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let us assume that $m$ is even divisible by $n$.
+  The \splitN pattern is then defined as follows:
+  \begin{align*}
+    &\splitN\ n\ [x_1, x_2, \dots, x_m] =\\
+    &\qquad\big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big]
+  \end{align*}
+  The types of $n$, $\vec{x}$, and \splitN are as follows:
+  \begin{align*}
+    n &: int,\\
+    \vec{x} &: [\alpha]_n,\\
+    \splitN\ n\ \vec{x} &: \big[[\alpha]_n\big]_{{}^m/_n}
+  \end{align*}
+\end{definition}
+
+\bigskip
+%The formal type of the \splitN pattern is:
+%\begin{align}
+%  n : int,\ xs : [\alpha]_m\ \vdash\ split\ n\ xs : \big[[\alpha]_n\big]_{{}^m/_n}
+%\end{align}
+
+\noindent
 The corresponding \pat{join} pattern does the opposite; it reassembles arrays of arrays by merging dimensions.
-The \pat{join} pattern type is as follows:
-\begin{align}
-  xs : \big[[\alpha]_n\big]_m\ \vdash join\ xs : [\alpha]_{m \times n}
-\end{align}
+\begin{definition}
+  \label{definition:pattern:join}
+  Let $\vec{x}$ be a vector of size $\frac{m}{n}$ whose elements are vectors of size $n$.
+  We denote the elements of the $i$th inner vector as $x_{((i-1)\times n) + j}$ where $0 < j \leq n$ and $0 < i \leq \frac{m}{n}$.
+  The \join pattern is then defined as follows:
+  \begin{align*}
+    &\join\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] =\\
+    &\qquad[x_1, x_2, \dots, x_m]
+  \end{align*}
+  The types of $n$, $m$, $\vec{x}$, and \join are as follows:
+  \begin{align*}
+    n &: int,\\
+    m &: int,\\
+    \vec{x} &: \big[[\alpha]_n\big]_{{}^m/_n},\\
+    \splitN\ n\ \vec{x} &: [\alpha]_n
+  \end{align*}
+\end{definition}
+
+%The \pat{join} pattern type is as follows:
+%\begin{align}
+%  xs : \big[[\alpha]_n\big]_m\ \vdash join\ xs : [\alpha]_{m \times n}
+%\end{align}
 
 These two patterns used together are similar to the split-join concept from data flow languages such as StreamIt~\cite{thies02streamit}.
 
@@ -161,9 +256,9 @@ Table~\ref{tab:llskel} gives an overview of the OpenCL-specific patterns we have
 \tabhead{Pattern} & \tabhead{Description}\\
 \midrule
  \pat{map-workgroup}
-     & Each \OpenCL \textbf{workgroup} applies the given function to an element of the input array.\\
+     & Each \OpenCL \textbf{work group} applies the given function to an element of the input array.\\
  \pat{map-local}
-     & Each \textbf{local work item} of a workgroup applies the given function to an element of the input array.\\ 
+     & Each \textbf{local work item} of a work group applies the given function to an element of the input array.\\ 
  \pat{map-global}
      & Each \textbf{global work item} applies the given function to an element of the input array.\\ 
  \pat{map-seq}
@@ -191,20 +286,20 @@ Table~\ref{tab:llskel} gives an overview of the OpenCL-specific patterns we have
 \paragraph{Parallel Maps}
 
 The \pat{map} patterns represent possible ways of mapping computations to the hardware and exploit parallelism in OpenCL.
-For instance, the \pat{map-workgroup} pattern assigns work to an \OpenCL \emph{workgroup} with every workgroup applying the given function on an element of the input array.
-Similarly, the \pat{map-local} pattern assigns work to a local work item inside a workgroup.
-As workgroups are optional in OpenCL the \pat{map-global} pattern assigns work to a work item not organized in a workgroup.
+For instance, the \pat{map-workgroup} pattern assigns work to an \OpenCL \emph{work group} with every work group applying the given function on an element of the input array.
+Similarly, the \pat{map-local} pattern assigns work to a local work item inside a work group.
+As work group are optional in OpenCL the \pat{map-global} pattern assigns work to a work item not organized in a work group.
 This allows us to map computations in different ways to the thread hierarchy.
 The types of all these low-level \OpenCL \pat{map} patterns are the same as the high-level \pat{map} pattern shown in \autoref{eq:type:map}.
 In fact, these patterns can be seen as \emph{instantiations} of the high-level \pat{map} pattern \emph{interface}, as they provide different possibilities to implement the \pat{map} pattern.
 
 The code generation for all these map patterns is similar; we describe it using \pat{map-workgroup} as an example.
 A loop is generated, where the iteration variable is determined by the \emph{workgroup-id} function provided by \OpenCL.
-Inside of the loop, a pointer is generated to partition the input array, so that every workgroup calls \pat{map-workgroup}'s customizing function on a different chunk of data.
+Inside of the loop, a pointer is generated to partition the input array, so that every work group calls \pat{map-workgroup}'s customizing function on a different chunk of data.
 An output pointer is generated similarly.
 We continue with the body of the loop by generating the code for the customizing function recursively.
 Finally, an appropriate synchronization mechanism for the given map pattern is added.
-For instance after a \pat{map-local} we add a barrier synchronization to synchronize the threads inside of the workgroup.
+For instance after a \pat{map-local} we add a barrier synchronization to synchronize the threads inside of the work group.
 
 % An interesting aspect of this approach is that we can automatically optimize away some of the synchronization barriers.
 % On most GPUs, it is possible to avoid synchronization when dealing with threads within the same warp since they are executed in an lock-step synchronized manner (Figure~\ref{fig:map}).
