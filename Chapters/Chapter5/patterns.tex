@@ -24,7 +24,7 @@ The only exceptions are the user-provided functions such as the \code{mul3} func
 Most of the patterns are well known in functional programming, like \map and \reduce.
 The \zip, \splitN and \join patterns transform the shape of the data.
 For arrays we store the number of dimensions and size of each dimension in the type system, as we will see.
-The \iterate pattern iteratively applies a function multiple times.
+The \iterateN pattern iteratively applies a function multiple times.
 Finally, the \reorder pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
 
 In the following we discuss each high-level algorithmic pattern in more detail including their formal definitions.
@@ -55,7 +55,7 @@ Finally, arrays have their length denoted as part of their type, therefore, for 
      & Produces a multi-dimensional array by splitting an array in chunks of a given size.\\
  \join
      & Joins the two outer most dimensions of an multi-dimensional array.\\
- \iterate
+ \iterateN
      & Iterate a given function over an input array a fixed number of times.\\
  \reorder
      & Reorder the element of the input array.\\
@@ -72,7 +72,7 @@ In \autoref{chapter:skelcl} we defined the \map pattern as an algorithmic skelet
 The same definition holds here.
 We repeat it here for completeness and add type information:
 \begin{definition}
-  \label{definition:patter:map}
+  \label{definition:pattern:map}
   Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $f$ be a unary customizing function defined in elements.
   The \map pattern is then defined as follows:
@@ -93,7 +93,7 @@ In this chapter we represent matrices as nested arrays, therefore, performing an
 \begin{align*}
   mapMatrix\ f\ X &= \map\ (\map\ f)\ X
 \end{align*}
-If $X$ represents a $n\times m$ matrix with elements of type $\alpha$, its type is $\big[[\alpha]_m\big]_n$.
+Let us assume $X$ represents a $n\times m$ matrix with elements of type $\alpha$, its type is $\big[[\alpha]_m\big]_n$.
 The outer \map applies its customizing function to every row of matrix $X$.
 The customizing function is defined by \emph{currying} \map and $f$, thus, producing a function which applies $f$ to every element of its argument vector.
 Therefore, $f$ will be applied to every element of matrix $X$.
@@ -164,7 +164,7 @@ We start with the definition of the \splitN pattern.
   Let us assume that $m$ is even divisible by $n$.
   The \splitN pattern is then defined as follows:
   \begin{align*}
-    &\splitN\ n\ [x_1, x_2, \dots, x_m] =\\
+    &\splitN\ n\ [x_1, x_2, \dots, x_m] \eqdef\\
     &\qquad\big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big]
   \end{align*}
   The types of $n$, $\vec{x}$, and \splitN are as follows:
@@ -182,72 +182,102 @@ We start with the definition of the \splitN pattern.
 %\end{align}
 
 \noindent
-The corresponding \pat{join} pattern does the opposite; it reassembles arrays of arrays by merging dimensions.
+The corresponding \join pattern does the opposite; it reassembles arrays of arrays by merging dimensions.
 \begin{definition}
   \label{definition:pattern:join}
   Let $\vec{x}$ be a vector of size $\frac{m}{n}$ whose elements are vectors of size $n$.
-  We denote the elements of the $i$th inner vector as $x_{((i-1)\times n) + j}$ where $0 < j \leq n$ and $0 < i \leq \frac{m}{n}$.
+  We denote the elements of the $i$th inner vector as $x_{((i-1)\times n) + j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
   The \join pattern is then defined as follows:
   \begin{align*}
-    &\join\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] =\\
+    &\join\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] \eqdef\\
     &\qquad[x_1, x_2, \dots, x_m]
   \end{align*}
   The types of $n$, $m$, $\vec{x}$, and \join are as follows:
   \begin{align*}
-    n &: int,\\
-    m &: int,\\
-    \vec{x} &: \big[[\alpha]_n\big]_{{}^m/_n},\\
-    \splitN\ n\ \vec{x} &: [\alpha]_n
+    n &: int, m : int,\\
+    \vec{x} &: \big[[\alpha]_n\big]_{\frac{m}{n}},\\
+    \join\ \vec{x} &: [\alpha]_n
   \end{align*}
 \end{definition}
 
-%The \pat{join} pattern type is as follows:
-%\begin{align}
-%  xs : \big[[\alpha]_n\big]_m\ \vdash join\ xs : [\alpha]_{m \times n}
-%\end{align}
+\noindent
+From these definitions follow, that the composition of $\splitN\ n$ and \join: $\join \circ \splitN\ n$ for any value $n$ yields back the same type and also does not change any element in the vector, \ie, it is equivalent to the identify function \emph{id}.
 
-These two patterns used together are similar to the split-join concept from data flow languages such as StreamIt~\cite{thies02streamit}.
+These two patterns used together are similar to the split-join concept from data flow languages such as StreamIt~\cite{ThiesKaAm2002}.
 
 
 \paragraph{Iterate}
-The \pat{iterate} pattern corresponds to the mathematical definition of iteratively applying a function.
-It is defined as: {$f^0 = id$} and {$f^{n+1} = f^n \circ f$}.
-In terms of implementation, our code generator emits a for-loop to perform the iteration, and two pointers for input and output.
-After each iteration, we swap the pointers, so that the output of the last iteration becomes the input for the next one.
-% We automatically allocated and calculate memory requirements based on the information from the input and output type.
-The type of the \pat{iterate} pattern is interesting as 
+The \iterateN pattern corresponds to the mathematical definition of iteratively applying a function, which is defined as: {$f^0 = id$} and {$f^{n+1} = f^n \circ f$}.
 
-\begin{align}
-  n : int,\ F : (int \rightarrow int),\ f : (\forall k\ .\ [\alpha]_k \rightarrow [\alpha]_{F(k)}),\ xs : [\alpha]_m\ %
-  \vdash iterate\ n\ f\ xs : [\alpha]_{F^{n}(m)}
-\end{align}
+\begin{definition}
+  \label{definition:pattern:iterate}
+  Let $n$ be an integer value with $n \geq 0$.
+  Let $f$ be a unary function.
+  Let $\vec{x}$ be a vector of arbitrary size.
+  We define the \iterateN pattern recursively:
+  \begin{align*}
+    \iterateN\ n\ f\ \vec{x} &\eqdef \iterateN\ (n-1)\ f\ (f\ \vec{x}),\\
+    \iterateN\ 0\ f\ \vec{x} &\eqdef \vec{x}
+  \end{align*}
+  The types of $n$, $f$, $\vec{x}$, and \iterateN are as follows:
+  \begin{align*}
+    n &: int,\\
+    f &: ([\alpha]_k \rightarrow [\alpha]_{F(k)}), 
+      \begin{aligned}[t]
+        & \forall k \text{ and where } \\
+        &F : (int\rightarrow int) \text{ describes the change}\\
+        &\text{of vector length when applying } f,
+      \end{aligned}\\
+    \vec{x} &: [\alpha]_m,\\
+    \iterateN\ n\ f\ \vec{x} &: [\alpha]_{F^n(m)}
+  \end{align*}
+\end{definition}
+
+
+% In terms of implementation, our code generator emits a for-loop to perform the iteration, and two pointers for input and output.
+% After each iteration, we swap the pointers, so that the output of the last iteration becomes the input for the next one.
+% We automatically allocated and calculate memory requirements based on the information from the input and output type.
+\noindent
+The type of the \iterateN pattern is interesting as its result type depends on the effect $f$ has on the size of its argument.
+
+%\begin{align}
+%  n : int,\ F : (int \rightarrow int),\ f : (\forall k\ .\ [\alpha]_k \rightarrow [\alpha]_{F(k)}),\ xs : [\alpha]_m\ %
+%  \vdash iterate\ n\ f\ xs : [\alpha]_{F^{n}(m)}
+%\end{align}
 
 \paragraph{Reorder}
-The \pat{reorder} pattern is used to specify that the ordering of the elements of an array does not matter.
-This allows our system to reorder arbitrarily the elements of an array and might enable optimizations, as we will see later.
-As reordering does not change the types of values or the length of the input array the type is identical to the identity function:
+The \reorder pattern is used to specify that the ordering of the elements of an array does not matter.
 
-\begin{align}
-  xs : [\alpha]_n\ \vdash reorder\ xs : [\alpha]_n
-\end{align}
+\begin{definition}
+  \label{definition:pattern:reorder}
+  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\sigma$ be an arbitrary permutation of $[1,\ldots, n]$.
+  The \reorder pattern is then defined as follows:
+  \begin{align*}
+    \reorder\ [x_1, \ldots, x_n] &\eqdef [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]
+  \end{align*}
+  The types of $\vec{x}$, and \reorder are as follows:
+  \begin{align*}
+    \vec{x} &: [\alpha]_n,\\
+    \reorder\ \vec{x} &: [\alpha]_n
+  \end{align*}
+\end{definition}
+
+\noindent
+This definition allows the implementation to pick any permutation to reorder the elements of an array arbitrarily which might enable optimizations, as we will see later.
 
 
 
 
 
+\subsection{Low-level \OpenCL-specific Patterns}
 
-
-
-\subsection{OpenCL-specific Patterns}
-
-Programming manycore CPU and GPU devices is difficult due to the need for managing parallelism, the memory hierarchy and other hardware specific features.
+% Programming manycore CPU and GPU devices is difficult due to the need for managing parallelism, the memory hierarchy and other hardware specific features.
 In order to achieve the highest performance, programmers often use a set of rules of thumb to drive the optimization of their application.
-Each hardware vendor provides optimization guides~\cite{nvidia11guide,amd12guide} that extensively cover hardware particularities and optimizations.
-The main idea behind our work is to identify common optimizations patterns and express them with the help of low-level patterns coupled with a rewrite-rule system.
-%
-%In this paper we focus on the OpenCL programming model, which is a popular low-level programming model used to program manycore CPUs and GPUs.
-%Programming these devices consists of writing a compute \emph{kernel} in OpenCL C that executes on the device and writing the host code that orchestrates %data movement, allocates memory and manages the execution on the device.
-Table~\ref{tab:llskel} gives an overview of the OpenCL-specific patterns we have identified.
+Each hardware vendor provides optimization guides~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide} that extensively cover hardware particularities and optimizations.
+The main idea behind this work is to identify common optimization patterns and express them with the help of low-level patterns coupled with a rewrite-rule system.
+
+\autoref{tab:llskel} gives an overview of the \OpenCL-specific patterns we have identified.
 
 \begin{table}[t]
 \centering
@@ -255,27 +285,27 @@ Table~\ref{tab:llskel} gives an overview of the OpenCL-specific patterns we have
 \toprule
 \tabhead{Pattern} & \tabhead{Description}\\
 \midrule
- \pat{map-workgroup}
+ \mapWorkgroup
      & Each \OpenCL \textbf{work group} applies the given function to an element of the input array.\\
- \pat{map-local}
+ \mapLocal
      & Each \textbf{local work item} of a work group applies the given function to an element of the input array.\\ 
- \pat{map-global}
+ \mapGlobal
      & Each \textbf{global work item} applies the given function to an element of the input array.\\ 
- \pat{map-seq}
+ \mapSeq
       & Apply the given function to every element of the input array \textbf{sequentially}.\\
- \pat{reduce-seq}
+ \reduceSeq
       & Perform the reduction using the given binary reduction function and initial value on the input array \textbf{sequentially}.\\  
- \pat{reorder-stride}
+ \reorderStride
       & Access input array with a given stride to maintain \textbf{memory coalescing}.\\
- \pat{toLocal}
+ \toLocal
       & Store the results of a given function to \textbf{local memory}.\\
- \pat{toGlobal}
+ \toGlobal
       & Store the results of a given function to \textbf{global memory}.\\
- \pat{asVector}
+ \asVector
       & Turns the elements of an array into \textbf{vector type} of a given width.\\
- \pat{asScalar}
+ \asScalar
       & Turns the elements of an array into \textbf{scalar type}.\\
- \pat{vect}
+ \vect
       & \textbf{Vectorize} a given function by a given width.\\
 \bottomrule
 \end{tabular}
@@ -284,104 +314,230 @@ Table~\ref{tab:llskel} gives an overview of the OpenCL-specific patterns we have
 \end{table}
 
 \paragraph{Parallel Maps}
+The different \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread level parallelism in \OpenCL.
+The execution semantics and types of all these low-level \OpenCL \map patterns are the same as the high-level \map pattern shown in \autoref{definition:pattern:map}.
+In fact, these patterns can be seen as \emph{instantiations} of the high-level \map pattern \emph{interface}, as they provide different possibilities to implement the \map pattern.
 
-The \pat{map} patterns represent possible ways of mapping computations to the hardware and exploit parallelism in OpenCL.
-For instance, the \pat{map-workgroup} pattern assigns work to an \OpenCL \emph{work group} with every work group applying the given function on an element of the input array.
-Similarly, the \pat{map-local} pattern assigns work to a local work item inside a work group.
-As work group are optional in OpenCL the \pat{map-global} pattern assigns work to a work item not organized in a work group.
-This allows us to map computations in different ways to the thread hierarchy.
-The types of all these low-level \OpenCL \pat{map} patterns are the same as the high-level \pat{map} pattern shown in \autoref{eq:type:map}.
-In fact, these patterns can be seen as \emph{instantiations} of the high-level \pat{map} pattern \emph{interface}, as they provide different possibilities to implement the \pat{map} pattern.
+The \mapWorkgroup pattern assigns work to an \OpenCL work group, \ie, following \autoref{definition:pattern:map} each \OpenCL work group executed the given function on a different part of the input vector.
 
-The code generation for all these map patterns is similar; we describe it using \pat{map-workgroup} as an example.
-A loop is generated, where the iteration variable is determined by the \emph{workgroup-id} function provided by \OpenCL.
-Inside of the loop, a pointer is generated to partition the input array, so that every work group calls \pat{map-workgroup}'s customizing function on a different chunk of data.
-An output pointer is generated similarly.
-We continue with the body of the loop by generating the code for the customizing function recursively.
-Finally, an appropriate synchronization mechanism for the given map pattern is added.
-For instance after a \pat{map-local} we add a barrier synchronization to synchronize the threads inside of the work group.
+The \mapLocal pattern assigns work to a local work item inside a work group.
+This pattern should only be used in the context of a work group and is, therefore, only valid when nested inside a \mapWorkgroup pattern, \eg, $\mapWorkgroup\ (\mapLocal\ f)$.
 
-% An interesting aspect of this approach is that we can automatically optimize away some of the synchronization barriers.
-% On most GPUs, it is possible to avoid synchronization when dealing with threads within the same warp since they are executed in an lock-step synchronized manner (Figure~\ref{fig:map}).
-% As a result the implementation of \pat{map-lane} does not emit any synchronization.
+The \mapGlobal pattern can be used to assign work to work items outside of a work group.
+This allows us to map computations in different ways to the thread hierarchy of \OpenCL.
 
-
+%The code generation for all these map patterns is similar; we describe it using \pat{map-workgroup} as an example.
+%A loop is generated, where the iteration variable is determined by the \emph{workgroup-id} function provided by \OpenCL.
+%Inside of the loop, a pointer is generated to partition the input array, so that every work group calls \pat{map-workgroup}'s customizing function on a different chunk of data.
+%An output pointer is generated similarly.
+%We continue with the body of the loop by generating the code for the customizing function recursively.
+%Finally, an appropriate synchronization mechanism for the given map pattern is added.
+%For instance after a \pat{map-local} we add a barrier synchronization to synchronize the threads inside of the work group.
 
 \paragraph{Sequential Map and Reduce}
-The \pat{map-seq} and \pat{reduce-seq} patterns perform a sequential map and reduction, respectively, within a single work item.
-In both cases the generated code consists of a loop iterating over the array and calling the customizing function.
-For the reduction an accumulation variable is initialized with the given initial value and used to accumulate the results produced by the successive calls to to the customizing function.
+The \mapSeq and \reduceSeq patterns perform a sequential map and reduction, respectively, within a single work item.
+% In both cases the generated code consists of a loop iterating over the array and calling the customizing function.
+% For the reduction an accumulation variable is initialized with the given initial value and used to accumulate the results produced by the successive calls to to the customizing function.
 
-For the \pat{map-seq} pattern the type is the same as for the high-level \pat{map} pattern shown in \autoref{eq:type:map}.
-This is not the case for the \pat{reduce-seq} and \pat{reduce} patterns.
-For the high-level \par{reduce} pattern we require the customizing binary function to be associative and commutative to allow for an efficient parallel implementation.
-As the \pat{reduce-seq} performs a sequential reduction we can relax these requirements, therefore, the type for \pat{reduce-seq} becomes:
+For the \mapSeq pattern the semantic and type is the same as for the high-level \map pattern shown in \autoref{definition:pattern:map}.
+This is not the case for the \reduceSeq and \reduce patterns, where their types differ.
+For the high-level \reduce pattern we require the customizing binary function to be associative and commutative to allow for an efficient parallel implementation.
+As the \reduceSeq pattern performs a sequential reduction we can relax these requirements, therefore, we define \reduceSeq separately.
+\begin{definition}
+  \label{definition:pattern:reduceSeq}
+  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\oplus$ be an binary customizing operator with the corresponding identity element \id.
+  The \reduceSeq pattern is then defined as follows:
+  \begin{equation*}
+    \reduceSeq\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
+      \eqdef (\dots((id \oplus x_1) \oplus x_2) \ldots \oplus x_n)
+  \end{equation*}
+  The types of $\oplus$, $\id$, $\vec{x}$, and \reduce are as follows:
+  \begin{align*}
+    \oplus &: ((\alpha, \beta) \rightarrow \alpha),\\
+    \id &: \alpha,\\
+    \vec{x} &: [\beta]_n,\\
+    \reduceSeq\ \oplus\ \id\ \vec{x} &: [\alpha]_1
+  \end{align*}
+\end{definition}
 
-\begin{align}
-  f : (\alpha \rightarrow \beta \rightarrow \alpha),\ z : \alpha,\ xs : [\beta]_n\ \vdash\ reduce\ f\ z\ xs : [\alpha]_1
-  \label{eq:type:reduce-seq}
-\end{align}
 
 \paragraph{Reorder-stride}
-The elements of the input array $xs$ are reordered with a given stride $s$.
-This generates an access to an array such that $out[i] = in[i / n + s \cdot (i \bmod{n})]$, where $n\cdot s$ is the size of the array.
-This pattern ensures that after splitting the workload, consecutive threads access consecutive memory elements (\ie, \emph{coalesce memory access}), which is beneficial on modern \GPUs as it maximizes the memory bandwidth.
+The \reorderStride pattern enforces a special reordering of a vector.
+In our implementation no code is produces, but instead the reordering describes how the data is read from the vector.
+The produced strided access pattern ensures that after splitting the workload, consecutive work items access consecutive memory elements.
+This corresponds to \emph{coalesce memory accesses}, which are beneficial on modern \GPUs as discussed in \autoref{chapter:background}.
 
-Our implementation does not produce code directly, but generates instead an index function, which is used when accessing the array the next time.
-Therefore, any following read implicitly reorders the array.
-Our design is general enough to supports user-defined index functions as well, which we will add in the future.
-The type of \pat{reorder-stride} corresponds to the type of the high-level \pat{reorder} pattern.
+\begin{definition}
+  \label{definition:pattern:reorderStride}
+  Let $s$ be an integer value.
+  Let $\vec{x}$ be a vector of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let us assume that $m$ is even divisible by $s$ and that $m = s\times n$ for some integer value $n$.
+  The \reorderStride pattern is then defined as follows:
+  \begin{align*}
+    \reorderStride\ s\ [x_1, x_2, \dots, x_m] &\eqdef [y_1, y_2, \dots, y_m], \text{ where}\\
+    y_i &\eqdef x_{i / n + s \times (i \bmod{n})}
+  \end{align*}
+  The types of $s$, $\vec{x}$, and \reorderStride are as follows:
+  \begin{align*}
+    s &: int,\\
+    \vec{x} &: [\alpha]_m,\\
+    \reorderStride\ s\ \vec{x} &: [\alpha]_m
+  \end{align*}
+\end{definition}
+
+%\noindent
+\todo{Maybe a figure visualizing the reordering ...}
+
+%Our implementation does not produce code directly, but generates instead an index function, which is used when accessing the array the next time.
+%Therefore, any following read implicitly reorders the array.
+%Our design is general enough to supports user-defined index functions as well, which we will add in the future.
+%The type of \pat{reorder-stride} corresponds to the type of the high-level \pat{reorder} pattern.
 
 \paragraph{toLocal and toGlobal}
-The \pat{toLocal} and \pat{toGlobal} patterns are used to determine where the result of a given function $f$ should be stored.
-\OpenCL defines two distinct address spaces: global and local.
+The \toLocal and \toGlobal patterns are used to determine where the result of a given function $f$ should be stored.
+As explained in more detail in \autoref{chapter:background}, \OpenCL defines two distinct address spaces: global and local.
 Global memory is the commonly used large but slow memory.
 On \GPUs, the small local memory has a high bandwidth with low latency and is used to store frequently accessed data.
 With these two patterns, we can in effect exploit the memory hierarchy defined in \OpenCL.
-These patterns act similarly to a typecast and are in fact implemented as such so that no code is emitted directly.
 
-In our design, every function reads its input and writes its output using pointers provided by the callee function.
-As a result, we can simply force a store to local memory by wrapping any function with our \pat{toLocal} pattern.
-In the code generator, this will simply change the output pointer of function $f$ to an area in local memory.
+First, we define \toLocal:
+\begin{definition}
+  \label{definition:pattern:toLocal}
+  Let $f$ be a function.
+  The \toLocal pattern is then defined as follows:
+  \begin{align*}
+    \toLocal\ f &\eqdef f',
+    \begin{aligned}[t]
+      &\text{ where $f' \eqdef f$, and  $f'$ is guaranteed to store}\\
+      &\text{its result in local memory.}
+    \end{aligned}
+  \end{align*}
+  The types of $f$, and \toLocal are as follows:
+  \begin{align*}
+    f &: (\alpha \rightarrow \beta)\\
+    \toLocal\ f &: (\alpha \rightarrow \beta)
+  \end{align*}
+\end{definition}
 
-The types of \pat{toLocal} and \pat{toGlobal} are identical and as follows:
-\begin{align}
-  f : (\alpha \rightarrow \beta)\ &\vdash\ toLocal\ f : (\alpha \rightarrow \beta)
-  \label{eq:type:toLocal}
-  \\
-  f : (\alpha \rightarrow \beta)\ &\vdash\ toGlobal\ f : (\alpha \rightarrow \beta)
-  \label{eq:type:toGlobal}
-\end{align}
+\noindent
+The definition of \toGlobal is correspondent:
+\begin{definition}
+  \label{definition:pattern:toGlobal}
+  Let $f$ be a function.
+  The \toGlobal pattern is then defined as follows:
+  \begin{align*}
+    \toGlobal\ f &\eqdef f',
+    \begin{aligned}[t]
+      &\text{ where $f' \eqdef f$, and $f'$ is guaranteed to store}\\
+      &\text{ its result in global memory.}
+    \end{aligned}
+  \end{align*}
+  The types of $f$, and \toLocal are as follows:
+  \begin{align*}
+    f &: (\alpha \rightarrow \beta)\\
+    \toGlobal\ f &: (\alpha \rightarrow \beta)
+  \end{align*}
+\end{definition}
+
+% These patterns act similarly to a typecast and are in fact implemented as such so that no code is emitted directly.
+
+%In our design, every function reads its input and writes its output using pointers provided by the callee function.
+%As a result, we can simply force a store to local memory by wrapping any function with our \pat{toLocal} pattern.
+%In the code generator, this will simply change the output pointer of function $f$ to an area in local memory.
+
+%The types of \pat{toLocal} and \pat{toGlobal} are identical and as follows:
+%\begin{align}
+%  f : (\alpha \rightarrow \beta)\ &\vdash\ toLocal\ f : (\alpha \rightarrow \beta)
+%  \label{eq:type:toLocal}
+%  \\
+%  f : (\alpha \rightarrow \beta)\ &\vdash\ toGlobal\ f : (\alpha \rightarrow \beta)
+%  \label{eq:type:toGlobal}
+%\end{align}
 
 
 \paragraph{Vectorize and asVector/asScalar}
 The \OpenCL programming model supports vector data types such as \code{float4} where any operations on this type will be executed in the hardware vector units.
 In the absence of vector units in the hardware, the \OpenCL compiler scalarizes the code automatically.
 
-The \pat{asVector} and \pat{asScalar} patterns change the data type into vector elements and scalar elements respectively.
+The \asVector and \asScalar patterns change the data type into vector elements and scalar elements respectively.
 For instance, an array of \code{float} is transformed into an array of \code{float4} as seen in the motivation example (\autoref{fig:codeex}).
-The \pat{vect} pattern vectorizes the given function by simply converting all the operations that apply to vector types into vectorized operations. 
-Our current implementation can only vectorize functions containing simple arithmetic operations such as $+$ or $-$.
-In case of more complex functions, we rely on external tools~\cite{garrenberg11vect} for vectorizing the operations.
-These tools are not required to performing further analysis to find opportunities for vectorization.
-The rewrite rules presented in \autoref{section:rules} ensure that vectorization is only applied to patterns where vectorization is a legal optimization.
+The \vect pattern vectorizes the given function by simply converting all the operations that apply to vector types into vectorized operations. 
+%Our current implementation can only vectorize functions containing simple arithmetic operations such as $+$ or $-$.
+In case of more complex functions, we rely on external tools~\cite{KarrenbergHa2011} for vectorizing the operations.
+%These tools are not required to performing further analysis to find opportunities for vectorization.
+%The rewrite rules presented in \autoref{section:rules} ensure that vectorization is only applied to patterns where vectorization is a legal optimization.
 
-For the following type declarations $\alpha$ and $\beta$ have to be basic types, \eg, \code{int} or \code{float}, and $\alpha_n$ denotes the vectorized version of that type with a vector width of $n$.
-The types of \pat{asVector} and \pat{asScalar} are as follows:
-\begin{align}
-  n : int,\ xs : [\alpha]_m\ &\vdash\ asVector\ n\ xs : [\alpha_n]_{{}^m/_n}
-  \label{eq:type:asVector}
-  \\
-  xs : [\alpha_n]_m\ &\vdash\ asScalar\ xs : [\alpha]_{n \times m}
-  \label{eq:type:asScalar}
-\end{align}
-The \pat{vect} pattern has the type:
-\begin{align}
-  n : int,\ f : (\alpha \rightarrow \beta)\ \vdash\ vect\ n\ f : (\alpha_n \rightarrow \beta_n)
-\end{align}
+We start by defining the \asVector pattern.
+\begin{definition}
+  \label{definition:pattern:asVector}
+  Let $n$ be an integer value.
+  Let $\vec{x}$ be a vector of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let us assume, that $m$ is evenly divisible by $n$.
+  The \asVector pattern is then defined as follows:
+  \begin{align*}
+    &\asVector\ n\ [x_1, x_2, \dots, x_m] \eqdef \\
+    &\qquad\big[\{x_1, \ldots, x_n\}, \{x_{n+1}, \ldots, x_{2n}\}, \ldots, \{x_{m-n+1}, \ldots, x_m\}\big],
+  \end{align*}
+  where $\{x_1,\ldots,x_n\}$ denotes an element of a vector type with vector width $n$.\\
+  The types of $n$, $\vec{x}$, and \asVector are as follows:
+  \begin{align*}
+    n &: int\\
+    \vec{x} &: [\alpha]_m,\\
+    \asVector\ n\ \vec{x} &: [\alpha_n]_{{}^m/_n}
+  \end{align*}
+  Here $\alpha$ is required to be a basic scalar type, \eg, \code{int} or \code{float}, and $\alpha_n$ denotes the vectorized version of that type with a vector width of $n$.
+\end{definition}
 
+\noindent
+The corresponding \asScalar pattern is defined as follows.
+\begin{definition}
+  \label{definition:pattern:asScalar}
+  Let $\vec{x}$ be a vector of size $\frac{m}{n}$ whose elements are of a vector type with vector width $n$.
+  We denote the individual vector elements of the $i$th element of $\vec{x}$ as $x_{((i-1)\times n)+j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
+  The \asScalar pattern is then defined as follows:
+  \begin{align*}
+    &\asScalar\ \big[\{x_1, \ldots, x_n\}, \{x_{n+1}, \ldots, x_{2n}\}, \ldots, \{x_{m-n+1}, \ldots, x_m\}\big] \eqdef\\
+    &\qquad [x_1, x_2, \dots, x_m],
+  \end{align*}
+  where $\{x_1,\ldots,x_n\}$ denotes an element of a vector type with vector width $n$.\\
+  The types of $n$, $\vec{x}$, and \asVector are as follows:
+  \begin{align*}
+    n &: int\\
+    \vec{x} &: [\alpha_n]_{\frac{m}{n}},\\
+    \asVector\ n\ \vec{x} &: [\alpha]_m
+  \end{align*}
+  Here $\alpha$ is required to be a basic scalar type, \eg, \code{int} or \code{float}, and $\alpha_n$ denotes the vectorized version of that type with a vector width of $n$.
+\end{definition}
 
+\noindent
+Finally, we define th \vect pattern.
+\begin{definition}
+  \label{definition:pattern:vect}
+  Let $n$ be an integer value.
+  Let $f$ be a function.
+  The \vect pattern is then defined as follows:
+  \begin{align*}
+    \vect\ n\ f &\eqdef f'_n, \begin{aligned}[t]
+      \text{ where $f'_n$ is a vectorized version of $f$}\\
+      \text{ for a vector width of $n$. }
+    \end{aligned}
+  \end{align*}
+  The types of $n$, $f$, and \vect are as follows:
+  \begin{align*}
+    n &: int,\\
+    f &: (\alpha \rightarrow \beta),\\
+    \vect\ n\ f &: (\alpha_n \rightarrow \beta_n)
+  \end{align*}
+  Here $\alpha$ and $\beta$ are required to be a basic scalar type, \eg, \code{int} or \code{float}, and $\alpha_n$ denotes the vectorized version of that type with a vector width of $n$.
+\end{definition}
 
+\subsection{Summary}
+In this section we introduced two type of \emph{patterns}:
+high-level algorithmic patterns and low-level \OpenCL specific patterns.
+While all of these patterns can be used by the application programmer to describe the solution for a particular problem, we expect the programmer to focus on the algorithmic patterns which should be used to provide an high-level algorithmic implementation.
+We will see in the next section how such an implementation composed of our high-level algorithmic patterns can be systematically rewritten using \emph{rewrite rules}.
+During this process the original implementation will be modified and \OpenCL specific patterns will be introduced.
 
 
 
