@@ -1,15 +1,4 @@
-\section{Overview}
-
-The overview of our pattern-based code generation approach is presented in \autoref{fig:highlevel}.
-The programmer writes a \emph{high-level expression} composed of \emph{algorithmic patterns}.
-Using a rewrite rule system, we lower this high-level expression into a \emph{low-level expression} consisting of \emph{OpenCL patterns}.
-In this rewrite stage algorithmic and optimization choices in the high-level expression are explored.
-The generated low-level expression is then fed into our code generator that emits an \emph{\OpenCL program} compiled to machine code by the vendor provided \OpenCL compiler.
-A major advantage of our approach is that there is no analysis or optimizations performed in the code generator.
-All optimization decisions are made earlier on in the rule rewrite system.
-This results in a clear separation of concern between the high-level patterns used by the application developer and the low-level hardware paradigms that enable performance portability.
-
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{overviewPatternCodeGeneration}
 \caption{
@@ -21,8 +10,20 @@ These are systematically transformed into low-level \OpenCL patterns using a rul
 \label{fig:highlevel}
 \end{figure}
 
+\newpage
+\section{Overview}
+
+The overview of our pattern-based code generation approach is presented in \autoref{fig:highlevel}.
+The programmer writes a \emph{high-level expression} composed of \emph{algorithmic patterns}.
+Using a rewrite rule system, we lower this high-level expression into a \emph{low-level expression} consisting of \emph{OpenCL patterns}.
+In this rewrite stage algorithmic and optimization choices in the high-level expression are explored.
+The generated low-level expression is then fed into our code generator that emits an \emph{\OpenCL program} compiled to machine code by the vendor provided \OpenCL compiler.
+A major advantage of our approach is that there is no analysis or optimizations performed in the code generator.
+All optimization decisions are made earlier on in the rule rewrite system.
+This results in a clear separation of concern between the high-level patterns used by the application developer and the low-level hardware paradigms that enable performance portability.
 
 
+\newpage
 \subsection{Example}
 
 \begin{figure}[t]
