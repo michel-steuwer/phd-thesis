@@ -362,6 +362,7 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \theoremstyle{mystyle}
 \newtheorem{definition}{definition}
 \newcommand{\definitionautorefname}{Definition}
+\numberwithin{definition}{chapter}
 
 % included for HiStencils
 \newcommand{\code}[1]{\texttt{#1}}
@@ -440,7 +441,6 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \newcommand{\asScalar}{\text{\textit{asScalar}}\xspace}
 \newcommand{\vect}{\text{\textit{vectorize}}\xspace}
 
-\numberwithin{equation}{section}
 
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}
 \stepcounter{footnote}
@@ -482,6 +482,11 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 }
 \makeatother
 
+\numberwithin{figure}{chapter}
+\numberwithin{table}{chapter}
+\AtBeginDocument{\numberwithin{lstlisting}{chapter}}
+
+\numberwithin{equation}{chapter}
 \usepackage{varioref}
 \labelformat{equation}{\textup{(#1)}}
 

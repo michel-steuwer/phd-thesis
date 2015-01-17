@@ -11,8 +11,9 @@ many rules can be applied successively to produce expressions that compose hardw
 Similarly to our patterns, we distinguish between algorithmic and lowering rules.
 Algorithmic rules produce derivations that represent the different algorithmic choices.
 Our \OpenCL-specific rules map expressions to \OpenCL patterns.
-Once the expression is in its lowest form, it is possible to produce \OpenCL code for each single pattern easily with our code generator as described in the previous section.
+Once the expression is in its lowest form, it is possible to produce \OpenCL code for each single pattern easily with our code generator as described in the following section.
 
+\todo{Explain syntax used}
 
 %\paragraph{Syntax and Rule Derivation}
 %Some rules can only be activated if certain conditions are true.
@@ -36,15 +37,21 @@ Once the expression is in its lowest form, it is possible to produce \OpenCL cod
 
 
 \subsection{Algorithmic Rules}
+\label{section:rules:algo}
+
+Each algorithmic rule formulates a true statement of the relationship of multiple algorithmic patterns.
+Applying the rule allows to rewrite an expression and, by doing so, explore different implementations.
+As the algorithmic rules are separated from the  \OpenCL rules, these rules can explore valid implementations regardless of their concrete implementation in a concrete low-level programming model like \OpenCL.
 
 \paragraph{Identity}
-The identity rule in \autoref{eq:algo:identity} specifies that it is always valid to compose any function with the identity function \pat{id}.
-The \pat{id} function can acts as a copy operation; this is useful to express copy to local memory for instance when composed with the corresponding lowering rule.
+The identity rule in \autoref{eq:algo:identity} specifies that it is always valid to compose any function $f$ with the identity function \emph{id}.%
 %
 \begin{rerule}{lclcl}
   f & \rightarrow & f \circ \pat{id} & | & \pat{id} \circ f
   \label{eq:algo:identity}
 \end{rerule}
+%
+The \pat{id} function can acts as a copy operation; this is, \eg, useful for expressing copies to local memory when composed with the \toLocal \OpenCL pattern: $\toLocal\ id$.
 
  
 \paragraph{Iterate decomposition}
@@ -71,7 +78,6 @@ The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can b
 
 \paragraph{Split-join}
 The split-join rule in \autoref{eq:algo:splitjoin} partitions a map into two maps.
-This allows us to nest map patterns in each other and, thus, \emph{maps} the computation to the thread hierarchy of the \OpenCL programming model, such as \pat{map-workgroup\ (map-local\ $f$)} as seen in our motivation example (\autoref{fig:codeex}).
 %
 \begin{rerule}{lcl}
   \pat{map}\ f
@@ -81,14 +87,16 @@ This allows us to nest map patterns in each other and, thus, \emph{maps} the com
         \circ \pat{split}\ n
   \label{eq:algo:splitjoin}
 \end{rerule}
+%
+This allows us to nest map patterns in each other and, thus, \emph{maps} the computation to the thread hierarchy of the \OpenCL programming model, such as \pat{map-workgroup\ (map-local\ $f$)} as seen in our motivation example (\autoref{fig:codeex}).
 
 
 \paragraph{Reduction}
-The reduction in \autoref{eq:algo:red} is currently our most complex rule but also the most powerful one.
-It expresses the reduction function as a composition of other primitive functions, which is a fundamental aspect of our work.
+We express the reduction function as a composition of other primitive functions, which is a fundamental aspect of our work.
 From the algorithmic point of view we first define a partial reduction pattern \pat{part-red}.
 This partial reduction reduces an array of $n$ elements to an array of $m$ elements where $1 \leq m < n$.
-The reduction can be derived in a partial reduction combined with a full reduction which ensures we end up with one unique element.
+The reduction can be derived in a partial reduction combined with a full reduction as defined in \autoref{eq:algo:red}.
+This definition ensures that we end up with one unique element.
 % Another possible derivation consists in iterating a partial reduction until a full reduction is achieved (this is what $\infty$ represents).
 %Note that our definition of \pat{reduce} remains correct since the result of a partial reduction is always composed with the reduction to ensure we end up with one unique element.
 %
@@ -100,12 +108,7 @@ The reduction can be derived in a partial reduction combined with a full reducti
 \end{rerule}
 
 \paragraph{Partial Reduction}
-The first possible derivation for partial reduction, in \autoref{eq:algo:part-red}, leads to the full reduction ($m=1$).
-The next possible derivation expresses the fact that it is possible to reorder the elements to be reduced, expressing the commutativity property of our definition of reduction.
-The third derivation is actually the only place where parallelism is expressed in the definition of our reduction pattern.
-This rule expressed the fact that it is valid to partition the input elements first and then reduce them independently.
-Finally, the last possible derivation expresses the notion that it is possible to perform a partial reduction with an iterative process by repetitively applying the same partial reduction function.
-This concept is very important when considering how the reduction function is typically implemented on a GPU (iteratively reducing within a workgroup using the local memory).
+\autoref{eq:algo:part-red} shows the rewrite rules for the partial reduction.
 %
 \begin{rerule}{lcl}
   \pat{part-red}\ f\ z
@@ -121,59 +124,70 @@ This concept is very important when considering how the reduction function is ty
       \pat{iterate}\ n\ \pat{(part-red$\ f\ z$)}
   \label{eq:algo:part-red}
 \end{rerule}
+%
+The first possible derivation for partial reduction leads to the full reduction, \ie, $m=1$.
+The next possible derivation expresses the fact that it is possible to reorder the elements to be reduced, expressing the commutativity property we demand in our definition of reduction (see \autoref{definition:pattern:reduce}).
+The third derivation is actually the only place where parallelism is expressed in the definition of our reduction pattern.
+This rule expressed the fact that it is valid to partition the input elements first and then reduce them independently.
+Finally, the last possible derivation expresses the notion that it is possible to perform a partial reduction in an iterative process by repetitively applying the same partial reduction function.
+This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\ref{lst:reduce6}.
 
 
 \paragraph{Simplification Rules}
 \autoref{eq:algo:simpl} shows our simplification rules.
-They express the fact that consecutive \pat{split}-\pat{join} pairs and \pat{asVector}-\pat{asScalar} pairs are equivalent to the identity. % function \emph{id}.
+They express the fact that consecutive \pat{split}-\pat{join} pairs and \pat{asVector}-\pat{asScalar} pairs are equivalent to the identity.
 %
 \begin{rerule}{lcl}
-  \pat{split}\ n \circ \pat{join}\ n
-    \hspace{1em} |\hspace{1em}
-      \pat{join}\ n \circ \pat{split}\ n
-        & \rightarrow & \pat{id}\\
-  \pat{asVector}\ n \circ \pat{asScalar}\ n
-    \hspace{1em} |\hspace{1em}
-      \pat{asScalar}\ n \circ \pat{asVector}\ n
-        & \rightarrow & \pat{id}
+  \pat{join} \circ \pat{split}\ n        & \rightarrow & \pat{id}\\
+  %\pat{split}\ n \circ \pat{join} \circ\ f\ \circ \pat{split}\ n        & \rightarrow & \pat{id}\\
+  \pat{asScalar} \circ \pat{asVector}\ n & \rightarrow & \pat{id}
   \label{eq:algo:simpl}
 \end{rerule}
 
 \paragraph{Fusion Rules}
 Finally, our fusion rules are shown in \autoref{eq:algo:fusion}.
-The first rule fuses the functions applied by two consecutive maps.
-The second rule fuses the map-reduce pattern by creating a lambda function that is the results of merging function $f$ and $g$ from the original reduction and map respectively.
-This rule only applies to the sequential version since this is the only implementation not requiring the associativity property required by the more generic $\pat{reduce}$ pattern.
-When generating code, these rules in effect allow us to fuse the implementation of the different functions and avoid having to store temporary results.
-% More sophisticated rules exist in the functional programming community~\cite{fusion} which we want to incorporate in the future.
-% The functional community has also studied rules for fusion (a.k.a. \emph{deforestation}) from a theoretical~\cite{} as well as a more practical point of view~\cite{jones01playing}.
-The functional programming community has studied more generic rules for fusion~\cite{coutts07streamfusion,jones01playing}.
-%More generic rules for fusion have been studied by the functional programming community~\cite{coutts07streamfusion,jones01playing}.
-However, as we currently focus on a restricted set of patterns our simpler fusion rules have, so far, proven to be sufficient.
 %
 \begin{rerule}{lcl}
   \pat{map}\ f \circ \pat{map}\ g
-    & \rightarrow & map\ (f \circ g)\\
+    & \rightarrow & \pat{map}\ (f \circ g)\\
   \pat{reduce-seq}\ f\ z \circ \pat{map-seq}\ g
     & \rightarrow & \\
   {\hspace{3em}}
   \pat{reduce-seq}\
-    \big(\ \lambda\ acc,x\ .
+    \big(\ \lambda\ (acc,x)\ .
       &\hspace{-.75em} f\ acc\ (g\ x)&\hspace{-.75em}\big)\ z
       % only reduce sequential is valid because non-associativity!!!
   \label{eq:algo:fusion}
 \end{rerule}
+%
+The first rule fuses the functions applied by two consecutive maps.
+The second rule fuses the map-reduce pattern by creating a lambda function that is the results of merging function $f$ and $g$ from the original reduction and map respectively.
+This rule only applies to the sequential version since this is the only implementation not requiring the associativity property required by the more generic $\pat{reduce}$ pattern.
+% When generating code, these rules in effect allow us to fuse the implementation of the different functions and avoid having to store temporary results.
+The functional programming community has studied more generic rules for fusion~\cite{CouttsLeSt2007,JonesToHo2001}.
+However, as we currently focus on a restricted set of patterns our simpler fusion rules have, so far, proven to be sufficient.
 
 \paragraph{Summary}
-\todo{...}
-\autoref{fig:algoRules} given an overview of all algorithmic rules.
+\autoref{fig:algoRules} given an overview of all algorithmic rules defined in this subsection.
+Each single rule states a single statement of the relationship of multiple algorithmic patterns.
+The rules allow us to formalize different algorithmic implementation strategies.
+The rewrite rules regarding the \reduce pattern (\autoref{fig:algo:red}), for example, specify that an iterative implementation of the reduction as well as a divide-and-conquer style implementation are possible. 
+
+The split-join rule (\autoref{fig:algo:splitjoin}) allows a divide-and-conquer style implementation of the \map pattern.
+This eventually enables different parallel implementations, which we can express with \OpenCL, as we will see in the next subsection.
+
+The rules presented here are by no means complete and can easily be extended to express more possible implementations.
+When adding new patterns to the system this set of rules have to be extended as well.
+
+In the next subsection we will discuss \OpenCL specific rewrite rules which allow us to map patter implementations to low-level \OpenCL concepts.
 
 \newlength{\ruleSpace}
-\setlength{\ruleSpace}{0.5em}
-\begin{figure}[t]
+\setlength{\ruleSpace}{1em}
+\begin{figure}[p]
 \centering
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lclcl}
           f & \rightarrow & f \circ \pat{id} & | & \pat{id} \circ f
     \end{rerule*}
@@ -186,11 +200,12 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
-      \pat{\textbf{iterate}}^{m+n}\ f
+      \pat{iterate}^{m+n}\ f
         & \rightarrow &
-          \pat{\textbf{iterate}}^m\ f
-            \circ \pat{\textbf{iterate}}^n\ f
+          \pat{iterate}^m\ f
+            \circ \pat{iterate}^n\ f
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -201,6 +216,7 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
       \pat{map}\ f \circ \pat{reorder}
         & \rightarrow & \pat{reorder} \circ \pat{map}\ f\\
@@ -216,12 +232,13 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
       \pat{map}\ f
         & \rightarrow &
-          \pat{\textbf{join}}
+          \pat{join}
             \circ \pat{map\ (map\ $f$)}
-            \circ \pat{\textbf{split}}\ n
+            \circ \pat{split}\ n
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -232,6 +249,7 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
       \pat{reduce}\ f\ z
         & \rightarrow &
@@ -242,11 +260,11 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
         & | &
           \pat{part-red}\ f\ z \circ \pat{reorder}\\    
         & | &
-          \pat{\textbf{join}}
+          \pat{join}
             \circ \pat{map\ (part-red$\ f\ z$)}
-            \circ \pat{\textbf{split}}\ n\\
+            \circ \pat{split}\ n\\
         & | &
-          \pat{\textbf{iterate}}\ n\ \pat{(part-red$\ f\ z$)}\\
+          \pat{iterate}\ n\ \pat{(part-red$\ f\ z$)}\\
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -258,14 +276,11 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
-      \pat{\textbf{split}}\ n \circ \pat{\textbf{join}}\ n
-        \hspace{1em} |\hspace{1em}
-          \pat{\textbf{join}}\ n \circ \pat{\textbf{split}}\ n
+      \pat{split}\ n \circ \pat{join}
             & \rightarrow & \pat{id}\\
-      \pat{\textbf{asVector}}\ n \circ \pat{\textbf{asScalar}}\ n
-        \hspace{1em} |\hspace{1em}
-          \pat{\textbf{asScalar}}\ n \circ \pat{\textbf{asVector}}\ n
+      \pat{asVector}\ n \circ \pat{asScalar}
             & \rightarrow & \pat{id}\\
     \end{rerule*}
   \end{mdframed}
@@ -277,13 +292,14 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
       \pat{map}\ f \circ \pat{map}\ g
-        & \rightarrow & map\ (f \circ g)\\
-      \pat{\textbf{reduce-seq}}\ f\ z \circ \pat{\textbf{map-seq}}\ g
+        & \rightarrow & \pat{map}\ (f \circ g)\\
+      \pat{reduce-seq}\ f\ z \circ \pat{map-seq}\ g
         & \rightarrow & \\
       {\hspace{3em}}
-      \pat{\textbf{reduce-seq}}\
+      \pat{reduce-seq}\
         \big(\ \lambda\ acc,x\ .
           &\hspace{-.75em} f\ acc\ (g\ x)&\hspace{-.75em}\big)\ z\\
           % only reduce sequential is valid because non-associativity!!!
@@ -294,42 +310,22 @@ However, as we currently focus on a restricted set of patterns our simpler fusio
   \label{fig:algo:fusion}
 \end{subfigure}
 
-\caption{Algorithmic rules. Bold patterns are known to the code generator.}
+\caption{Overview of our algorithmic rewrite rules.}
 \label{fig:algoRules}
 \end{figure}
-\FloatBarrier
 
 
 
 
 
 \subsection{OpenCL-Specific Rules}
+\label{section:rules:opencl}
 
 In this section we discuss our \OpenCL-specific rules that are used to apply \OpenCL optimizations and to lower high-level algorithmic concepts down to \OpenCL-specific ones.
-Patterns that are known to the code generator are shown in bold.% in both Figure~\ref{fig:algo} and~\ref{fig:low}.
-%The code generation process is described separately in section~\ref{codegen}.
-
-% \paragraph{Identity}
-% Figure~\ref{fig:low:id} shows the rewrite rule for the identity pattern.
-% We decided to only support code generation for the \pat{id-primitive} function
-% which is valid only on non-array data types.
-% % in our code generator which is the id function.
-% We explicitly use the \pat{map} pattern in order to implement the identity function for arrays.
+The code generation process is described separately in the next section.
 
 \paragraph{Maps}
-The rule in \autoref{eq:low:map} is used to produce \OpenCL-specific map implementations that match the thread hierarchy of OpenCL.
-Our implementation maintains context information to ensure the hierarchy is respected.
-For instance, it is only legal to nest a \pat{map-local} inside a \pat{map-workgroup}.
-%Similarly, a \pat{map-global} pattern can not be nested inside a \pat{map-workgroup} pattern as it represents global threads not organized in OpenCL workgroups.
-%
-% The \emph{pre} and \emph{post} conditions reflect the hierarchy presented in Figure~\ref{fig:map} corresponding to the OpenCL programming model.
-% For instance for \pat{map-workgroup}, we have the pre condition that we must not be within a \pat{map-workgroup} ($\overline{mwg}$) already.
-%
-%Some rules can only be activated if certain conditions are true.
-%We use the syntax $[pre:post]$ to represent the pre and post conditions of a rule.
-%The pre condition $pre$ corresponds to the list of conditions that must be true for the rule to be applied.
-%The post condition $post$ is set for any function bound to the pattern.
-%The $\overline{\rule[-.3\baselineskip]{0pt}{1.5ex}\hspace{1.5ex}}$, $\wedge$, and $\vee$ corresponds to the logical \emph{not}, \emph{and}, and \emph{or} operators respectively.
+The rule in \autoref{eq:low:map} is used to produce \OpenCL-specific map implementations that match the thread hierarchy of \OpenCL.
 %
 \begin{rerule}{lclcl}
   \pat{map}\ f
@@ -339,13 +335,14 @@ For instance, it is only legal to nest a \pat{map-local} inside a \pat{map-workg
     & | & \pat{map-seq}\ f
   \label{eq:low:map}
 \end{rerule}
+%
+Our implementation maintains context information to ensure the \OpenCL hierarchy is respected.
+For instance, it is only legal to nest a \pat{map-local} inside a \pat{map-workgroup} and it is not valid to nest a \pat{map-global} or another \pat{map-workgroup} inside a \pat{map-workgroup}.
 
 \paragraph{Reduction}
-There is only one lowering rule for reduction (\autoref{eq:low:red}), which expresses the fact that the only implementation known to the code generator is a sequential reduction.
+There is only one rule for lowering to reduction to \OpenCL (\autoref{eq:low:red}), which expresses the fact that the only implementation known to the code generator is a sequential reduction.
 Parallel implementations are defined at a higher level by composition of other algorithmic patterns.
 Most existing high performance compilers treat the reduction directly as an irreducible primitive operation.
-%The power of our approach is that the code generator implementation only needs to know about the simple sequential reduction.
-%As a result, it is possible to explore different implementation for the reduction by simply applying different rules.
 With our approach it is possible to explore different implementations for the reduction by simply applying different rules.
 %
 \begin{rerule}{lcl}
@@ -359,58 +356,78 @@ With our approach it is possible to explore different implementations for the re
 In our current implementation, we support two types of reordering:
 no reordering, represented by the \pat{id} function, and \pat{reorder-stride}, which reorders elements with a certain stride $s$.
 As described earlier, the major use case for the stride reorder is to enable coalesced memory accesses.
-%Note that other types of reordering functions could be implemented easily within this framework such as user-defined reorder function.
 %
 \begin{rerule}{lcl}
   \pat{reorder} & \rightarrow & \pat{reorder-stride}\ s\\
                 & | & \pat{id}
   \label{eq:low:stride}
 \end{rerule}
+%
+Other types of reordering functions could be implemented easily within this framework such as user-defined reorder function.
 
 \paragraph{Local and Global Memory}
-\ref{eq:low:mem} shows two rules that enable GPU local memory usage.
-They express the fact that the result of a \pat{map-local} can always be stored in local memory or back in global memory.
-This holds since a \pat{map-local} always exists within a \pat{map-workgroup} for which the local memory is defined.
-These rules allow us to determine how the data is mapped to the GPU memory hierarchy.
+\autoref{eq:low:mem} shows two rules that enable \GPU local memory usage.
 %
 \begin{rerule}{lcl}
-  \pat{map-local}\ f & \rightarrow & \pat{toGlobal\ (map-local}\ f)\\  
-  \pat{map-local}\ f & \rightarrow & \pat{toLocal\ (map-local}\ f)\\  
+  \pat{map-local}\ f & \rightarrow & \pat{toGlobal\ (map-local}\ f)\\
+  \pat{map-local}\ f & \rightarrow & \pat{toLocal\ (map-local}\ f)
   \label{eq:low:mem}
 \end{rerule}
+%
+They express the fact that the result of a \pat{map-local} can always be stored in local memory or back in global memory.
+This holds since a \pat{map-local} always exists within a \pat{map-workgroup} for which the local memory is defined in \OpenCL.
+These rules allow us to determine how the data is mapped to the \GPU memory hierarchy.
 
 
 
 \paragraph{Vectorization}
 \autoref{eq:algo:vect} shows the vectorization rule.
-Vectorization is achieved by using the \pat{asVector} and corresponding \pat{asScalar}, which changes the element type of an array and adjust the length accordingly.
-This rule is only allowed to be applied once to a given \pat{map(f)} pattern.
-This constrain can easily be checked by looking at the function's type. %; if it is a vector type, the rule cannot be applied.
-Another set of rules, not shown here for space reason, is used to propagate the \pat{vect} function recursively within $f$.
 %
 \begin{rerule}{lcl}
   \pat{map}\ f
     & \rightarrow &
       \pat{asScalar}
-        \circ \pat{map\ (vect}\ n\ f)
+        \circ \pat{map\ (\vect}\ n\ f)
         \circ \pat{asVector}\ n
   \label{eq:algo:vect}
 \end{rerule}
+%
+Vectorization is achieved by using the \pat{asVector} and corresponding \pat{asScalar} patterns, which changes the element type of an array and adjust the length accordingly.
+This rule is only allowed to be applied once to a given $\pat{map}\ f$ pattern.
+This constrain can easily be checked by looking at the function's type, \ie, if it is a vector type, the rule cannot be applied.
+% Another set of rules, not shown here for space reason, is used to propagate the \pat{vect} function recursively within $f$.
+The \vect pattern is used to produce a vectorized version of the customizing function $f$.
+Note that the vector width $n$ has to match for the vectorization of the function and the modification of the array.
 
 \paragraph{Summary}
-\todo{...}
-\autoref{fig:lowRules} show an overview of the \OpenCL-specific rules.
+\autoref{fig:lowRules} show an overview of the \OpenCL-specific rewrite rules.
+Each rule formalizes a different implementation or optimization strategy in \OpenCL.
+
+The map rules (\autoref{fig:low:map}) describe the usage of the \OpenCL threading hierarchy with work-items and work-groups.
+
+The reduce rule (\autoref{fig:low:red}) specifies the simple sequential implementation in \OpenCL, the parallel reduction is implemented in terms of other patterns as we saw in \autoref{section:rules:algo}.
+
+The stride access rule (\autoref{fig:low:stride}) enables coalesced memory access, which are crucial for performance as we saw in \autoref{section:reduce:case-study}.
+
+The local memory rule (\autoref{fig:low:mem}) allows the usage of the fast local memory.
+We saw the benefits of using the local memory when evaluating the matrix multiplication expressed using the \allpairs pattern in \autoref{chapter:skelcl-evaluation}.
+
+Finally, the vectorization rule (\autoref{fig:low:vect}) enables vectorization, which is a key optimization for the Intel \CPU architectures as we will see in \autoref{chapter:codeGeneration-evaluation}.
+
+As for the algorithmic rules, the \OpenCL-specific rules presented here are not complete and do not cover all possible optimizations in \OpenCL.
+Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation}, that these rules are a good starting set for generating efficient \OpenCL code.
 
 \begin{figure}[t]
 \centering
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lclcl}
       \pat{map}\ f
         & \rightarrow &
-          \pat{\textbf{map-workgroup}}\ f & | & \pat{\textbf{map-local}}\ f\\
+          \pat{map-workgroup}\ f & | & \pat{map-local}\ f\\
         & | &
-          \pat{\textbf{map-global}}\ f    & | & \pat{\textbf{map-seq}}\ f\\
+          \pat{map-global}\ f    & | & \pat{map-seq}\ f\\
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -421,10 +438,11 @@ Another set of rules, not shown here for space reason, is used to propagate the 
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
       \pat{reduce}\ f\ z
         & \rightarrow &
-          \pat{\textbf{reduce-seq}}\ f\ z
+          \pat{reduce-seq}\ f\ z
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -435,10 +453,11 @@ Another set of rules, not shown here for space reason, is used to propagate the 
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lclcl}
       \pat{reorder}
         & \rightarrow &
-          \pat{\textbf{reorder-stride}}\ s & | & \pat{id}
+          \pat{reorder-stride}\ s & | & \pat{id}
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -449,12 +468,13 @@ Another set of rules, not shown here for space reason, is used to propagate the 
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
-      \pat{\textbf{map-local}}\ f
+      \pat{map-local}\ f
         & \rightarrow &
-          \pat{\textbf{toGlobal}\ (\textbf{map-local}}\ f)\\  
-      \pat{\textbf{map-local}}\ f
-        & \rightarrow & \pat{\textbf{toLocal}\ (\textbf{map-local}}\ f)\\  
+          \pat{toGlobal\ (map-local}\ f)\\  
+      \pat{map-local}\ f
+        & \rightarrow & \pat{toLocal\ (map-local}\ f)\\  
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -465,20 +485,21 @@ Another set of rules, not shown here for space reason, is used to propagate the 
 \vspace{\ruleSpace}
 \begin{subfigure}[b]{1\linewidth}
   \begin{mdframed}
+    \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
       \pat{map}\ f
         & \rightarrow &
-          \pat{\textbf{asScalar}}
-            \circ \pat{map\ (\textbf{vect}}\ n\ f)
-            \circ \pat{\textbf{asVector}}\ n
+          \pat{asScalar}
+            \circ \pat{map\ (vect}\ n\ f)
+            \circ \pat{asVector}\ n
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
   \caption{Vectorization}
-  \label{fig:algo:vect}
+  \label{fig:low:vect}
 \end{subfigure}
 
-\caption{OpenCL-specific rules. Bold patterns are known to the code generator.}
+\caption{Overview of the \OpenCL-specific rewrite rules.}
 \label{fig:lowRules}
 \end{figure}
 
@@ -501,8 +522,45 @@ Another set of rules, not shown here for space reason, is used to propagate the 
 %Note that in addition to selecting the rules, we also search at the same time for the parameters controlling our patterns such as the vector size for the $\pat{vect}^n$ pattern.
 %Using this simple strategy, we found that less than a thousand expressions were evaluated to reach a solution in most cases.
 
-\subsection{Example: Deriving a Fused Implementation}
+\subsection{Applying the rewrite rules}
 \label{sec:example}
+In this section we will discuss some examples to show how the rewrite rules can be used to systematically rewrite applications expressed with the patterns introduced in \autoref{section:patterns}.
+We will start by looking back at the first example from \autoref{section:code-generation:overview}.
+Then we will look at the parallel reduction example and how we can systematically derive optimized implementations equivalent to the implementations discussed in \autoref{sec:reduce:case-study}.
+
+\subsubsection{A First Example: Scaling a Vector}
+\autoref{eq:vectorScal:impl} shows the implementation of the vector scaling example we used in \autoref{section:code-generation:overview}.
+This directly corresponds to \autoref{fig:codeex:map}.
+\begin{align}
+  mul3\ x &= x \times 3\nonumber\\
+  vectorScal &= \map\ mul3
+  \label{eq:vectorScal:impl}
+\end{align}
+The application developer uses the algorithmic pattern \map together with the customizing function $mul3$ which multiplies every element with the number $3$.
+\autoref{eq:vectorScal:rules} shows how this implementation can be systematically rewritten using the rewrite rules introduced in this section.
+The numbers above the equal signs refer to \autoref{fig:algoRules} and \autoref{fig:lowRules} indicating which rule was used in the step.
+\begin{align}
+  &vectorScal = \map\ mul3\nonumber\\
+  &\qquad\begin{aligned}
+    &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}} \join \circ \map\ (\map\ mul3) \circ \splitN\ n\\
+    &\overset{\ref{fig:low:vect}}{=\hspace{.2em}} \join \circ \map\ \big(\\
+      &\qquad\quad \asScalar \circ \map\ (\vect\ m\ mul3) \circ \asVector\ m\\
+      &\qquad\big) \circ \splitN\ n\\
+    &\overset{\ref{fig:low:map}}{=\hspace{.2em}} \join \circ \mapWorkgroup\ \big(\\
+      &\qquad\quad \asScalar \circ \mapLocal\ (\\
+      &\qquad\qquad\vect\ m\ mul3\\
+      &\qquad\quad) \circ \asVector\ m\\
+      &\qquad\big) \circ \splitN\ n
+  \end{aligned}
+  \label{eq:vectorScal:rules}
+\end{align}
+When selecting $n=1024$ and $m=4$ we obtain the expression shown in \autoref{fig:codeex:impl} from which \OpenCL code can be generated.
+We will discuss the process of \OpenCL code generation in the next section.
+But first we will discuss possible derivations for the parallel reduction.
+
+\subsubsection{Systematic Deriving Implementations of Parallel Reduction}
+
+\paragraph{Example: Deriving a Fused Implementation}
 
 \newcommand{\Reduce}{\text{\textit{reduce}}\xspace}
 \newcommand{\PartRed}{\text{\textit{part-red}}\xspace}
@@ -513,51 +571,51 @@ Another set of rules, not shown here for space reason, is used to propagate the 
 \newcommand{\MySplit}[1]{\text{\textit{split}}^{#1}\xspace}
 
 \begin{figure*}[t]
-\begin{align}
-  \text{\textit{asum}}
-  &\hspace{.2em}=\hspace{.2em} \Reduce\ (+)\ 0\ \circ\ \Map\ abs\\[1em]
+\begin{align*}
+  &\text{\textit{asum}} = \Reduce\ (+)\ 0\ \circ\ \Map\ abs\\[.5em]
   %
+  &\begin{aligned}
   & \overset{\ref{fig:algo:red}}{\hspace{.2em}=\hspace{.2em}}
       \begin{aligned}
         & \Reduce\ (+)\ 0\\
         &\circ\ \MyJoin\ \circ\ \Map\ (\PartRed\ (+)\ 0)\ \circ\ \MySplit\ n\\
         &\circ\ \Map\ abs
-      \end{aligned}\\[1em]
+      \end{aligned}\\[.5em]
   %
   & \overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
       \begin{aligned}
         & \Reduce\ (+)\ 0\\
         &\circ\ \MyJoin\ \circ\ \Map\ (\PartRed\ (+)\ 0)\ \circ\ \MySplit\ n\\
         &\circ\ \MyJoin\ \circ\ \Map\ (\Map\ abs)\ \circ\ \MySplit\ n
-      \end{aligned}\\[1em]
+      \end{aligned}\\[.5em]
   %
   & \overset{\ref{fig:algo:simpl}}{=\hspace{.2em}}
       \begin{aligned}
         & \Reduce\ (+)\ 0\\
         &\circ\ \MyJoin\ \circ\ \Map\ (\PartRed\ (+)\ 0)\\
         &\circ\ \Map\ (\Map\ abs)\ \circ\ \MySplit\ n
-      \end{aligned}\\[1em]
+      \end{aligned}\\[.5em]
   %
   & \overset{\ref{fig:algo:fusion}}{=\hspace{.2em}}
       \begin{aligned}
         & \Reduce\ (+)\ 0\\
         &\circ\ \MyJoin\ \circ\ \Map\ (\PartRed\ (+)\ 0\ \circ\ \Map\ abs)\\
         &\circ\ \MySplit\ n
-      \end{aligned}\\[1em]
+      \end{aligned}\\[.5em]
   %
   & \overset{\ref{fig:low:map}}{=\hspace{.2em}}
       \begin{aligned}
         & \Reduce\ (+)\ 0\\
         &\circ\ \MyJoin\ \circ\ \Map\ (\PartRed\ (+)\ 0\ \circ\ \MapSeq\ abs)\\
         &\circ\ \MySplit\ n
-      \end{aligned}\\[1em]
+      \end{aligned}\\[.5em]
   %
   & \overset{\hspace{-1.3em}\ref{fig:algo:red}\& \ref{fig:low:red}\hspace{-1.1em}}{=\hspace{.2em}}
       \begin{aligned}
         & \Reduce\ (+)\ 0\\
         &\circ\ \MyJoin\ \circ\ \Map\ (\RedSeq\ (+)\ 0\ \circ\ \MapSeq\ abs)\\
         &\circ\ \MySplit\ n
-      \end{aligned}\\[1em]
+      \end{aligned}\\[.5em]
   %
   & \overset{\ref{fig:algo:fusion}}{=\hspace{.2em}}
       \begin{aligned}
@@ -566,8 +624,8 @@ Another set of rules, not shown here for space reason, is used to propagate the 
         &\circ\ \Map\ \big(\RedSeq\ (\lambda\ a, b\ .\ a+(abs\ b))\ 0\big)\\
         &\circ\ \MySplit\ n
       \end{aligned}
-\end{align}
-\vspace{-2em}
+  \end{aligned}
+\end{align*}
 \caption{Derivation for \emph{asum}$(\vec{x})$ to a fused parallel version.
   The numbers above the equality sign refer to the rules from sections ....
 }
@@ -601,7 +659,7 @@ This sequence of transformations results in expression (7), which allows for a m
 
 The power of our approach lies in the composition of our rules that produce complex low-level expressions from simple high-level expressions.
 Looking back at our example in Figure~\ref{fig:codeex}, we see how a simple algorithmic pattern can effectively be derived into a low-level expression by applying the rules.
-This expression matches hardware concepts expressible with OpenCL such as mapping computation and data to the thread and memory hierarchy. % and vectorization.
+This expression matches hardware concepts expressible with \OpenCL such as mapping computation and data to the thread and memory hierarchy. % and vectorization.
 Each single rule encodes a simple, easy to understand, provable fact.
 By composition of the rules we systematically derive low-level expressions which are semantically equivalent to the high-level expressions by construction.
 This results in a powerful mechanism to safely explore the space of possible implementations.
@@ -619,8 +677,8 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % Similarly to our patterns, we distinguish between algorithmic and lowering rules.
 % Algorithmic rules produces derivations that represent the different algorithmic choices and are shown in Figure~\ref{fig:algo}.
-% The lowering rules shown in Figure~\ref{fig:low} map expressions to hardware patterns expressible with the OpenCL programming model.
-% Once the expression is in its lowest form, it is possible to produce OpenCL code easily with our code generator as seen in the previous section.
+% The lowering rules shown in Figure~\ref{fig:low} map expressions to hardware patterns expressible with the \OpenCL programming model.
+% Once the expression is in its lowest form, it is possible to produce \OpenCL code easily with our code generator as seen in the previous section.
 % 
 % 
 % \paragraph{Syntax and Rule Derivation}
@@ -832,7 +890,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % \paragraph{Split-join}
 % The split-join rule in Figure~\ref{fig:algo:splitjoin} partitions a map into two maps.
-% This allows us to nest maps in each other and, thus, \emph{map} the computation to the thread hierarchy of the OpenCL programming model such as \pat{map-workgroup(map-local(f))} as seen in our motivation example (Figure~\ref{fig:codeex}).
+% This allows us to nest maps in each other and, thus, \emph{map} the computation to the thread hierarchy of the \OpenCL programming model such as \pat{map-workgroup(map-local(f))} as seen in our motivation example (Figure~\ref{fig:codeex}).
 % 
 % 
 % \paragraph{Reduction}
@@ -882,11 +940,11 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % \paragraph{Maps}
 % The rule shown in Figure~\ref{fig:low:map} is used to produce the different low-level \pat{maps}.
-% The \emph{pre} and \emph{post} conditions reflect the hierarchy presented in Figure~\ref{fig:map} corresponding to the OpenCL programming model.
+% The \emph{pre} and \emph{post} conditions reflect the hierarchy presented in Figure~\ref{fig:map} corresponding to the \OpenCL programming model.
 % For instance for \pat{map-workgroup}, we have the pre condition that we must not be within a \pat{map-workgroup} ($\overline{mwg}$) already.
 % 
 % \paragraph{Reduction}
-% There is only one lowering rule for reduction (Figure~\ref{fig:low:red}), which expresses the fact that the only OpenCL implementation known to the code generator is a sequential reduction.
+% There is only one lowering rule for reduction (Figure~\ref{fig:low:red}), which expresses the fact that the only \OpenCL implementation known to the code generator is a sequential reduction.
 % The reduction pattern is defined at a higher level by composing other algorithmic patterns.
 % To the best of our knowledge, all other existing high performance compilers treat the reduction directly as an irreducible primitive operation.
 % The power of our approach is that the code generator implementation only needs to know about the simple sequential reduction.
@@ -926,7 +984,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % The power of our approach lies in the composition of our rules that produce complex expressions.
 % Looking back at our motivation example in Figure~\ref{fig:codeex}, we can see how a simple algorithmic pattern such as \pat{map} can be effectively derived into a low-level expression by applying our rules.
-% This expression matches various hardware concepts expressible with the OpenCL programming model such as mapping computation and data to the GPU thread and memory hierarchy respectively and vectorization.
+% This expression matches various hardware concepts expressible with the \OpenCL programming model such as mapping computation and data to the GPU thread and memory hierarchy respectively and vectorization.
 % Using these rules and our automatic search technique we now have a powerful mechanism to explore the space of possible program implementations.
 % \from{PACT end}
 % 
@@ -942,9 +1000,9 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % Similarly to our patterns, we distinguish between algorithmic and lowering rules.
 % Algorithmic rules produces derivations that represent the different algorithmic choices and are shown in Figure~\ref{fig:algo}.
 % %The lowering rules map expressions to hardware patterns.
-% Figure~\ref{fig:low} shows our OpenCL-specific rules which map expressions to OpenCL patterns.
-% %are expressible with the OpenCL programming model.
-% Once the expression is in its lowest form, it is possible to produce OpenCL code for each single pattern easily with our code generator as described in the previous section.
+% Figure~\ref{fig:low} shows our \OpenCL-specific rules which map expressions to \OpenCL patterns.
+% %are expressible with the \OpenCL programming model.
+% Once the expression is in its lowest form, it is possible to produce \OpenCL code for each single pattern easily with our code generator as described in the previous section.
 % 
 % 
 % %\paragraph{Syntax and Rule Derivation}
@@ -975,7 +1033,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % \paragraph{Split-join}
 % The split-join rule in Figure~\ref{fig:algo:splitjoin} partitions a map into two maps.
-% This allows us to nest map patterns in each other and, thus, \emph{map} the computation to the thread hierarchy of the OpenCL programming model such as \pat{map-workgroup(map-local(f))} as seen in our motivation example (Figure~\ref{fig:codeex}).
+% This allows us to nest map patterns in each other and, thus, \emph{map} the computation to the thread hierarchy of the \OpenCL programming model such as \pat{map-workgroup(map-local(f))} as seen in our motivation example (Figure~\ref{fig:codeex}).
 % 
 % 
 % \paragraph{Reduction}
@@ -1237,7 +1295,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % \subsection{OpenCL-Specific Rules}
 % 
-% Figure~\ref{fig:low} shows our OpenCL-specific rules that are used to apply OpenCL optimizations and to lower high-level concepts down to OpenCL-specific ones.
+% Figure~\ref{fig:low} shows our \OpenCL-specific rules that are used to apply \OpenCL optimizations and to lower high-level concepts down to \OpenCL-specific ones.
 % Patterns that are known to the code generator are shown in bold in both Figure~\ref{fig:algo} and~\ref{fig:low}.
 % %The code generation process is described separately in section~\ref{codegen}.
 % 
@@ -1249,12 +1307,12 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % % We explicitly use the \pat{map} pattern in order to implement the identity function for arrays.
 % 
 % \paragraph{Maps}
-% The rule in Figure~\ref{fig:low:map} is used to produce OpenCL-specific map implementations that match the thread hierarchy of the OpenCL programming model.
+% The rule in Figure~\ref{fig:low:map} is used to produce \OpenCL-specific map implementations that match the thread hierarchy of the \OpenCL programming model.
 % Our implementation maintains context information to ensure the thread hierarchy is respected.
 % For instance, it is only legal to nest a \pat{map-local} inside a \pat{map-workgroup}.
-% %Similarly, a \pat{map-global} pattern can not be nested inside a \pat{map-workgroup} pattern as it represents global threads not organized in OpenCL workgroups.
+% %Similarly, a \pat{map-global} pattern can not be nested inside a \pat{map-workgroup} pattern as it represents global threads not organized in \OpenCL workgroups.
 % 
-% % The \emph{pre} and \emph{post} conditions reflect the hierarchy presented in Figure~\ref{fig:map} corresponding to the OpenCL programming model.
+% % The \emph{pre} and \emph{post} conditions reflect the hierarchy presented in Figure~\ref{fig:map} corresponding to the \OpenCL programming model.
 % % For instance for \pat{map-workgroup}, we have the pre condition that we must not be within a \pat{map-workgroup} ($\overline{mwg}$) already.
 % 
 % %Some rules can only be activated if certain conditions are true.
@@ -1264,7 +1322,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % %The $\overline{\rule[-.3\baselineskip]{0pt}{1.5ex}\hspace{1.5ex}}$, $\wedge$, and $\vee$ corresponds to the logical \emph{not}, \emph{and}, and \emph{or} operators respectively.
 % 
 % \paragraph{Reduction}
-% There is only one lowering rule for reduction (Figure~\ref{fig:low:red}), which expresses the fact that the only OpenCL implementation known to the code generator is a sequential reduction.
+% There is only one lowering rule for reduction (Figure~\ref{fig:low:red}), which expresses the fact that the only \OpenCL implementation known to the code generator is a sequential reduction.
 % Possible parallel implementations of the reduction pattern are defined at a higher level by composition of other algorithmic patterns.
 % To the best of our knowledge, all other existing high performance compilers treat the reduction directly as an irreducible primitive operation.
 % The power of our approach is that the code generator implementation only needs to know about the simple sequential reduction.
@@ -1314,7 +1372,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % The power of our approach lies in the composition of our rules that produce complex low-level expressions from simple high-level expressions.
 % Looking back at our motivation example in Figure~\ref{fig:codeex}, we see how a simple algorithmic pattern such as \pat{map} can effectively be derived into a low-level expression by applying the rules.
-% This expression matches various hardware concepts expressible with the OpenCL programming model such as mapping computation and data to the GPU thread and memory hierarchy and vectorization.
+% This expression matches various hardware concepts expressible with the \OpenCL programming model such as mapping computation and data to the GPU thread and memory hierarchy and vectorization.
 % Each single rule encodes a simple, easy to understand, provable fact.
 % By composition of the rules we systematically derive low-level expressions which are semantically equivalent to the high-level expressions by construction.
 % This results in a powerful mechanism to safely explore the space of possible implementations.
@@ -1333,9 +1391,9 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % Similarly to our patterns, we distinguish between algorithmic and lowering rules.
 % Algorithmic rules produce derivations that represent the different algorithmic choices and are shown in Figure~\ref{fig:algo}.
 % %The lowering rules map expressions to hardware patterns.
-% Figure~\ref{fig:low} shows our OpenCL-specific rules which map expressions to OpenCL patterns.
-% %are expressible with the OpenCL programming model.
-% Once the expression is in its lowest form, it is possible to produce OpenCL code for each single pattern easily with our code generator as described in the previous section.
+% Figure~\ref{fig:low} shows our \OpenCL-specific rules which map expressions to \OpenCL patterns.
+% %are expressible with the \OpenCL programming model.
+% Once the expression is in its lowest form, it is possible to produce \OpenCL code for each single pattern easily with our code generator as described in the previous section.
 % 
 % 
 % %\paragraph{Syntax and Rule Derivation}
@@ -1495,7 +1553,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % \paragraph{Split-join}
 % The split-join rule in Figure~\ref{fig:algo:splitjoin} partitions a map into two maps.
-% This allows us to nest map patterns in each other and, thus, \emph{maps} the computation to the thread hierarchy of the OpenCL programming model.
+% This allows us to nest map patterns in each other and, thus, \emph{maps} the computation to the thread hierarchy of the \OpenCL programming model.
 % % such as \pat{map-workgroup(map-local(f))} as seen in our motivation example (Figure~\ref{fig:codeex}).
 % 
 % 
@@ -1541,7 +1599,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % \subsection{OpenCL-Specific Rules}
 % 
-% Figure~\ref{fig:low} shows our OpenCL-specific rules that are used to apply OpenCL optimizations and to lower high-level concepts down to OpenCL-specific ones.
+% Figure~\ref{fig:low} shows our \OpenCL-specific rules that are used to apply \OpenCL optimizations and to lower high-level concepts down to \OpenCL-specific ones.
 % Patterns that are known to the code generator are shown in bold.% in both Figure~\ref{fig:algo} and~\ref{fig:low}.
 % %The code generation process is described separately in section~\ref{codegen}.
 % 
@@ -1553,12 +1611,12 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % % We explicitly use the \pat{map} pattern in order to implement the identity function for arrays.
 % 
 % \paragraph{Maps}
-% The rule in Figure~\ref{fig:low:map} is used to produce OpenCL-specific map implementations that match the thread hierarchy of OpenCL.
+% The rule in Figure~\ref{fig:low:map} is used to produce \OpenCL-specific map implementations that match the thread hierarchy of \OpenCL.
 % Our implementation maintains context information to ensure the hierarchy is respected.
 % For instance, it is only legal to nest a \pat{map-local} inside a \pat{map-workgroup}.
-% %Similarly, a \pat{map-global} pattern can not be nested inside a \pat{map-workgroup} pattern as it represents global threads not organized in OpenCL workgroups.
+% %Similarly, a \pat{map-global} pattern can not be nested inside a \pat{map-workgroup} pattern as it represents global threads not organized in \OpenCL workgroups.
 % 
-% % The \emph{pre} and \emph{post} conditions reflect the hierarchy presented in Figure~\ref{fig:map} corresponding to the OpenCL programming model.
+% % The \emph{pre} and \emph{post} conditions reflect the hierarchy presented in Figure~\ref{fig:map} corresponding to the \OpenCL programming model.
 % % For instance for \pat{map-workgroup}, we have the pre condition that we must not be within a \pat{map-workgroup} ($\overline{mwg}$) already.
 % 
 % %Some rules can only be activated if certain conditions are true.
@@ -1707,7 +1765,7 @@ This results in a powerful mechanism to safely explore the space of possible imp
 % 
 % The power of our approach lies in the composition of our rules that produce complex low-level expressions from simple high-level expressions.
 % Looking back at our example in Figure~\ref{fig:codeex}, we see how a simple algorithmic pattern can effectively be derived into a low-level expression by applying the rules.
-% This expression matches hardware concepts expressible with OpenCL such as mapping computation and data to the thread and memory hierarchy. % and vectorization.
+% This expression matches hardware concepts expressible with \OpenCL such as mapping computation and data to the thread and memory hierarchy. % and vectorization.
 % Each single rule encodes a simple, easy to understand, provable fact.
 % By composition of the rules we systematically derive low-level expressions which are semantically equivalent to the high-level expressions by construction.
 % This results in a powerful mechanism to safely explore the space of possible implementations.
