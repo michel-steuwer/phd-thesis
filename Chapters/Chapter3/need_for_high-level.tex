@@ -1,7 +1,7 @@
 \section{The need for high-level abstractions}
 We start the discussion of programming for parallel systems and in particular for \GPU systems by looking thoroughly at an application example.
-By doing so we will identify challenges faced by application developers which arise from typical features of parallel hardware architectures.
-We will then derive from these challenges requirements to a potential high-level programming model.
+By doing so we will identify challenges faced by application developers which arise from typical characteristics of parallel hardware architectures.
+We will then derive from these challenges requirements for a potential high-level programming model.
 
 
 % ============================================================================ %
@@ -64,15 +64,15 @@ for (int l = 0; l < subsets; l++) {
 \end{lstlisting}
 \end{figure}
 
-\subsubsection{Parallelization of LM OSEM in OpenCL}
+\subsubsection{Parallelization of LM OSEM in \OpenCL}
 \label{sec:parallel_implementation}
 LM OSEM is a rather time-consuming algorithm that needs parallelization:
 a typical 3D image reconstruction processing $6 \cdot 10^7$ input events for a $150 \times 150 \times 280$ voxel PET image takes more than two hours on a modern PC.
 
 Although the iterations of the outer loop in \autoref{lst:lmosem:seq_code} are inherently sequential, we can parallelize the two calculation steps within one iteration as shown in \autoref{fig:lmosem:em_distribution} for a system comprising one CPU and two GPUs.
-Note that these steps require different data distribution patterns:
+Note that the two steps require different data distribution patterns:
 \begin{itemize}
-  \item[] \emph{Step 1:} Subset's events are copied from the CPU to all GPUs (\emph{upload}) to compute the summation parts of $c_l$ concurrently. This step requires that the complete image estimate $f_l$ is available on all GPUs.
+  \item[] \emph{Step 1:} Subset's events ($S$) are copied from the CPU to all GPUs (\emph{upload}) to compute the summation parts of $c_l$ concurrently. This step requires that the complete image estimate $f_l$ is available on all GPUs.
   \item[] \emph{Step 2:} For computing the next image estimate $f_{l+1}$ in parallel, the current image estimate $f_l$ and the error image $c_l$ computed in step 1 have to be distributed in disjoint parts (blocks) among all GPUs.
 \end{itemize}
 
@@ -88,18 +88,18 @@ Note that for step 1, each GPU requires a full copy of the image estimate, while
 After step 2, the disjoint parts of the image estimate are copied from all GPUs back to the CPU (\emph{download}).
 
 \bigskip\noindent
-In the following, we describe how the phases in the parallelization schema in \autoref{fig:lmosem:em_distribution} are implemented using OpenCL.
+In the following, we describe how the phases in the parallelization schema in \autoref{fig:lmosem:em_distribution} are implemented using \OpenCL.
 
 \paragraph{Upload}
-\autoref{lst:lmosem:upload} shows the simplified OpenCL implementation of the upload phase.
+\autoref{lst:lmosem:upload} shows a simplified \OpenCL implementation of the upload phase.
 Uploading of the event vector $S$ is performed in lines \autoref{lst:lmosem:upload:1:start}--\autoref{lst:lmosem:upload:1:end}, while lines \autoref{lst:lmosem:upload:2:start}--\autoref{lst:lmosem:upload:2:end} upload the image estimate $f_l$.
-In OpenCL, we have to manage each GPU explicitly, therefore, for each GPU, we create an array of buffers (\texttt{s\_gpu} in line~\autoref{lst:lmosem:upload:1:cl_false} and \texttt{f\_gpu} in line~\autoref{lst:lmosem:upload:2:cl_false}) and we use a loop (line \autoref{lst:lmosem:upload:loop}) to repeat all memory operations for each GPU.
+In \OpenCL, we have to manage each GPU explicitly, therefore, for each GPU, we manage an array of buffers (\texttt{s\_gpu} in line~\autoref{lst:lmosem:upload:1:cl_false} and \texttt{f\_gpu} in line~\autoref{lst:lmosem:upload:2:cl_false}) and we use a loop (line \autoref{lst:lmosem:upload:loop}) to repeat all memory operations for each GPU.
 For performance reasons, we use asynchronous copy operations, specified using the \texttt{CL\_FALSE} flag (lines \autoref{lst:lmosem:upload:1:cl_false} and \autoref{lst:lmosem:upload:2:cl_false}): this allows data transfers to multiple GPUs to overlap.
 We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (copy to each GPU), therefore, there are differences when specifying the amount of bytes to copy (lines \autoref{lst:lmosem:upload:1:amount} and \autoref{lst:lmosem:upload:2:amount}) and the offsets in the CPU memory (lines \autoref{lst:lmosem:upload:1:offset} and \autoref{lst:lmosem:upload:2:offset}).
-Altogether eleven such memory operations -- each with different amounts of bytes and offsets -- appear in the OpenCL source code.
+Altogether eleven such memory operations -- each with different amounts of bytes and offsets -- appear in the \OpenCL source code.
 
 \begin{lstlisting}[float,
-  caption={Implementation of the upload phase in OpenCL (omitting error checks for brevity)},
+  caption={Implementation of the upload phase in \OpenCL (omitting error checks for brevity)},
   label={lst:lmosem:upload}]
 for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
   // upload $S$
@@ -119,17 +119,17 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
 \end{lstlisting}
 
 \paragraph{Step 1}
-The implementation of step 1 performs the operations shown in \autoref{lst:lmosem:seq_code}.
-Because of GPU memory restrictions, the OpenCL implementation is not straightforward, therefore, we will not show the detailed code here.
-An OpenCL kernel is launched where each work item processes multiple events one after another.
+The implementation of step 1 performs the three sub-steps shown in \autoref{lst:lmosem:seq_code}.
+Because of GPU memory restrictions, the \OpenCL implementation is not straightforward, therefore, we will not show the detailed code here.
+An \OpenCL kernel is launched where each work-item processes multiple events one after another.
 For each event first $A_i$ is computed, then the local error for $A_i$ is computed using the current image estimate $f_l$ which is finally added to $c_l$.
 
 In \autoref{equ:lm_osem} $A_i$ represents the \emph{path} of a detected line through the 3D image space.
 In mathematics it is convenient to think of this as a sparse vector containing the length of the intersection of the line with a given voxel in the image space.
 As most voxels are not intersected by the line, most entries in the vector remain zero.
-Therefore, in the OpenCL code $A_i$ is represented as an array of pairs, where the first entry of each pair is the index of a voxel in the image space and the second entry is the length of the intersection with this voxel.
+Therefore, in the \OpenCL code $A_i$ is represented as an array of pairs, where the first entry of each pair is the index of a voxel in the image space and the second entry is the length of the intersection with this voxel.
 
-Synchronization between work items in OpenCL is highly restricted, \ie, synchronization is only possible for work items organized in the same work group.
+Synchronization between work-items in \OpenCL is highly restricted, \ie, synchronization is only possible for work-items organized in the same work-group.
 Therefore, it is not possible to efficiently protect the writing operation to $c_l$ to avoid race conditions.
 We have conducted studies and found that for this particular algorithm these race conditions are acceptable as they do not substantially decrease the numerical accuracy of the computed result~\cite{SchellmannGoMeKoScWuBu2009}.
 
@@ -155,28 +155,28 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 }
 \end{lstlisting}
 
-\autoref{lst:lmosem:redistribution} shows an OpenCL pseudocode for the redistribution phase.
-To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
-For such synchronization, OpenCL uses \emph{events}, associated with an operation (line \autoref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
+\autoref{lst:lmosem:redistribution} shows an \OpenCL pseudocode for the redistribution phase.
+To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function (line~\ref{lst:lmosem:redistribution:operation}) and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
+For such synchronization, \OpenCL uses \emph{events}, associated with an operation (line~\ref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
 After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (line \autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
-Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in any version of OpenCL.
+Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in any version of \OpenCL.
 
 \paragraph{Step 2}
 \autoref{lst:lmosem:step_2} shows the implementation of step 2.
-In OpenCL, computations are specified as \emph{kernels} which are created from the source code specifying the computation.
+In \OpenCL, computations are specified as \emph{kernels} which are created from the source code specifying the computation.
 The computation in step 2 is, therefore, described as a string in lines \autoref{lst:lmosem:step_2:string:start}--\autoref{lst:lmosem:step_2:string:stop}.
 The operations used here are the same as in the sequential code.
 
 For executing the computations of step 2, we have to perform the following steps for each GPU:
 \begin{itemize}
-  \item create an OpenCL kernel from the source code (requires 50 lines of code in OpenCL);
-  \item compile the kernel specifically for the GPU (requires 13 lines of code in OpenCL);
+  \item create an \OpenCL kernel from the source code (requires 50 lines of code in \OpenCL);
+  \item compile the kernel specifically for the GPU (requires 13 lines of code in \OpenCL);
   \item specify kernel arguments one-by-one using the \texttt{clSetKernelArg} function (line \autoref{lst:lmosem:step_2:args:start} -- \autoref{lst:lmosem:step_2:args:stop});
   \item specify execution environment, i.\,e., how many instances of the kernel to start (line \autoref{lst:lmosem:step_2:env:start} -- \autoref{lst:lmosem:step_2:env:stop});
   \item launch the kernel (line \autoref{lst:lmosem:step_2:kernel:start} -- \autoref{lst:lmosem:step_2:kernel:stop}).
 \end{itemize}
 \begin{lstlisting}[float,
-  caption={Implementation of step 2 in OpenCL (omitting error checks for brevity)},
+  caption={Implementation of step 2 in \OpenCL (omitting error checks for brevity)},
   label={lst:lmosem:step_2}]
 // step 2 (in $\autoref{fig:lmosem:em_distribution}$)
 source_code_step_2 =
@@ -220,7 +220,7 @@ The implementation of the download phase is similar to the upload phase as shown
 
 
 % ============================================================================ %
-\subsection{Requirements to a High-Level Programming Model}
+\subsection{Requirements for a High-Level Programming Model}
 \label{section:requirements}
 The described implementation of the example application reveals the main problems and challenges that application developers have to overcome when targeting \GPU systems.
 Our analysis show that to simplify programming for a system with multiple \GPUs, at least the following three high-level abstraction are desirable:

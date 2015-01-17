@@ -210,6 +210,12 @@
 \pdfcompresslevel=9
 \pdfadjustspacing=1
 
+%\let\origtheequation\theequation
+%\makeatletter
+%\def\tagform@#1{\maketag@@@{\ignorespaces#1\unskip\@@italiccorr}}
+%\makeatother
+%\renewcommand{\theequation}{(\origtheequation)}
+
 \hypersetup{
 % Uncomment the line below to remove all links (to references, figures, tables, etc)
 %draft, 
@@ -342,8 +348,20 @@ pdfproducer={LaTeX with hyperref and classicthesis}
             \node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
 
 \usepackage{amsthm}
-%\theoremstyle{remark}
-\newtheorem{definition}{Definition}
+\newtheoremstyle{mystyle}% name
+  {\topsep}%Space above
+  {\topsep}%Space below
+  {\itshape}%Body font
+  {}%Indent amount
+  %{\bfseries}
+  {\scshape}% Theorem head font
+  {.}%Punctuation after theorem head
+  { }%Space after theorem head 2
+  {}%Theorem head spec (can be left empty, meaning ‘normal’)
+
+\theoremstyle{mystyle}
+\newtheorem{definition}{definition}
+\newcommand{\definitionautorefname}{Definition}
 
 % included for HiStencils
 \newcommand{\code}[1]{\texttt{#1}}
@@ -463,4 +481,7 @@ pdfproducer={LaTeX with hyperref and classicthesis}
   }%
 }
 \makeatother
+
+\usepackage{varioref}
+\labelformat{equation}{\textup{(#1)}}
 
