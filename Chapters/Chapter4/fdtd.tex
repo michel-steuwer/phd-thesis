@@ -3,7 +3,7 @@ As one representative we study the \emph{Finite-Difference-Time-Domain (FDTD) Me
 This simulation from the field of optical physics simulates the propagation of light through a medium.
 
 In the simulation two fields, the electric field $\vec{E}$ and the magnetic field $\vec{H}$, are iteratively updated using stencils computations.
-The Maxwell's equations are the basic equations describing electrodynamic processes in nature and are used here to describe the light propagating through a non-magnetic (\emph{dielectric}) medium.
+We use the Maxwell's equations which are the basic equations describing electrodynamic processes in nature to describe the light propagating through a non-magnetic (\emph{dielectric}) medium.
 
 \begin{align}
   \vec{\nabla}\vec{E}\left(\vec{r}, t\right) &= 0, \label{eq:div_e}\\
@@ -25,8 +25,8 @@ To couple the polarisation of a medium $\vec{P}$ to the electric field, \autoref
 Here $\vec{N}$ is the induced energy distribution in the medium using the model proposed in~\cite{Jiang2000}.
 The parameters $\mu_0$, $\epsilon_0$ and $\epsilon_r$ describe the permeability and permittivity of free space and the relative permittivity of the dielectric medium.
 
-To solve this set of coupled PDEs, the Finite-Difference-Time-Domain Method (short FDTD)~\cite{Yee1966} can be used.
-Here we use a form of FDTD where the electric and magnet field are discretized within a n-dimensional regular grid.
+To solve this set of coupled PDEs, a method called Finite-Difference-Time-Domain (FDTD)~\cite{Yee1966} can be used.
+Here we use a form where the electric and magnet field are discretized within a n-dimensional regular grid.
 $\vec{E}$ and $\vec{H}$ are shifted against each other by a half grid-cell.
 This allows the calculation of the new values by computing finite differences between two values of the grid.
 Using the FDTD method, we implemented a simulation of the effect of random lasing on a nano-meter scale~\cite{Cao1999} for our evaluation.
