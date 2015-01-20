@@ -289,9 +289,6 @@ void reduce5(global float* g_idata, global float* g_odata,
   barrier(CLK_LOCAL_MEM_FENCE);
 
   // unroll for loop entirely
-  $\strut$@if (WG_SIZE >= 512) {@$\label{lst:reduce5:if:1}$
-  $\strut$@    if (tid < 256) { l_data[tid] += l_data[tid+256]; }@
-  $\strut$@    barrier(CLK_LOCAL_MEM_FENCE); }@
   $\strut$@if (WG_SIZE >= 256) {@$\label{lst:reduce5:if:2}$
   $\strut$@    if (tid < 128) { l_data[tid] += l_data[tid+128]; }@
   $\strut$@    barrier(CLK_LOCAL_MEM_FENCE); }@

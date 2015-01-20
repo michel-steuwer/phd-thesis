@@ -560,7 +560,6 @@ But first we will discuss possible derivations for the parallel reduction.
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
-    %&\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
     &=\hspace{.2em}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
       &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
@@ -571,28 +570,87 @@ But first we will discuss possible derivations for the parallel reduction.
       &\qquad\big) \circ \splitN\ wgSize
   \end{aligned}
 \end{align}
-This is eq. to Listings 36--38.
+This is eq. to Listings 5.1--5.2.
 
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
-    %&\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
     &=\hspace{.2em}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
       &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
       &\qquad \circ \iterateN\ (log_2\ wgSize)\ (\\
       &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \reorderStride\ s\\
+      &\qquad\quad)\\
+      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
+      &\qquad\big) \circ \splitN\ wgSize
+  \end{aligned}
+\end{align}
+This is eq. to Listings 5.3.
+
+\begin{align}
+  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
+  &\hspace{-2em}\quad\begin{aligned}
+    &=\hspace{.2em}
+      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
+      &\qquad \circ \iterateN\ (log_2\ wgSize)\ (\\
+      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \reorderStride\ s\\
       &\qquad\quad)\\
       &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
       &\qquad\big) \circ \splitN\ (2\times wgSize)
   \end{aligned}
 \end{align}
-This is eq. to Listing 39
+This is eq. to Listing 5.4
 
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
-    %&\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
+    &=\hspace{.2em}
+      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
+      &\qquad \circ \join \circ \mapWarp\ (\\
+      &\qquad\qquad\ \ \ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\quad) \circ \splitN\ 32\\
+      &\qquad \circ \iterateN\ ((log_2\ wgSize) - (log_2\ 32))\ (\\
+      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \reorderStride\ s\\
+      &\qquad\quad)\\
+      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
+      &\qquad\big) \circ \splitN\ (2\times wgSize)
+  \end{aligned}
+\end{align}
+This is eq. to Listing 5.5
+
+\begin{align}
+  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
+  &\hspace{-2em}\quad\begin{aligned}
+    &=\hspace{.2em}
+      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
+      &\qquad \circ \join \circ \mapWarp\ (\\
+      &\qquad\qquad\ \ \ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad\quad) \circ \splitN\ 32\\
+      &\qquad \circ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad \circ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
+      &\qquad\big) \circ \splitN\ (2\times 128)
+  \end{aligned}
+\end{align}
+This is eq. to Listing 5.6 (i.e. wgSize = 128)
+
+\begin{align}
+  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
+  &\hspace{-2em}\quad\begin{aligned}
     &=\hspace{.2em}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
       &\qquad\ \ \ \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
@@ -605,12 +663,13 @@ This is eq. to Listing 39
       &\qquad\quad) \circ \splitN\ 32\\
       &\qquad \circ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
       &\qquad \circ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2048\\
-      &\qquad \circ \reorderStride\ s\\
-      &\qquad\big) \circ \splitN\ 262144
+      &\qquad \circ \join\\
+      &\qquad\quad \circ\toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0))\\
+      &\qquad \circ \splitN\ (blockSize/wgSize) \circ \reorderStride\ s\\
+      &\qquad\big) \circ \splitN\ blockSize
   \end{aligned}
 \end{align}
-This is eq. to Listing 42
+This is eq. to Listing 5.7
 
 \paragraph{Example: Deriving a Fused Implementation}
 
