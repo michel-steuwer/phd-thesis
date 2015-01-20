@@ -3,7 +3,7 @@ require('grid')
 
 # row.names = NULL forces numbering of the lines and, thus, preserves the order
 bandwidth <- read.csv("reduce.csv", sep=";", comment.char="#", header=TRUE, row.names=NULL)
-rownumbers <- as.integer(row.names(data))
+rownumbers <- as.integer(row.names(bandwidth))
 
 hwFeatures <- read.csv("hwFeatures.csv", sep=";", comment.char="#", header=TRUE, row.names=NULL)
 bws <- subset(hwFeatures, Feature=="Hardware Bandwidth Limit")
@@ -14,7 +14,7 @@ theme <- theme_bw() +
                axis.title = element_text(size = rel(1.125), vjust = 3),
                axis.text.x = element_text(angle = 45, vjust = 0.5),
                panel.border = element_rect(linetype = "solid", colour = "black", size = 1.5),
-               plot.margin = unit(c(0.5,0.5,0.5,1), 'cm'))
+               plot.margin = unit(c(2,0.5,-0.75,1), 'cm'))
 
 labs <- labs(x = "", y = "Bandwidth (GB/s)")
 
@@ -62,7 +62,7 @@ pIntel <- ggplot(bandwidth, aes(x = reorder(Kernel, rownumbers), y = E5530)) +
           labs + theme +
           # override theme defaults set above
           theme(axis.title = element_text(size = rel(1.125), vjust = 4.35),
-                plot.margin = unit(c(0.5,0.5,0.5,1.35), 'cm'))
+                plot.margin = unit(c(2,0.5,-0.75,1.35), 'cm'))
 
 # save plot to file
 ggsave(file = "reduce_intel.pdf", width = 9, height = 6)
