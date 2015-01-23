@@ -558,89 +558,6 @@ But first we will discuss possible derivations for the parallel reduction.
 \subsubsection{Systematic Deriving Implementations of Parallel Reduction}
 
 
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
-%
-  \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
-    &\qquad\quad\map\ id\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:map}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\ldots
-\end{align*}
-\caption{reduce10: This is eq. to Listings 5.1--5.2.}
-\end{figure*}
-
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{.5em}\ldots\\
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}\&\ref{fig:low:red}}{=\hspace{.2em}}\\[-.75em]
-    &\qquad\ \ 
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:mem}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
-    &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-    &\qquad\big) \circ \splitN\ 128
-  \end{aligned}
-%  
-\end{align*}
-\caption{reduce10 continued}
-\end{figure*}
 
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
@@ -665,115 +582,6 @@ reduce10: This is eq. to Listings 5.1 \& Listings 5.2.
 
 
 
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
-%
-  \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0\ \circ \reorder)\ \big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ \circ \reorder) \circ \splitN\ 2)\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:reorder}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
-    &\qquad\quad\map\ id\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\ldots
-\end{align*}
-\caption{reduce12: This is eq. to Listings 5.1--5.2.}
-\end{figure*}
-
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{.5em}\ldots\\
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:map}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorder)\ \circ\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}\&\ref{fig:low:red}}{=\hspace{.2em}}\\[-.75em]
-    &\qquad\ \ 
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorder)\ \circ\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:stride}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s)\ \circ\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
-    &\qquad\big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:mem}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad \iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s\ )\ \circ\\
-    &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-    &\qquad\big) \circ \splitN\ 128
-  \end{aligned}
-%  
-\end{align*}
-\caption{reduce12 continued}
-\end{figure*}
 
 
 
@@ -806,137 +614,27 @@ reduce12: This is eq. to Listings 5.3.
 
 
 
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
-%
-  \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 8\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 8\ (\partRed\ (+)\ 0\ \circ \reorder)\ \big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0\ \circ \reorder) \circ \splitN\ 2)\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:reorder}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\ldots
-\end{align*}
-\caption{reduce13: This is eq. to Listings 5.4}
-\end{figure*}
-
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{.5em}\ldots\\
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:map}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}\&\ref{fig:low:red}}{=\hspace{.2em}}\\[-.75em]
-    &\qquad\ \ 
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorder)\ \circ\\
-    &\qquad\quad\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\ \circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:stride}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s)\ \circ\\
-    &\qquad\quad\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\quad\reorderStride\ 128\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:mem}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s\ )\ \circ\\
-    &\qquad\quad\join \circ \toLocal\ (\mapLocal\ (\partRed\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
-    &\qquad\quad\reorderStride\ 128\\
-    &\qquad\big) \circ \splitN\ 128
-  \end{aligned}
-%  
-\end{align*}
-\caption{reduce13 continued}
-\end{figure*}
 
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
     &=\hspace{.2em}
+%      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+%      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
+%      &\qquad \circ \iterateN\ (log_2\ wgSize)\ (\\
+%      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
+%      &\qquad\qquad \circ \reorderStride\ s\\
+%      &\qquad\quad)\\
+%      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
+%      &\qquad \circ \reorderStride\ wgSize\\
+%      &\qquad\big) \circ \splitN\ (2\times wgSize)
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-      &\qquad \circ \iterateN\ (log_2\ wgSize)\ (\\
-      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ s\\
-      &\qquad\quad)\\
-      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
-      &\qquad \circ \reorderStride\ wgSize\\
-      &\qquad\big) \circ \splitN\ (2\times wgSize)
+    &\qquad\quad\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ s\ )\ \circ\\
+    &\qquad\quad\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\reorderStride\ 128\\
+    &\qquad\big) \circ \splitN\ 128
   \end{aligned}
 \end{align}
 reduce13: This is eq. to Listing 5.4
@@ -949,199 +647,6 @@ reduce13: This is eq. to Listing 5.4
 
 
 
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
-%
-  \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 3\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{??}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\partRed\ (+)\ 0\ \circ \reorder)\ \big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0\ \circ \reorder) \circ \splitN\ 2)\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:reorder}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\ldots
-\end{align*}
-\caption{reduce14: This is eq. to Listings 5.5}
-\end{figure*}
-
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{.5em}\ldots\\
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{??}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0)\ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{??}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \iterateN\ 6\ (\partRed\ (+)\ 0)\ \big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{??}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \iterateN\ 6\ (\partRed\ (+)\ 0)\ \big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0\circ \reorder) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{??}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \iterateN\ 6\ (\join \circ \map\ (\partRed\ (+)\ 0\circ \reorder))\circ \splitN\ 2\ \big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{??}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \iterateN\ 6\ (\join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2\circ \reorder \big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\ldots
-\end{align*}
-\caption{reduce14: continued}
-\end{figure*}
-
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{.5em}\ldots\\
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{??}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\\
-    &\qquad\qquad\big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:low:mem}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-    &\qquad \circ \join \circ \mapWarp\ (\\
-    &\qquad\qquad\ \ \ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-    &\qquad\qquad \circ \reorderStride\ 1\\
-    &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-    &\qquad\qquad \circ \reorderStride\ 2\\
-    &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-    &\qquad\qquad \circ \reorderStride\ 4\\
-    &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-    &\qquad\qquad \circ \reorderStride\ 8\\
-    &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-    &\qquad\qquad \circ \reorderStride\ 16\\
-    &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-    &\qquad\qquad \circ \reorderStride\ 32\\
-    &\qquad\quad) \circ \splitN\ 64\\
-    &\qquad \circ \iterateN\ 1\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-    &\qquad\qquad \circ \reorderStride\ s\ )\\
-    &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
-    &\qquad \circ \reorderStride\ 128\\
-    &\qquad\big) \circ \splitN\ 256
-  \end{aligned}
-%  
-\end{align*}
-\caption{reduce14 continued}
-\end{figure*}
 
 
 \begin{align}
@@ -1149,57 +654,66 @@ reduce13: This is eq. to Listing 5.4
   &\hspace{-2em}\quad\begin{aligned}
     &=\hspace{.2em}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-      &\qquad \circ \join \circ \mapWarp\ (\\
-      &\qquad\qquad\ \ \ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 1\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 2\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 4\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 8\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 16\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 32\\
-      &\qquad\quad) \circ \splitN\ 64\\
-      &\qquad \circ \iterateN\ ((log_2\ wgSize) - (log_2\ 64))\ (\\
-      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ s\\
-      &\qquad\quad)\\
-      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
-      &\qquad \circ \reorderStride\ wgSize\\
-      &\qquad\big) \circ \splitN\ (2\times wgSize)
+    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad \join \circ \mapWarp\ (\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 32\\
+    &\qquad\quad) \circ \splitN\ 64\ \circ\\
+    &\qquad\quad \iterateN\ 1\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ s\ )\ \circ\\
+    &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ 128\\
+    &\qquad\big) \circ \splitN\ 256
   \end{aligned}
 \end{align}
 reduce14: This is eq. to Listing 5.5
 
+
+
+
+
+
+
+
+
+
+
+
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
     &=\hspace{.2em}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-      &\qquad \circ \join \circ \mapWarp\ (\\
-      &\qquad\qquad\ \ \ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 1\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 2\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 4\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 8\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 16\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad \circ \reorderStride\ 32\\
-      &\qquad\quad) \circ \splitN\ 64\\
-      &\qquad \circ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad \circ \reorderStride\ 64\\
-      &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\\
-      &\qquad \circ \reorderStride\ 128\\
-      &\qquad\big) \circ \splitN\ (2\times 128)
+    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad \join \circ \mapWarp\ (\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 32\\
+    &\qquad\quad) \circ \splitN\ 64\ \circ\\
+    &\qquad\quad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ 64\ \circ\\
+    &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ 128\\
+    &\qquad\big) \circ \splitN\ 256
   \end{aligned}
 \end{align}
 reduce15: This is eq. to Listing 5.6 (i.e. wgSize = 128)
@@ -1209,29 +723,49 @@ reduce15: This is eq. to Listing 5.6 (i.e. wgSize = 128)
   &\hspace{-2em}\quad\begin{aligned}
     &=\hspace{.2em}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\ \ \ \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-      &\qquad \circ \join \circ \mapWarp\ (\\
-      &\qquad\qquad\ \ \ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad\quad \circ \reorderStride\ 1\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad\quad \circ \reorderStride\ 2\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad\quad \circ \reorderStride\ 4\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad\quad \circ \reorderStride\ 8\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad\quad \circ \reorderStride\ 16\\
-      &\qquad\qquad \circ \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\qquad\quad \circ \reorderStride\ 32\\
-      &\qquad\quad) \circ \splitN\ 64\\
-      &\qquad \circ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\\
-      &\qquad\quad \circ \reorderStride\ 64\\
-      &\qquad \circ \join \circ\toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0))\\
-      &\qquad\quad \circ \reorderStride\ 128 \circ \splitN\ (blockSize/128)\\
-      &\qquad\big) \circ \splitN\ blockSize
+    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad \join \circ \mapWarp\ (\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\quad \reorderStride\ 32\\
+    &\qquad\quad) \circ \splitN\ 64\ \circ\\
+    &\qquad\quad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ 64\ \circ\\
+    &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0))\ \circ\\
+    &\qquad\qquad\splitN\ (blockSize/128)\ \circ \reorderStride\ 128\\
+    &\qquad\big) \circ \splitN\ blockSize
   \end{aligned}
 \end{align}
 reduce16: This is eq. to Listing 5.7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \paragraph{Example: Deriving a Fused Implementation}
 
