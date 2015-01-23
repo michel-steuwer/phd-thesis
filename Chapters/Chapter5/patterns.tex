@@ -28,7 +28,8 @@ The \iterateN pattern iteratively applies a function multiple times.
 Finally, the \reorder pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
 
 In the following we discuss each high-level algorithmic pattern in more detail including their formal definitions.
-As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism as our syntax for the patterns.
+As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism~\cite{} as our syntax for the patterns.
+\todo{add citation}
 
 In this chapter we are especially interested in how patterns can be composed and nested.
 As \emph{types} formally specify which compositions and nesting of patterns are legal, we will give the type of each pattern.
@@ -73,7 +74,7 @@ The same definition holds here.
 We repeat it here for completeness and add type information:
 \begin{definition}
   \label{definition:pattern:map}
-  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $f$ be a unary customizing function defined in elements.
   The \map pattern is then defined as follows:
   \begin{equation*}
@@ -93,21 +94,21 @@ In this chapter we represent matrices as nested arrays, therefore, performing an
 \begin{align*}
   mapMatrix\ f\ X &= \map\ (\map\ f)\ X
 \end{align*}
-Let us assume $X$ represents a $n\times m$ matrix with elements of type $\alpha$, its type is $\big[[\alpha]_m\big]_n$.
+Let us assume $X$ represents a $n\times m$ matrix with elements of type $\alpha$, then its type is $\big[[\alpha]_m\big]_n$.
 The outer \map applies its customizing function to every row of matrix $X$.
-The customizing function is defined by \emph{currying} \map and $f$, thus, producing a function which applies $f$ to every element of its argument vector.
+The customizing function is defined by \emph{currying} \map and $f$, thus, producing a function which applies $f$ to every element of its argument array.
 Therefore, $f$ will be applied to every element of matrix $X$.
 
 \paragraph{Reduce}
 The \reduce pattern (\aka, fold or accumulate) uses a given binary function $f$ to combine all elements of the input array.
 We require the function $f$ to be associative and commutativity which allows for an efficient parallel implementation.
-By requiring commutativity our system can also generate vectorized implementations of the reduction.
+By requiring commutativity our system can also generate vectorized implementations of the reduction and utilize the efficient coalesced memory access pattern, as we saw in \autoref{section:reduce:case-study}.
 In \autoref{chapter:skelcl} we defined \reduce as an algorithmic skeleton (see \autoref{definition:reduce}).
 The same definition holds here.
 We repeat it here for completeness and add type information:
 \begin{definition}
   \label{definition:pattern:reduce}
-  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\oplus$ be an associative and commutative binary customizing operator with the corresponding identity element \id.
   The \reduce pattern is then defined as follows:
   \begin{equation*}
@@ -130,7 +131,7 @@ The \zip pattern fuses two arrays into a single array of pairs.
 
 \begin{definition}
   \label{definition:pattern:zip}
-  Let $\vec{x}$ and $\vec{y}$ be vectors of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
+  Let $\vec{x}$ and $\vec{y}$ be arrays of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
   The \zip pattern is then defined as follows:
   \begin{equation*}
     \zip\ [x_1, x_2, \dots, x_n]\ [y_1, y_2, \dots, y_n]\\
@@ -160,7 +161,7 @@ We start with the definition of the \splitN pattern.
 \begin{definition}
   \label{definition:pattern:split}
   Let $n$ be an integer value.
-  Let $\vec{x}$ be a vector of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let us assume that $m$ is even divisible by $n$.
   The \splitN pattern is then defined as follows:
   \begin{align*}
@@ -171,7 +172,7 @@ We start with the definition of the \splitN pattern.
   \begin{align*}
     n &: int,\\
     \vec{x} &: [\alpha]_n,\\
-    \splitN\ n\ \vec{x} &: \big[[\alpha]_n\big]_{{}^m/_n}
+    \splitN\ n\ \vec{x} &: \big[[\alpha]_n\big]_{\frac{m}{n}}
   \end{align*}
 \end{definition}
 
@@ -185,8 +186,8 @@ We start with the definition of the \splitN pattern.
 The corresponding \join pattern does the opposite; it reassembles arrays of arrays by merging dimensions.
 \begin{definition}
   \label{definition:pattern:join}
-  Let $\vec{x}$ be a vector of size $\frac{m}{n}$ whose elements are vectors of size $n$.
-  We denote the elements of the $i$th inner vector as $x_{((i-1)\times n) + j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
+  Let $\vec{x}$ be an array of size $\frac{m}{n}$ whose elements are arrays of size $n$.
+  We denote the elements of the $i$th inner arrays as $x_{((i-1)\times n) + j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
   The \join pattern is then defined as follows:
   \begin{align*}
     &\join\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] \eqdef\\
@@ -201,7 +202,7 @@ The corresponding \join pattern does the opposite; it reassembles arrays of arra
 \end{definition}
 
 \noindent
-From these definitions follow, that the composition of $\splitN\ n$ and \join: $\join \circ \splitN\ n$ for any value $n$ yields back the same type and also does not change any element in the vector, \ie, it is equivalent to the identify function \emph{id}.
+From these definitions follow, that the composition of $\splitN\ n$ and \join: $\join \circ \splitN\ n$ for any value $n$ yields back the same type and also does not change any element in the array, \ie, it is equivalent to the identify function \emph{id}.
 
 These two patterns used together are similar to the split-join concept from data flow languages such as StreamIt~\cite{ThiesKaAm2002}.
 
@@ -213,7 +214,7 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
   \label{definition:pattern:iterate}
   Let $n$ be an integer value with $n \geq 0$.
   Let $f$ be a unary function.
-  Let $\vec{x}$ be a vector of arbitrary size.
+  Let $\vec{x}$ be an array of arbitrary size.
   We define the \iterateN pattern recursively:
   \begin{align*}
     \iterateN\ n\ f\ \vec{x} &\eqdef \iterateN\ (n-1)\ f\ (f\ \vec{x}),\\
@@ -226,7 +227,7 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
       \begin{aligned}[t]
         & \forall k \text{ and where } \\
         &F : (int\rightarrow int) \text{ describes the change}\\
-        &\text{of vector length when applying } f,
+        &\text{of array length when applying } f,
       \end{aligned}\\
     \vec{x} &: [\alpha]_m,\\
     \iterateN\ n\ f\ \vec{x} &: [\alpha]_{F^n(m)}
@@ -238,6 +239,7 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
 % After each iteration, we swap the pointers, so that the output of the last iteration becomes the input for the next one.
 % We automatically allocated and calculate memory requirements based on the information from the input and output type.
 \noindent
+\todo{say more}
 The type of the \iterateN pattern is interesting as its result type depends on the effect $f$ has on the size of its argument.
 
 %\begin{align}
@@ -250,7 +252,7 @@ The \reorder pattern is used to specify that the ordering of the elements of an 
 
 \begin{definition}
   \label{definition:pattern:reorder}
-  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\sigma$ be an arbitrary permutation of $[1,\ldots, n]$.
   The \reorder pattern is then defined as follows:
   \begin{align*}
@@ -274,6 +276,7 @@ This definition allows the implementation to pick any permutation to reorder the
 
 % Programming manycore CPU and GPU devices is difficult due to the need for managing parallelism, the memory hierarchy and other hardware specific features.
 In order to achieve the highest performance, programmers often use a set of rules of thumb to drive the optimization of their application.
+We extensively discussed one application example in \autoref{section:reduce:case-study}.
 Each hardware vendor provides optimization guides~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide} that extensively cover hardware particularities and optimizations.
 The main idea behind this work is to identify common optimization patterns and express them with the help of low-level patterns coupled with a rewrite-rule system.
 
@@ -291,6 +294,10 @@ The main idea behind this work is to identify common optimization patterns and e
      & Each \textbf{local work-item} of a work-group applies the given function to an element of the input array.\\ 
  \mapGlobal
      & Each \textbf{global work-item} applies the given function to an element of the input array.\\ 
+ \mapWarp
+     & Each \textbf{warp} applies the given function to an element of the input array.\newline Only available for Nvidia \GPUs.\\
+ \mapLane
+     & Each \textbf{work item inside a warp} applies the given function to an element of the input array.\newline Only available for Nvidia \GPUs.\\
  \mapSeq
       & Apply the given function to every element of the input array \textbf{sequentially}.\\
  \reduceSeq
@@ -345,7 +352,7 @@ For the high-level \reduce pattern we require the customizing binary function to
 As the \reduceSeq pattern performs a sequential reduction we can relax these requirements, therefore, we define \reduceSeq separately.
 \begin{definition}
   \label{definition:pattern:reduceSeq}
-  Let $\vec{x}$ be a vector of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\oplus$ be an binary customizing operator with the corresponding identity element \id.
   The \reduceSeq pattern is then defined as follows:
   \begin{equation*}
@@ -363,15 +370,15 @@ As the \reduceSeq pattern performs a sequential reduction we can relax these req
 
 
 \paragraph{Reorder-stride}
-The \reorderStride pattern enforces a special reordering of a vector.
-In our implementation no code is produces, but instead the reordering describes how the data is read from the vector.
+The \reorderStride pattern enforces a special reordering of an array.
+In our implementation no code is produces, but instead the reordering describes how the data is read from the array.
 The produced strided access pattern ensures that after splitting the workload, consecutive work-items access consecutive memory elements.
 This corresponds to \emph{coalesce memory accesses}, which are beneficial on modern \GPUs as discussed in \autoref{chapter:background}.
 
 \begin{definition}
   \label{definition:pattern:reorderStride}
   Let $s$ be an integer value.
-  Let $\vec{x}$ be a vector of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let us assume that $m$ is even divisible by $s$ and that $m = s\times n$ for some integer value $n$.
   The \reorderStride pattern is then defined as follows:
   \begin{align*}
@@ -409,7 +416,7 @@ First, we define \toLocal:
   \begin{align*}
     \toLocal\ f &\eqdef f',
     \begin{aligned}[t]
-      &\text{ where $f' \eqdef f$, and  $f'$ is guaranteed to store}\\
+      &\text{ where $f'\ x \eqdef f\ x$, $\forall x$, and  $f'$ is guaranteed to store}\\
       &\text{its result in local memory.}
     \end{aligned}
   \end{align*}
@@ -429,7 +436,7 @@ The definition of \toGlobal is correspondent:
   \begin{align*}
     \toGlobal\ f &\eqdef f',
     \begin{aligned}[t]
-      &\text{ where $f' \eqdef f$, and $f'$ is guaranteed to store}\\
+      &\text{ where $f'\ x \eqdef f\ x$, $\forall x$ and $f'$ is guaranteed to store}\\
       &\text{ its result in global memory.}
     \end{aligned}
   \end{align*}
@@ -472,7 +479,7 @@ We start by defining the \asVector pattern.
 \begin{definition}
   \label{definition:pattern:asVector}
   Let $n$ be an integer value.
-  Let $\vec{x}$ be a vector of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let us assume, that $m$ is evenly divisible by $n$.
   The \asVector pattern is then defined as follows:
   \begin{align*}
@@ -484,7 +491,7 @@ We start by defining the \asVector pattern.
   \begin{align*}
     n &: int\\
     \vec{x} &: [\alpha]_m,\\
-    \asVector\ n\ \vec{x} &: [\alpha_n]_{{}^m/_n}
+    \asVector\ n\ \vec{x} &: [\alpha_n]_{\frac{m}{n}}
   \end{align*}
   Here $\alpha$ is required to be a basic scalar type, \eg, \code{int} or \code{float}, and $\alpha_n$ denotes the vectorized version of that type with a vector width of $n$.
 \end{definition}
@@ -493,7 +500,7 @@ We start by defining the \asVector pattern.
 The corresponding \asScalar pattern is defined as follows.
 \begin{definition}
   \label{definition:pattern:asScalar}
-  Let $\vec{x}$ be a vector of size $\frac{m}{n}$ whose elements are of a vector type with vector width $n$.
+  Let $\vec{x}$ be an array of size $\frac{m}{n}$ whose elements are of a vector type with vector width $n$.
   We denote the individual vector elements of the $i$th element of $\vec{x}$ as $x_{((i-1)\times n)+j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
   The \asScalar pattern is then defined as follows:
   \begin{align*}
