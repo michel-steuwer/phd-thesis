@@ -561,8 +561,23 @@ But first we will discuss possible derivations for the parallel reduction.
 
 \subsubsection{Systematic Deriving Implementations of Parallel Reduction}
 
+In \autoref{section:reduce:case-study} we looked at implementations of the parallel reduction manually optimized for an Nvidia \GPU.
+In this subsection we want to resemble these implementations with corresponding expressions comprised of the patterns presented in \autoref{section:patterns}.
+The implementations presented in \autoref{lst:reduce0}--\autoref{lst:reduce6} are manual implementations where optimizations have been applied ad-hoc.
+The key difference to the implementations presented in this section is, that these are systematically derived from a single high-level expression using the rewrite rules introduced in this section.
+Therefore, these implementations can be generated systematically by an optimizing compiler.
+The rules guaranty that all derived expressions are semantically equivalent.
 
+Each \OpenCL low-level expression presented in this subsection is derived from the high-level expression \autoref{eq:reduceSum} expressing parallel summation:
+\begin{align}
+  vecSum = \reduce\ (+)\ 0
+  \label{eq:reduceSum}
+\end{align}
+%
+The formal derivations for all expression are shown in \autoref{chapter:AppendixA} in \autoref{section:derivations}.
 
+\paragraph{First Pattern-Based Expression}
+\autoref{eq:reduce11} shows our first expression implementing parallel reduction:
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
@@ -573,24 +588,24 @@ But first we will discuss possible derivations for the parallel reduction.
     &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
     &\qquad\big) \circ \splitN\ 128
   \end{aligned}
+  \label{eq:reduce11}
 \end{align}
-reduce10: This is eq. to Listings 5.1 \& Listings 5.2.
+%
+This expression closely resembles the structure of the first two implementations presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.
+First the input array is split into chunks of size 128 and each work-group processes such a chunk of data.
+128 corresponds to the work-group size we assumed for our implementations in \autoref{section:reduce:case-study}.
+Inside of a work-group each work-item first copies a single data item into the local memory using the \textit{id} function to perform a copy nested inside the $\toLocal$ pattern.
+Afterwards, the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$) the data is further divided into pairs of two elements which are reduced sequentially by the work-items.
+Finally, the computed result is copied back to the global memory.
+
+The first two implementations discussed in \autoref{section:reduce:case-study} are very similar and the only difference is which work-item remains active in the parallel reduction tree.
+Currently, we do not model this subtle difference in our patterns, therefore, we cannot create an expression which distinguishes between these two implementations.
+This is not a major drawback, because none of the three architectures favoured the first over the second implementation, as we saw in \autoref{section:reduce:case-study}.
+Therefore, on these three architectures it is always beneficial to choose the second over the first implementation, which is exactly what our \OpenCL code generator does as we will see in the next section.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+\paragraph{Avoiding Interleaved Addressing}
+\autoref{eq:reduce12} shows our second expression implementing parallel reduction:
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
@@ -604,21 +619,17 @@ reduce10: This is eq. to Listings 5.1 \& Listings 5.2.
       &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
       &\qquad\big) \circ \splitN\ 128
   \end{aligned}
+  \label{eq:reduce12}
 \end{align}
-reduce12: This is eq. to Listings 5.3.
+%
+This expression closely resembles the third implementation shown in \autoref{lst:reduce2}.
+The $\reorderStride$ pattern is used which makes local memory bank conflicts highly unlikely.
+Please note, that the pattern is used inside the $\iterateN$ pattern.
+Therefore, the stride changes in every iteration, which is expressed by referring to the size of the array in the current iteration.
 
 
-
-
-
-
-
-
-
-
-
-
-
+\paragraph{Increase Computational Intensity per Work-item}
+\autoref{eq:reduce13} shows our third expression implementing parallel reduction:
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
@@ -638,21 +649,17 @@ reduce12: This is eq. to Listings 5.3.
     &\qquad\qquad \reorderStride\ s\ )\ \circ\\
     &\qquad\quad\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
     &\qquad\qquad\reorderStride\ 128\\
-    &\qquad\big) \circ \splitN\ 128
+    &\qquad\big) \circ \splitN\ 256
   \end{aligned}
+  \label{eq:reduce13}
 \end{align}
-reduce13: This is eq. to Listing 5.4
+%
+This expression closely resembles the fourth implementation presented in \autoref{lst:reduce3}.
+By replacing the copy operation into the local memory with a reduction of two elements we increase the computational intensity per work-item.
+The first $\reorderStride$ pattern is used to ensure the coalesced memory access when accessing the global memory.
 
 
-
-
-
-
-
-
-
-
-
+\paragraph{Avoid Synchronization Inside a Warp}
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
@@ -679,6 +686,7 @@ reduce13: This is eq. to Listing 5.4
     &\qquad\qquad \reorderStride\ 128\\
     &\qquad\big) \circ \splitN\ 256
   \end{aligned}
+  \label{eq:reduce14}
 \end{align}
 reduce14: This is eq. to Listing 5.5
 
@@ -692,7 +700,7 @@ reduce14: This is eq. to Listing 5.5
 
 
 
-
+\paragraph{Complete Loop Unrolling}
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
@@ -719,9 +727,14 @@ reduce14: This is eq. to Listing 5.5
     &\qquad\qquad \reorderStride\ 128\\
     &\qquad\big) \circ \splitN\ 256
   \end{aligned}
+  \label{eq:reduce15}
 \end{align}
 reduce15: This is eq. to Listing 5.6 (i.e. wgSize = 128)
 
+
+
+
+\paragraph{Fully Optimized Implementation}
 \begin{align}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\nonumber\\
   &\hspace{-2em}\quad\begin{aligned}
@@ -748,6 +761,7 @@ reduce15: This is eq. to Listing 5.6 (i.e. wgSize = 128)
     &\qquad\qquad\splitN\ (blockSize/128)\ \circ \reorderStride\ 128\\
     &\qquad\big) \circ \splitN\ blockSize
   \end{aligned}
+  \label{eq:reduce16}
 \end{align}
 reduce16: This is eq. to Listing 5.7
 
