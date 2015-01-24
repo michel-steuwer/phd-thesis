@@ -17,6 +17,70 @@ Finally, we will give some details specifying which software infrastructure we u
 
 \subsection{Generating \OpenCL Code for Patterns}
 
+\begin{table}[t]
+\centering
+\begin{tabular}{llll}
+\toprule
+    \multicolumn{2}{c}{\tabhead{Algorithmic Patterns}}
+  & \multicolumn{2}{c}{\tabhead{\OpenCL Patterns}}\\
+\midrule
+ \map &
+  \textbf{\zip} &
+    \textbf{\mapWorkgroup} &
+      \textbf{\reduceSeq}\\
+ \reduce&
+  \textbf{\splitN}&
+    \textbf{\mapLocal}&
+      \textbf{\toLocal}\\
+ \reorder&
+  \textbf{\join} &
+    \textbf{\mapGlobal}&
+      \textbf{\toGlobal}\\
+ &
+  \textbf{\iterateN} &
+    \textbf{\mapWarp}&
+      \textbf{\reorderStride}\\
+ & &
+    \textbf{\mapLane} &
+      \textbf{\asVector}\\
+ & & \textbf{\mapSeq} &
+        \textbf{\asScalar}\\
+ & & & \textbf{\vect}\\
+\bottomrule
+\end{tabular}
+\caption{Overview of all algorithmic and \OpenCL patterns.}
+\label{fig:patterns:generation}
+\end{table}
+
+\autoref{fig:patterns:generation} shows all patterns introduced in \autoref{section:patterns}.
+The code generator does not know how to generate \OpenCL code for all patterns, for example are there many different options to implement the \reduce pattern in \OpenCL, as we discussed in \autoref{section:reduce:case-study}.
+Therefore, the code generator would have to make a choice which implementation to pick.
+We want to avoid such situations, as these complicates the implementation of the code generator and limits its flexibility and the performance of the generated code.
+In our approach this decision about the implementation of \reduce has to be made before the code generator is invoked by applying the rewrite rules presented in \autoref{section:rules} which allow to safely derive specialized low-level implementations from high-level expressions.
+
+The code generator generates code only for the patterns highlighted in bold in \autoref{fig:patterns:generation} (all patterns in the last three columns).
+The three patterns in the first column: \map, \reduce, and \reorder have to be eliminated from an expression before the code generation process can begin.
+
+We will now discuss the code generation process for all highlighted patterns from \autoref{fig:patterns:generation} in more detail.
+
+\paragraph{Zip}
+
+\paragraph{Split and Join}
+
+\paragraph{Iterate}
+
+\paragraph{Parallel OpenCL Maps}
+
+\paragraph{Sequential Map and Reduction}
+
+\paragraph{{\footnotesize to}Local and {\footnotesize to}Global}
+
+\paragraph{Reorder-Stride}
+
+\paragraph{{\footnotesize as}Vector, {\footnotesize as}Scalar, and Vectorize}
+
+
+
 \subsection{The Type System}
 
 \subsection{Implementation Details}
