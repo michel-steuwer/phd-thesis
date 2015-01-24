@@ -27,17 +27,8 @@ Then we will give an overview of our approach and present it in more detail in t
 
 \input{Chapters/Chapter5/rules.tex}
 
-\section{Code Generator \& Implementation Details}
+\input{Chapters/Chapter5/generator.tex}
 
-Our system is implemented in \Cpp, using the template system and support for lambda functions. 
-When generating code for a given low-level expression, two basic steps are performed.
-First, we use the Clang/LLVM compiler infrastructure to parse the expression and produce an abstract syntax tree for it.
-Second, we traverse the tree and emit code for every function call representing one of our low-level hardware patterns.
-
-As part of the first step, we have developed a type system which plays a dual role.
-Firstly, it prevents the user, or a rewrite rule, to produce an expression that is not correct.
-Secondly, the type system encodes informations that are necessary for code generation, such as memory address space and array size information, which are used to allocate memory.
-
-The design of our code generator is straightforward since no optimization decisions are made at this stage.
-We avoid performing complex analysis of the code which makes our design very different compared to traditional optimizing compilers.
+\section{Summary}
+\todo{List contributions and benefits of using the pattern code generator approach}
 

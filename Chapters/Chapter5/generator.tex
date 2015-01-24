@@ -1,0 +1,34 @@
+
+\section{Code Generator \& Implementation Details}
+In this section we discuss how an low-level expression comprising of patterns from \autoref{section:patterns} and possibly derived using the rewrite rules from \autoref{section:rules} is turned into \OpenCL code.
+We will see, that this process is surprisingly simple and straightforward.
+This is due to the fact, that all complex decisions regarding optimizations are made at an earlier stage: when applying the rewrite rules.
+This design was chosen deliberately and follows the principle of separation of concerns and keeps the implementation of the code generator simple.
+The expression used as input for the code generator explicitly specifies every important detail of the generated \OpenCL implementation, so that for every expression there is a one-to-one mapping to \OpenCL code.
+
+We will start our discussion by looking back at the patterns defined in \autoref{section:patterns} and how \OpenCL code is generated for them.
+We will see, that there are patterns for which it is not possible to generate \OpenCL code.
+These expressions do not specify the \OpenCL implementation detailed enough.
+We can use the rewrite rules presented in \autoref{section:rules} to transform the expression until, finally, the expression is precise enough for the code generator.
+
+We then shift our focus to the implementation of the type system and how this helps to implement a static memory allocator.
+
+Finally, we will give some details specifying which software infrastructure we used in our implementation.
+
+\subsection{Generating \OpenCL Code for Patterns}
+
+\subsection{The Type System}
+
+\subsection{Implementation Details}
+Our system is implemented in \Cpp, using the template system and support for lambda functions. 
+When generating code for a given low-level expression, two basic steps are performed.
+First, we use the Clang/LLVM compiler infrastructure to parse the expression and produce an abstract syntax tree for it.
+Second, we traverse the tree and emit code for every function call representing one of our low-level hardware patterns.
+
+As part of the first step, we have developed a type system which plays a dual role.
+Firstly, it prevents the user, or a rewrite rule, to produce an expression that is not correct.
+Secondly, the type system encodes informations that are necessary for code generation, such as memory address space and array size information, which are used to allocate memory.
+
+The design of our code generator is straightforward since no optimization decisions are made at this stage.
+We avoid performing complex analysis of the code which makes our design very different compared to traditional optimizing compilers.
+
