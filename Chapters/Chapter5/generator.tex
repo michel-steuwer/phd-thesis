@@ -16,6 +16,8 @@ We then shift our focus to the implementation of the type system and how this he
 Finally, we will give some details specifying which software infrastructure we used in our implementation.
 
 \subsection{Generating \OpenCL Code for Patterns}
+When generating \OpenCL code from an expression composed of patterns the code generator traverses the expression.
+It follows the data flow and emits code for each pattern it visits.
 
 \begin{table}[t]
 \centering
@@ -64,14 +66,163 @@ The three patterns in the first column: \map, \reduce, and \reorder have to be e
 We will now discuss the code generation process for all highlighted patterns from \autoref{fig:patterns:generation} in more detail.
 
 \paragraph{Zip}
+The code generator emits no \OpenCL code for the \zip pattern.
+Instead \zip's type has an effect how code for following patterns is generated.
+Let us look at the following example, where the \zip and \mapGlobal patterns are used together:
+\begin{align}
+  \map\ (+)\ (\zip\ \vec{x}\ \vec{y})
+\end{align}
+When processing this expression the \zip pattern is visited first.
+The type of \zip makes it explicit to the code generator that, when emitting code for the following \mapGlobal, two elements -- one element from each array -- have to be read together.
+In the implementation the code generator will investigate the type of the input array before emitting code for the \mapGlobal.
 
 \paragraph{Split and Join}
+Similar to the \zip pattern no \OpenCL code is emitted for neither \splitN nor \join.
+By encoding the size of arrays in the type system the information how the data was shaped by the \splitN and \join patterns is passed to following patterns.
+This information is used later when generating the \OpenCL code for performing \OpenCL memory accesses. 
+We will discuss the type system implementation in more detail in \autoref{section:typeSystem}.
 
 \paragraph{Iterate}
+\autoref{lst:iterate:impl} shows the structure of the \OpenCL code generated for the \iterateN pattern.
+%
+\begin{lstlisting}[%                                                             
+caption={Structure of the \OpenCL code emitted for the \iterateN pattern.},%
+numbers=left,%
+float=tb,
+label={lst:iterate:impl}]
+int size = 128;
+local float* in = array0;
+local float* out = ((7 & 1) != 0) ? array1 : array2;
+for (int i = 0; i < 7; i +=1) {$\label{lst:iterate:impl:for}$
+  ... // code emitted for nested pattern$\label{lst:iterate:nested}$
+  in  = (out == array2) ? array2 : array1;$\label{lst:iterate:impl:in}$
+  out = (out == array2) ? array2 : array1;$label{lst:iterate:impl:out}$
+  size = size / 2;$\label{lst:iterate:impl:size}$
+}
+\end{lstlisting}
+%
+This code segment is actually taken from the parallel reduction example discussed in \autoref{eq:reduce11}.
+A for loop is generated (line~\ref{lst:iterate:impl:for}) for performing the actual iterations.
+Two pointers (\code{in} and \code{out}) are swapped after each iteration (lines~\ref{lst:iterate:impl:in} and~\ref{lst:iterate:impl:out}) and used in the code generated for the nested pattern which is emitted inside the body of the for loop (line~\ref{lst:iterate:nested}).
+Because this code segment is taken from the parallel reduction example, the \code{size} variable, which represents the size of the current input array, is reduced by half after each iteration step (line~\ref{lst:iterate:impl:size}).
 
 \paragraph{Parallel OpenCL Maps}
+The generation of \OpenCL code for one of the \map patterns: \mapWorkgroup, \mapLocal, \mapGlobal, \mapWarp, and \mapLane is rather straightforward.
+
+\autoref{lst:mapWG:impl} shows the structure of the \OpenCL code generated for the \mapWorkgroup pattern.
+%
+\begin{lstlisting}[%                                                             
+caption={Structure of the \OpenCL code emitted for the \mapWorkgroup pattern.},%
+numbers=left,%
+float=tb,
+label={lst:mapWG:impl}]
+for (int wg_id = get_group_id(0); wg_id < size;
+     wg_id += get_num_groups(0)) {
+  ... // code emitted for nested pattern
+}
+return;
+\end{lstlisting}
+%
+A for loop is emitted where the loop variable (\code{wg\_id}) represents the work-group id in \OpenCL.
+The loop variable is used by the nested pattern inside the loop to ensure that the correct index is accessed in memory.
+After the for loop an synchronization mechanism is emitted, in this case \code{return}.
+As global synchronization between work-items is not possible in a single kernel in \OpenCL, the only way for global synchronization is to terminate the \OpenCL kernel and continue the processing in a new one. 
+
+\autoref{lst:mapLocal:impl} shows the \OpenCL code generated for the \mapLocal pattern.
+%
+\begin{lstlisting}[%                                                             
+caption={Structure of the \OpenCL code emitted for the \mapLocal pattern.},%
+numbers=left,%
+float=tb,
+label={lst:mapLocal:impl}]
+for (int l_id_id = get_local_id(0); l_id < size;
+     l_id += get_local_size(0)) {
+  ... // code emitted for nested pattern
+}
+barrier(CLK_LOCAL_MEM_FENCE);
+\end{lstlisting}
+%
+Here the \OpenCL \code{get\_local\_id(0)} function is used to obtain the id of the work-item inside the work-group.
+The \code{barrier} function is used for synchronization.
+
+The \OpenCL code emitted for \mapGlobal, \mapWarp, and \mapLane is similar reflecting the specific way of obtaining the loop variable and synchronization mechanism in \OpenCL.
+As there is no synchronization required between work-item of a single warp, the \mapLane pattern emits no synchronization statement.
 
 \paragraph{Sequential Map and Reduction}
+The \OpenCL implementations of the sequential \mapSeq and \reduceSeq patterns are shown in \autoref{lst:mapSeq:impl} and \autoref{lst:redSeq:impl}.
+%
+\begin{lstlisting}[%                                                             
+caption={Structure of the \OpenCL code emitted for the \mapSeq pattern.},%
+numbers=left,%
+float=tb,
+label={lst:mapSeq:impl}]
+for (int i = 0; i < size; ++i) {
+  output[out_index] = f(input[in_index]);
+}
+\end{lstlisting}
+%
+%
+\begin{lstlisting}[%                                                             
+caption={Structure of the \OpenCL code emitted for the \reduceSeq pattern.},%
+numbers=left,%
+float=tb,
+label={lst:redSeq:impl}]
+float acc = 0.0f;
+for (int i = 0; i < size; ++i) {
+  acc = f(acc, input[in_index]);
+}
+output[out_index] = acc;
+\end{lstlisting}
+%
+Both implementations are straightforward.
+The \mapSeq implementation applies its customizing function to each element of the input array and stores the outputs in an output array.
+The \reduceSeq implementation uses an accumulation variable to accumulate the result of the reduction while it iterates through the input array.
+After the for loop the result is stored in the output array.
+
+The most complicated bit is the generation of the input and output indices: \code{in\_index} and \code{out\_index}.
+To understand how this works let us investigate an example which combines the previous code segments.
+\autoref{lst:mapTogether:impl} shows the code generated for the expression:
+\begin{align*}
+  &\join \circ \mapWorkgroup\ \big(\\
+  &\qquad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\big) \circ \splitN\ 128
+\end{align*}
+%
+\begin{lstlisting}[%                                                             
+caption={Structure of the \OpenCL code emitted for the \mapLocal pattern.},%
+numbers=left,%
+float=tb,
+label={lst:mapTogether:impl}]
+for (int wg_id = get_group_id(0); wg_id < size / 128;
+     wg_id += get_num_groups(0)) {
+  for (int l_id_id = get_local_id(0); l_id < 128;
+       l_id += get_local_size(0)) {
+    for (int i = 0; i < 1; ++i) {
+      output[wg_id * 128 + l_id + i]$\label{lst:mapTogether:impl:output}$
+        = id(input[wg_id * 128 + l_id + i]);$\label{lst:mapTogether:impl:input}$
+    }
+  }
+  barrier(CLK_LOCAL_MEM_FENCE);
+}
+return;
+\end{lstlisting}
+%
+The input and output indices (line~\ref{lst:mapTogether:impl:output} and~\ref{lst:mapTogether:impl:input})
+
+\begin{lstlisting}[%                                                             
+caption={Structure of the \OpenCL code emitted for the \mapLocal pattern.},%
+numbers=left,%
+float=tb,
+label={lst:mapTogether:impl2}]
+for (int wg_id = get_group_id(0); wg_id < size / 128;
+     wg_id += get_num_groups(0)) {
+  int l_id = get_local_id(0);
+  output[wg_id * 128 + l_id + 0]
+    = id(input[wg_id * 128 + l_id + 0]);
+  barrier(CLK_LOCAL_MEM_FENCE);
+}
+return;
+\end{lstlisting}
+
 
 \paragraph{{\footnotesize to}Local and {\footnotesize to}Global}
 
@@ -81,7 +232,8 @@ We will now discuss the code generation process for all highlighted patterns fro
 
 
 
-\subsection{The Type System}
+\subsection{The Type System and Static Memory Allocation}
+\label{section:typeSystem}
 
 \subsection{Implementation Details}
 Our system is implemented in \Cpp, using the template system and support for lambda functions. 
