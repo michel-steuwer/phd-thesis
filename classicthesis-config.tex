@@ -496,3 +496,13 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 
 \newcommand\tikzmark[1]{\tikz[remember picture,overlay]\node (#1) {};}
 
+
+\definecolor{firstColor}{HTML}{FEF0D9}
+\definecolor{secondColor}{HTML}{FDCC8A}
+\definecolor{thirdColor}{HTML}{FC8D59}
+\definecolor{fourthColor}{HTML}{D7301F}
+\newcommand{\firstBox}{\tikz[baseline=0.25em]{\filldraw[fill=firstColor,   draw=black] (0,0) rectangle (.3,.3);}}
+\newcommand{\secondBox}{\tikz[baseline=0.25em]{\filldraw[fill=secondColor, draw=black] (0,0) rectangle (.3,.3);}}
+\newcommand{\thirdBox}{\tikz[baseline=0.25em]{\filldraw[fill=thirdColor,   draw=black] (0,0) rectangle (.3,.3);}}
+\newcommand{\fourthBox}{\tikz[baseline=0.25em]{\filldraw[fill=fourthColor, draw=black] (0,0) rectangle (.3,.3);}}
+

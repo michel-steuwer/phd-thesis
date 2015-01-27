@@ -3,23 +3,33 @@
 \label{section:reduce:case-study}
 To understand the problems of performance and portability in the context of modern parallel processors we will study a simple application example: parallel reduction.
 This discussed is based on the presentation \emph{``Optimizing Parallel Reduction in CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
-Optimization guidelines like this exist from every hardware vendor giving application developers advice on how to most efficiently exploit their hardware~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide}.
+Optimization guidelines like this exist from every hardware vendor giving developers advice on how to most efficiently exploit their hardware~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide}.
 
 In \autoref{chapter:skelcl} we saw that we can express a parallel reduction using a single algorithmic skeleton: \reduce.
 Here we look at how efficient \OpenCL implementations of this algorithm, or more precisely the parallel summation of an array, look like.
 We are especially interested in gradually optimizing this application to see how beneficial the single optimization steps are and how they change the source code.
 
-We will first start by looking at the implementation and optimizations on one particular hardware architecture, using Nvidia's Fermi \GPU architecture as our example.
+We will first start by looking at the implementation and optimizations on one particular hardware architecture, using a Nvidia \GPU as our example.
 Then we will see how the optimized implementations perform on an AMD \GPU and Intel \CPU, to evaluate their portability.
 Finally, we will use our observations to motivate the need for a pattern-based code generator for achieving performance portability.
 
 
 \subsection{Optimizing parallel reduction for a Nvidia \GPU}
 For implementing the parallel summation of an array an approach using two \OpenCL kernels is used.
-The first \OpenCL kernel is executed in parallel by multiple \OpenCL work-groups, each producing a temporary result, then the second \OpenCL kernel is executed by a single \OpenCL work-group producing the final result.
+The first \OpenCL kernel is executed in parallel by multiple \OpenCL work-groups, as shown in \autoref{fig:reduce:tree}.
+Each work-group produces a temporary result, then the second \OpenCL kernel is executed by a single \OpenCL work-group producing the final result.
 This strategy is applied as global synchronization, \ie, synchronization across work-groups, is prohibited in \OpenCL.
 By using the two kernel approach massive parallelism can be exploited in the first phase as multiple work-groups operate concurrently on independent parts of the input array.
 The synchronization inside the second work-group ensures correctness when computing the final result.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=.75\linewidth]{ReduceTree}
+  \caption{The first \OpenCL kernel is executed by four work-groups in parallel:
+    \protect\firstBox{}~work-group $0$, \protect\secondBox{}~work-group $1$, \protect\thirdBox{}~work-group $2$, \protect\fourthBox{}~work-group $3$.
+           The second \OpenCL kernel is only executed by the first work-group.}
+  \label{fig:reduce:tree}
+\end{figure}
 
 We will follow the methodology in~\cite{Harris2007} and evaluate the performance of the different versions using the measured memory bandwidth as our metric.
 This is reasonable as the reduction has a very low arithmetic intensity and its performance is, therefore, bound by the available memory bandwidth.
@@ -29,8 +39,8 @@ All following implementations are provided by Nvidia as part of their software d
 
 \paragraph{First \OpenCL implementation}
 \autoref{lst:reduce0} shows the first, basic version of the parallel reduction in \OpenCL.
-This will be our starting point for the following optimizations.
-In this implementation each work-item first loads an element into the local memory (line~\ref{lst:reduce0:load}).
+% This will be our starting point for the following optimizations.
+First each work-item loads an element into the local memory (line~\ref{lst:reduce0:load}).
 After a synchronization (line~\ref{lst:reduce0:firstBarrier}) all work-items of a work-group execute a for loop (lines~\ref{lst:reduce0:for:start}--\ref{lst:reduce0:for:end}) to perform a collective tree-based reduction.
 In every iteration the if statement (line~\ref{lst:reduce0:if}) ensures that a declining number of work-items remain active performing partial reductions in the shrinking reduction tree.
 The second barrier in line~\ref{lst:reduce0:for:end} ensures that no race conditions occurs when accessing the shared local memory.
@@ -59,13 +69,11 @@ void reduce0(global float* g_idata, global float* g_odata,
   unsigned int i   = get_global_id(0);
   l_data[tid] = (i < n) ? g_idata[i] : 0;$\label{lst:reduce0:load}$
   barrier(CLK_LOCAL_MEM_FENCE);$\label{lst:reduce0:firstBarrier}$
-
   // do reduction in local memory
   for(unsigned int s=1; s < get_local_size(0); s *= 2) {$\label{lst:reduce0:for:start}$
     if ((tid % (2*s)) == 0) {$\label{lst:reduce0:if}$
       l_data[tid] += l_data[tid + s]; }
     barrier(CLK_LOCAL_MEM_FENCE); }$\label{lst:reduce0:for:end}$
-
   // write result for this work-group to global memory
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }$\label{lst:reduce0:writeBack}$
 \end{lstlisting}
