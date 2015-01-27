@@ -464,7 +464,7 @@ Using this approach no dynamic memory allocation is required in our approach, so
 We currently do not perform any analysis to reuse memory objects, \ie, each pattern is assigned a newly allocated output array, even though, arrays could be reused.
 In \autoref{lst:reduce11} three local memory arrays (\code{sdata1}, \code{sdata2}, and \code{sdata3}) are used, where only a single array was used in the original \OpenCL implementation.
 In the future, we want to apply strategies to reuse memory and, thus, reduce the overall memory footprint.
-We intend to apply well understood algorithms which are used for register allocation in compilers, like graph coloring~\cite{}.
+We intend to apply well understood algorithms which are used for register allocation in compilers, like graph coloring~\cite{CooperTo2004}.
 
 \subsection{Implementation Details}
 Our system is implemented in \Cpp, using the template system and support for lambda functions. 
