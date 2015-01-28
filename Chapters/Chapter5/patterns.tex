@@ -401,7 +401,7 @@ This corresponds to \emph{coalesce memory accesses}, which are beneficial on mod
 %Our design is general enough to supports user-defined index functions as well, which we will add in the future.
 %The type of \pat{reorder-stride} corresponds to the type of the high-level \pat{reorder} pattern.
 
-\paragraph{toLocal and toGlobal}
+\paragraph{{\footnotesize to}Local and {\footnotesize to}Global}
 The \toLocal and \toGlobal patterns are used to determine where the result of a given function $f$ should be stored.
 As explained in more detail in \autoref{chapter:background}, \OpenCL defines two distinct address spaces: global and local.
 Global memory is the commonly used large but slow memory.
@@ -463,7 +463,7 @@ The definition of \toGlobal is correspondent:
 %\end{align}
 
 
-\paragraph{Vectorize and asVector/asScalar}
+\paragraph{{\footnotesize as}Vector, {\footnotesize as}Scalar, and Vectorize}
 The \OpenCL programming model supports vector data types such as \code{float4} where any operations on this type will be executed in the hardware vector units.
 In the absence of vector units in the hardware, the \OpenCL compiler scalarizes the code automatically.
 
