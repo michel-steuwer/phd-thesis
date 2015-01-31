@@ -199,8 +199,13 @@ asum xs   = reduce add 0 (map abs xs)
 dot xs ys = reduce add 0 (map mult (zip xs ys))
 
 gemv A xs ys a b =
-  zs = map (scal a $\circ$ dot xs) A
-  map add (zip zs (scal b ys))
+  map (
+    \ (Ar, y) ->
+      map add (zip
+        (scal a $\circ$ dot xs Ar)
+        scal b y
+      )
+  ) (zip A ys)
 \end{lstlisting}
 
 
