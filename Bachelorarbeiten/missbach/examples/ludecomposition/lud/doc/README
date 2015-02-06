@@ -1,0 +1,9 @@
+AMD APP SDK: Accelerated Parallel Processing (APP) SDK
+http://developer.amd.com/tools/heterogeneous-computing/amd-accelerated-parallel-processing-app-sdk/, 19.02.2013.
+
+APP SDK sample can be found at:
+	/path/to/amdstream/samples/opencl/bin/x86_64/
+	/path/to/amdstream/samples/opencl/cl/app/LUDecomposition/
+
+Example execution:
+	./LUDecomposition -x 4000 -t -q -p 0 -d 0

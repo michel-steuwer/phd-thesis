@@ -1,0 +1,1 @@
+Das Programm wurde so geschrieben, das sowohl die SkelCL Implementierung als auch die OpenCL Implementierung aufgerufen werden kann. Soll die OpenCL Implementierung aufgerufen werden, muss -o als Kommandozeilenparameter mit angegeben werden.

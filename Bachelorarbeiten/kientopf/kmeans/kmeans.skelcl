@@ -1,0 +1,30 @@
+#ifndef FLT_MAX
+#define FLT_MAX 3.40282347e+38
+#endif
+
+int func(Index index, float_matrix_t feature_matrix, int nclusters, int nfeatures, float_matrix_t cluster_matrix)
+{
+	float min_dist=FLT_MAX;
+	int ind = 0;
+	float dist;
+	float ans;
+	float hlp;
+
+	for (int i=0; i < nclusters; i++) 
+	{
+		ans  = 0;
+		
+		for (int l=0; l<nfeatures; l++)
+		{
+			hlp = get(feature_matrix, index, l) - get(cluster_matrix, i, l);
+			ans += hlp * hlp;
+		}
+		dist = ans;
+		if (dist < min_dist) 
+		{
+			min_dist = dist;
+			ind    = i;
+		}
+	}
+	return ind;
+}

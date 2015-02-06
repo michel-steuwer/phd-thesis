@@ -1,0 +1,11 @@
+Um die SkelCL Implementierungen des K-Means- und Needleman-Wunsch- Algorithmus auszuführen, wird eine lauffähige SkelCL-Bibliothek benötigt. Ist diese unter SKELCL_HOME installiert, müssen die beiden Archive kmeans.zip und nw.zip nach SKELCL_HOME/examples/ entpackt werden. Anschließend muss die Datei SKELCL_HOME/examples/CMakeLists.txt um folgende Einträge ergänzt werden:
+
+add_subdirectory (kmeans)
+add_subdirectory (nw)
+
+Mit folgenden Befehlen werden die Programme kompiliert:
+
+mkdir build
+cd build
+cmake SKELCL_HOME
+make

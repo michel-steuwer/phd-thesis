@@ -1,0 +1,9 @@
+AMD APP SDK: Accelerated Parallel Processing (APP) SDK
+http://developer.amd.com/tools/heterogeneous-computing/amd-accelerated-parallel-processing-app-sdk/, 19.02.2013.
+
+APP SDK sample:
+	/path/to/amdstream/samples/opencl/bin/x86_64/
+	/path/to/amdstream/samples/opencl/cl/app/MersenneTwister/
+
+Example execution:
+	./MersenneTwister -x 10000000 -y 8 -i 20 -t -q -p 2 -d 0

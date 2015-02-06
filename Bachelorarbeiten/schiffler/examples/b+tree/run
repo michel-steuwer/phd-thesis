@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if ! [ -d ./data ]
+then
+    echo "Creating data directory"
+    mkdir ./data
+fi
+
+if ! [ -f "./data/mil_odd.txt" ]
+then
+    echo "Creating data/mil_odd.txt"
+    echo "1000000" > ./data/mil_odd.txt
+    seq 1 2 2000000 >> ./data/mil_odd.txt
+fi
+
+if ! [ -f "./data/command_65k.txt" ]
+then
+    echo "Creating data/command_65k.txt"
+    echo "k 65000" > ./data/command_65k.txt
+fi
+
+echo ""
+echo "-----------------------------------------------------"
+echo "STARTING OPENCL VERSION -----------------------------"
+echo "-----------------------------------------------------"
+rm ./output_opencl.txt 2> /dev/null
+./b+tree_opencl file ./data/mil_odd.txt command ./data/command_65k.txt
+
+echo ""
+echo "-----------------------------------------------------"
+echo "STARTING SKELCL VERSION -----------------------------"
+echo "-----------------------------------------------------"
+rm ./output_skelcl.txt 2> /dev/null
+./b+tree_skelcl file ./data/mil_odd.txt command ./data/command_65k.txt
+
+echo ""
+echo "-----------------------------------------------------"
+echo "COMPARING OUTPUT ------------------------------------"
+echo "-----------------------------------------------------"
+if [ ! -f "./output_opencl.txt" ] || [ ! -f "./output_skelcl.txt" ]
+then
+    echo "Cannot find output files"
+else
+    if diff ./output_opencl.txt ./output_skelcl.txt > /dev/null
+    then
+	echo "Pass"
+    else
+	echo "Error: output files are different"
+    fi
+fi
+echo ""
