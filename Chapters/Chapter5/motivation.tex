@@ -447,7 +447,7 @@ Each of these libraries is implemented and provided by the corresponding hardwar
 \end{subfigure}\\
 \begin{subfigure}{\linewidth}
   \includegraphics[width=.85\linewidth]{Plots/Reduction/reduce_intel}
-    \caption{Dual-socket machine using Intel's E5530 \CPU.}
+    \caption{Intel's E5530 dual-socket \CPU.}
   \label{fig:reduce:intel}
 \end{subfigure}
   \caption{Performance of differently optimized implementations of the parallel reduction.}
@@ -463,44 +463,45 @@ Some implementations actually produce incorrect results on the Intel \CPU due to
 Interestingly, this optimization happens to be valid on AMD's \GPU architecture as well, as there exists a similar concept to warps called \emph{wavefronts}~\cite{AMDGCN2012}.
 
 \paragraph{Portability of Relative Performance}
-The achieved \emph{relative performance} differs widely across architectures as well.
 \emph{Relative performance} refers to the performance of an implementation relative to the best theoretical or practical performance possible on the same hardware architecture.
 The theoretical performance of an architecture is given by its hardware limitations, like the number of arithmetic logical units, the width of the memory bus, or the maximum clock frequency.
 Practical issues like work load and utilization or the cache miss rate are ignored.
 Possible metrics for measuring the theoretical performance are number of floating point operation in GFLOP/s or the memory bandwidth in GB/s.
 
-The best practical performance can be measured by comparison with the best possible implementation available for a particular hardware platform.
+The best practical performance is measured by comparison with the best possible implementation available for a particular hardware platform.
 It is, obviously, not always possible to determine which implementation is the best.
 Here we consider the BLAS library implementations tuned by the respective hardware vendors as the best available.
 
+\todo{sg: Fig 5.2??}
 By looking at the relative performance we can compare how well optimizations apply across different hardware architectures.
+The \emph{relative performance} achieved differs widely across architectures.
 
-On the Nvidia \GPU the best optimized implementation achieves 83.3\% of the performance of the vendor provided cuBLAS implementation and utilizes 65.4\% of the theoretical peak memory bandwidth.
+On the Nvidia \GPU, the best optimized implementation achieves 83.3\% of the performance of the vendor-provided cuBLAS implementation and utilizes 65.4\% of the theoretical peak memory bandwidth.
 
-On the AMD \GPU the gap between the manual and library implementation is much larger:
+On the AMD \GPU, the gap between the manual and library implementation is much larger:
 the manually optimized implementation achieves only 41.3\% of the clBLAS library implementation.
 Only 32.4\% of the theoretical peak memory bandwidth is achieved.
 
-On the Intel \CPU implementation~4 achieves just 16.6\% of the MKL performance.
+On the Intel \CPU, implementation~4 achieves only 16.6\% of the MKL performance.
 That means, that MKL is over 5 times faster than the best of the discussed implementations.
 The hardware bandwidth limit is only utilized to 8.6\%.
-Interestingly, does the MKL implementation also only provides 43.8\% of the maximum memory bandwidth.
+Interestingly, the MKL implementation also only provides 43.8\% of the maximum memory bandwidth.
 This is due to the combination of the implementation of the parallel reduction in MKL and the particular machine used in this experiment.
-The test machine used is configures as a dual-socket machine, \ie, two E5530 \CPUs each with their own memory controller are available.
+The test machine used is configured as a dual-socket machine, \ie, two E5530 \CPUs each with their own memory controller are available.
 Therefore, the hardware bandwidth available is doubled as compared to a single E5530 \CPU.
-While the implementation of the parallel reduction in the MKL library is optimized using vector instructions it does not exploit thread-level parallelism.
+While the implementation of the parallel reduction in the MKL library is optimized using vector instructions, it does not exploit thread-level parallelism.
 Therefore, the second E5530 \CPU can not be used by the implementation, thus, limiting the available bandwidth by a factor of 2.
 
 \paragraph{Conclusions}
-Studying the performance of these optimizations on different hardware architectures gained some interesting insides.
+Studying the performance of the optimizations presented in~\cite{Harris2007} on different hardware architectures gained some interesting insides.
 First, optimizations are not portable across hardware architectures and can even result in incorrect programs on some architectures.
-Second, the relative performance achieved with optimizations on the one architecture is not achieved on other hardware architectures as well.
-This let us conclude, that when using \OpenCL or similar low-level approaches performance is \emph{not} portable.
+Second, the relative performance achieved with optimizations on one architecture is not always achieved on other hardware architectures as well.
+This let us conclude that performance is \emph{not} portable when using \OpenCL or similar low-level approaches.
 
-As a positive result we can see from the results shown in \autoref{fig:reduce:overview}, that there exists implementations on the other hardware architectures which offer similar relative performance as the most optimized implementation on the Nvidia \GPU.
-For the AMD \GPU the clBLAS implementation achieves 78.5\% of the hardware bandwidth limit and Intel's MKL implementation achieves 87.6\% of the hardware limit, considering just the bandwidth of a single \CPU socket.
+As a positive result we can see from \autoref{fig:reduce:overview} that there exist implementations on the other hardware architectures which offer similar relative performance as the most optimized implementation on the Nvidia \GPU.
+For the AMD \GPU, the clBLAS implementation achieves 78.5\% of the hardware bandwidth limit and Intel's MKL implementation achieves 87.6\% of the hardware limit, considering just the bandwidth of a single \CPU socket.
 
-We aim for developing an approach which can systematically apply optimizations and generate code matching the performance on all three architectures, thus, offering performance portability.
+We aim at developing an approach which can systematically apply optimizations and generate code matching the performance on all three architectures, thus, offering performance portability.
 
 % In the following we aim for developing an approach where we can systematically describe and apply optimizations to eventually automatically generate highly efficient, hardware specific code.
 % This will ultimately lead to performance portable code.
@@ -509,48 +510,48 @@ We aim for developing an approach which can systematically apply optimizations a
 
 \subsection{The need for a pattern-based code generator}
 
-Our goal in this chapter is to develop an systematic approach to achieve \emph{performance portability}, \ie, to achieve high relative performance for a given application across a set of different parallel processors.
-As we saw in the previous section traditional approaches, like \OpenCL or C, are not performance portable.
+Our goal in this chapter is to develop a systematic approach to achieve \emph{performance portability}, \ie, to achieve high relative performance for a given application across a set of different parallel processors.
+As we saw in the previous section, traditional approaches, like \OpenCL, are not performance portable.
 Currently, programmers often tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
 This reduces portability, maintainability, and clarity of the code:
-multiple versions have to be maintained and non-obvious optimizations make the code hard to understand and to reason about.
+multiple versions have to be \todo{sg: ????} maintained, and non-obvious optimizations make the code hard to understand and to reason about.
 
-We argue that parallel pattern can help overcome the tension between achieving the highest possible and code portability and maintainability.
-Parallel patterns declaratively specify the desired algorithmic behavior rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
-The parallel pattern can be implemented in different ways optimized towards particular hardware architectures.
-If the underlying hardware is changed the most optimized implementation for the new hardware can be chosen.
+We argue that \emph{parallel patterns} can help overcome the tension between achieving the highest possible performance and code portability and maintainability.
+Parallel patterns declaratively specify the desired algorithmic behavior, rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
+A parallel pattern can be implemented in different ways, optimized towards particular hardware architectures.
+If the underlying hardware is changed, the optimal implementation for the new hardware can be chosen.
 
-While a compelling idea in theory, existing approaches have felt short of providing and selecting highly optimized implementations on different architectures.
-Previous work has proposed ad-hoc solutions to target specific hardware architectures.
-This has three main reasons:
+While a compelling idea in theory, existing approaches have fallen short of providing and selecting highly optimized implementations on different architectures.
+Previous work has been limited to ad-hoc solutions for specific hardware architectures.
+This limitation has three main reasons:
 
 First, providing optimized implementations of pattern on every new hardware platform is a challenging task.
 Nowadays, dozens of parallel architectures and hundreds of variations of them exist and new architectures are released every year.
 Therefore, it is often not feasible to provide optimized implementations for all available hardware architectures and existing library approaches have focused on particular hardware architectures.
 For example, Nvidia \GPUs have been the main target for the \SkelCL library.
-An approach using code generation could overcome this issue, where instead of fixed implementations possible optimizations are described systematically and automatically applied by the code generator.
+\todo{sg: sagen was daraus folgt, warum schlecht.}
+An approach using code generation could overcome this drawback, because instead of fixed implementations rather possible optimizations are systematically described and then automatically applied by the code generator.
 
-Second, most existing approaches are library based, which makes the optimization of composition and nesting of patterns extremely complex.
+Second, most existing approaches are library-based, which makes the optimization of composition and nesting of patterns extremely complex.
 In \SkelCL, for example, each pattern is implemented as a separate \OpenCL kernel.
-When composing patterns multiple \OpenCL kernels are executed, but often the most optimized solution would be to fuse multiple \OpenCL kernels into a single \OpenCL kernel avoiding costly operations to write and read the intermediate result into global memory.
-As fusion of \OpenCL kernel in general is complicated \SkelCL currently does not execute a fused, and, thus, fully optimized, implementation of composed patterns.
-An approach using code generation could overcome this issue, as the code generator processes the entire pattern-based expression instead of focusing on individual patterns.
+When composing patterns, multiple \OpenCL kernels are executed, but often a better solution would be to fuse multiple \OpenCL kernels into a single \OpenCL kernel, thus avoiding costly operations to write and read the intermediate result into/from the global memory.
+As fusion of \OpenCL kernels in general is complicated, \SkelCL currently cannot execute a fused, and, thus, fully optimized, implementation of composed patterns.
+Our envisaged approach using code generation should overcome this issue, as the code generator processes the entire pattern-based expression instead of focusing on individual patterns.
 
 Finally, the optimal implementation of a parallel pattern usually depends very much on the application and context the pattern is used in.
-Let us consider the algorithmic skeleton \reduce as an example for a parallel pattern.
-\reduce can be used on its own to implement a parallel summation, as we just discussed in \autoref{sec:reduce:case-study}, but it can also be used in different contexts, \eg, as part of the dot product computation which itself is a building block of matrix multiplication, as we saw in \autoref{chapter:skelcl}.
-The most optimal implementation of \reduce most certainly differs across these use cases:
-On the one hand, for the parallel summation the entire parallel processor should be exploited using many \OpenCL work-items simultaneously.
-On the other hand, when being executed as part of the matrix multiplication \reduce should only exploit thread level parallelism to a limited degree -- if at all.
+For example, the algorithmic skeleton \reduce can be used on its own to implement a parallel summation, as discussed in \autoref{sec:reduce:case-study}, but it can also be used as part of the dot product computation which itself is a building block of matrix multiplication, as we saw in \autoref{chapter:skelcl}.
+The optimal implementation of \reduce will most certainly differ across these use cases.
+Indeed, for the parallel summation the entire parallel processor should be exploited using many \OpenCL work-items simultaneously, while when being executed as part of the matrix multiplication \reduce should only exploit thread level parallelism to a limited degree -- if at all.
 An approach using code generation could overcome this issue, as optimized code can be generated for patterns in different contexts instead of providing a single fixed implementation.
 
 \bigskip
 
 % what is our approach
-We argue, that the root of the problem lies in a gap in the system stack between the high-level algorithmic patterns on the one hand and low-level hardware optimizations on the other hand.
+We argue that the root of the problem lies in the gap in the system stack between the high-level algorithmic patterns on the one hand and low-level hardware optimizations on the other hand.
 We propose to bridge this gap using a novel pattern-based code generation technique.
 A set of rewrite rules systematically translates high-level algorithmic patterns into low-level hardware patterns describing optimizations.
-The rewrite rules are used to systematically derive semantically equivalent low-level expressions from high-level algorithm expressions written by the application developer.
-Once derived, high performance code based on these expressions can be automatically generated.
+\todo{sg: describing => expressing? Ende des Satzes klingt komisch}
+The rewrite rules are used to systematically derive semantically equivalent, low-level expressions from high-level algorithm expressions written by the application developer.
+Once derived, high-performance code based on these expressions can be automatically generated.
 The next section introduces on overview of our approach.
  

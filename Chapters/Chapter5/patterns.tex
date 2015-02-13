@@ -1,33 +1,35 @@
 \section{Patterns: Design and Implementation}
 \label{section:patterns}
 
-In this section we will introduce the \emph{patterns} which form the expressions used for code generation.
+In this section, we will introduce the \emph{patterns} which form the expressions used for code generation.
 As we saw in the previous section there exist two type of patterns: high-level algorithmic patterns and low-level \OpenCL patterns.
 Some of the high-level algorithmic patterns directly correspond to algorithmic skeletons we have introduced in \autoref{chapter:skelcl}.
-As we will also introduce patterns which we have not seen so far and which do not confirm to the common definition of algorithmic skeletons we will use the more generic term \emph{pattern} throughout this and the next chapter.
+As we will also introduce patterns which we have not seen so far and which do not oblige to the common definition of algorithmic skeletons, we will use the more generic term \emph{pattern} throughout this and the next chapter.
 
 The key idea of our approach is to expose algorithmic choices and hardware-specific program optimizations as patterns that are systematically derived using a rule rewriting system (discussed later in \autoref{section:rules}).
 The high-level algorithmic patterns represent structured parallelism.
-They can either be used by the programmer directly as a stand-alone language (or embedded DSL) or used as an intermediate representation targeted by another language.
+They can either be used by the programmer directly as a stand-alone language (or embedded domain specific language) or used as an intermediate representation targeted by the compiler of another language.
+\todo{sg: embedded worin?}
 Once a program is represented with our high-level patterns, we automatically transform the program into low-level patterns.
-The low-level hardware patterns represent hardware specific concepts expressed by a programming model such as \OpenCL, the target chosen for this thesis.
+The low-level patterns represent hardware-specific concepts expressed by a programming model such as \OpenCL, which is the target chosen for this thesis.
 Following the same approach, a different set of low-level patterns could be designed to target other low-level programming models such as Pthreads or MPI.
 
 
 \subsection{High-level Algorithmic Patterns}
 
 We define our patterns as functions.
-To simplify our implementation we encode all types as arrays with primitives represented with arrays of length 1.
-The only exceptions are the user-provided functions such as the \code{mul3} function in \autoref{fig:codeex:map} that operates on a primitive type.
+To simplify our implementation, we encode all types as arrays with primitives represented by arrays of length 1.
+The only exceptions are the user-defined functions, such as the \code{mul3} function in \autoref{fig:codeex:map} that operates on a primitive type.
 
 \autoref{tab:hlskel} presents our high-level patterns used to define programs at the algorithmic level.
 Most of the patterns are well known in functional programming, like \map and \reduce.
 The \zip, \splitN and \join patterns transform the shape of the data.
 For arrays we store the number of dimensions and size of each dimension in the type system, as we will see.
+\todo{sg: we store ... in the type system. Wird das so gesagt?}
 The \iterateN pattern iteratively applies a function multiple times.
-Finally, the \reorder pattern lets our system know it is safe to reorder the elements of an array arbitrarily, which enables optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
+Finally, the \reorder pattern lets our system know that it is safe to reorder the elements of an array arbitrarily, which enables additional optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
 
-In the following we discuss each high-level algorithmic pattern in more detail including their formal definitions.
+In the following, we discuss each high-level algorithmic pattern in more detail including their formal definitions.
 As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism~\cite{} as our syntax for the patterns.
 \todo{add citation}
 
