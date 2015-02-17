@@ -324,8 +324,11 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 
 \usepackage{longtable}
 
+\usepackage[normalem]{ulem}
+
 \newcommand{\from}[1]{\marginpar{\colorbox{Maroon}{\parbox{\marginparwidth}{\color{white}#1}}}}
 \newcommand{\todo}[1]{\marginpar{\colorbox{MidnightBlue}{\parbox{\marginparwidth}{\color{white}TODO:\newline #1}}}}
+\newcommand{\todoU}[2]{\marginpar{\colorbox{MidnightBlue}{\parbox{\marginparwidth}{\color{white}TODO:\newline #2}}}\uline{#1}}
 
 % included for HLPP
 \usepackage{tikz}
@@ -346,6 +349,8 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \newcommand{\dotProduct}{\mbox{\emph{dotProduct}}}
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
             \node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
+\newcommand*\lineNum[1]{\tikz[baseline=(char.base)]{
+            \node[circle,draw,inner sep=0pt,minimum width=.4cm,minimum height=.4cm] (char) {\small $#1$};}}
 
 \usepackage{amsthm}
 \newtheoremstyle{mystyle}% name
@@ -505,4 +510,5 @@ pdfproducer={LaTeX with hyperref and classicthesis}
 \newcommand{\secondBox}{\tikz[baseline=0.125em]{\filldraw[fill=secondColor, draw=black] (0,0) rectangle (.3,.3);}}
 \newcommand{\thirdBox}{\tikz[baseline=0.125em]{\filldraw[fill=thirdColor,   draw=black] (0,0) rectangle (.3,.3);}}
 \newcommand{\fourthBox}{\tikz[baseline=0.125em]{\filldraw[fill=fourthColor, draw=black] (0,0) rectangle (.3,.3);}}
+
 

@@ -34,13 +34,14 @@ As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism~\cite{} as our
 \todo{add citation}
 
 In this chapter we are especially interested in how patterns can be composed and nested.
-As \emph{types} formally specify which compositions and nesting of patterns are legal, we will give the type of each pattern.
+As \emph{types} formally specify which compositions and nesting of patterns are legal, we will precisely define the type of each pattern.
 % For expressing types we base our syntax on the syntax established by J. Roger Hindley, Robin Miler, and Luis Damas as part of the Hindley---Milner type system~\cite{}.
 We write $e : \sigma$ to denote that expression $e$ has type $\sigma$.
 % To make typing judgments we write $e_0 : \sigma_0,\ \ldots,\ e_n : \sigma_n\ \vdash e : \sigma$ to denote that under the assumptions that $e_0,\ \ldots,\ e_n$ have types $\sigma_0,\ \ldots,\ \sigma_n$ the expression $e$ has type $\sigma$.
-For function types mapping values of type $\alpha$ to values of type $\beta$ we write $(\alpha \rightarrow \beta)$.
+For a function mapping values of type $\alpha$ to values of type $\beta$ we write its type as $(\alpha \rightarrow \beta)$.
 Tuple types are written as $\langle\alpha, \beta\rangle$.
-Finally, arrays have their length denoted as part of their type, therefore, for an array with elements of type $\alpha$ and length $n$ we write $[\alpha]_n$.
+Finally, arrays have their length denoted as part of their type:
+for an array with elements of type $\alpha$ and length $n$, we write $[\alpha]_n$.
 
 \begin{table}[t]
 \centering
@@ -53,11 +54,11 @@ Finally, arrays have their length denoted as part of their type, therefore, for 
  \reduce
      & Perform a reduction of an input array using a user-defined binary function and an initial value.\\
  \zip
-     & Builds an array of pairs by pairwise combining two arrays.\\
+     & Build an array of pairs by pairwise combining two arrays.\\
  \splitN
-     & Produces a multi-dimensional array by splitting an array in chunks of a given size.\\
+     & Produce a multi-dimensional array by splitting an array in chunks of a given size.\\
  \join
-     & Joins the two outer most dimensions of an multi-dimensional array.\\
+     & Join the two outer most dimensions of an multi-dimensional array.\\
  \iterateN
      & Iterate a given function over an input array a fixed number of times.\\
  \reorder
@@ -70,14 +71,14 @@ Finally, arrays have their length denoted as part of their type, therefore, for 
 
 
 \paragraph{Map}
-The \map pattern is well known in functional programming and applies a given function $f$ to all elements of its input array.
-In \autoref{chapter:skelcl} we defined the \map pattern as an algorithmic skeleton (see \autoref{definition:map}).
+The \map pattern is well known in functional programming and applies a given unary function $f$ to all elements of an input array.
+In \autoref{chapter:skelcl}, we defined the \map pattern as an algorithmic skeleton (see \autoref{definition:map}).
 The same definition holds here.
-We repeat it here for completeness and add type information:
+We repeat it here for completeness and we add the type information:
 \begin{definition}
   \label{definition:pattern:map}
   Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $f$ be a unary customizing function defined in elements.
+  Let $f$ be a unary customizing function defined on elements.
   The \map pattern is then defined as follows:
   \begin{equation*}
     \map\ f\ [x_1, x_2, \dots, x_n] \eqdef [f\ x_1, f\ x_2, \dots, f\ x_n]
@@ -86,7 +87,7 @@ We repeat it here for completeness and add type information:
   \begin{align*}
     f &: (\alpha \rightarrow \beta),\\
     \vec{x} &: [\alpha]_n,\\
-    \map\ f\ xs &: [\beta]_n
+    \map\ f\ \vec{x} &: [\beta]_n
   \end{align*}
 \end{definition}
 
@@ -94,24 +95,25 @@ We repeat it here for completeness and add type information:
 In \autoref{chapter:skelcl} we also defined the \map skeleton for operating on matrices (see \autoref{definition:map:matrix}).
 In this chapter we represent matrices as nested arrays, therefore, performing an operation on each element of a matrix can be represented by nesting two \map patterns:
 \begin{align*}
-  mapMatrix\ f\ X &= \map\ (\map\ f)\ X
+  mapMatrix\ \ f\ \ X &= \map\ (\map\ f)\ X
 \end{align*}
-Let us assume $X$ represents a $n\times m$ matrix with elements of type $\alpha$, then its type is $\big[[\alpha]_m\big]_n$.
+Let us assume that $X$ represents an $n\times m$ matrix with elements of type $\alpha$, then its type is $\big[[\alpha]_m\big]_n$.
 The outer \map applies its customizing function to every row of matrix $X$.
-The customizing function is defined by \emph{currying} \map and $f$, thus, producing a function which applies $f$ to every element of its argument array.
+The customizing function is defined by \emph{currying}~\cite{} \map and $f$, thus, producing a function which applies $f$ to every element of its argument array.
+\todo{add citation for currying}
 Therefore, $f$ will be applied to every element of matrix $X$.
 
 \paragraph{Reduce}
 The \reduce pattern (\aka, fold or accumulate) uses a given binary function $f$ to combine all elements of the input array.
-We require the function $f$ to be associative and commutativity which allows for an efficient parallel implementation.
-By requiring commutativity our system can also generate vectorized implementations of the reduction and utilize the efficient coalesced memory access pattern, as we saw in \autoref{section:reduce:case-study}.
+We require the function $f$ to be associative and commutative which allows for an efficient parallel implementation.
+By requiring commutativity, our system can also generate vectorized implementations of the reduction and utilize the efficient coalesced memory access pattern, as we saw in \autoref{section:reduce:case-study}.
 In \autoref{chapter:skelcl} we defined \reduce as an algorithmic skeleton (see \autoref{definition:reduce}).
 The same definition holds here.
-We repeat it here for completeness and add type information:
+We repeat it here for completeness and we add the type information:
 \begin{definition}
   \label{definition:pattern:reduce}
   Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be an associative and commutative binary customizing operator with the corresponding identity element \id.
+  Let $\oplus$ be an associative and commutative binary customizing operator with the identity element \id.
   The \reduce pattern is then defined as follows:
   \begin{equation*}
     \reduce\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
@@ -125,6 +127,7 @@ We repeat it here for completeness and add type information:
     \reduce\ \oplus\ \id\ \vec{x} &: [\alpha]_1
   \end{align*}
 \end{definition}
+\todo{sg: vielleicht sagen, dass wir id manchmal omitten reduce (+) [ ]?}
 
 
 \paragraph{Zip}
@@ -148,23 +151,23 @@ The \zip pattern fuses two arrays into a single array of pairs.
 \end{definition}
 
 \noindent
-This definition significantly differs from the definition of the \zip skeleton in \autoref{chapter:skelcl} (see \autoref{definition:zip}).
-Where in \autoref{definition:zip} \zip applies a given function to a pair of elements, there is no function to be applied in \autoref{definition:pattern:zip}.
-The behavior of the \zip skeleton can be achieved by composing \zip with the \map pattern:
+This definition significantly differs from the definition of the \zip skeleton in \autoref{chapter:skelcl}:
+While in \autoref{definition:zip}, \zip applies a given function to a pair of elements, there is no function to be applied in \autoref{definition:pattern:zip} of the \zip pattern.
+The behavior of the \zip skeleton can be achieved by composing the \zip pattern with the \map pattern:
 \begin{align*}
   zipWith\ f\ \vec{x}\ \vec{y} &= \map\ f\ (\zip\ \vec{x}\ \vec{y})
 \end{align*}
 
 
 \paragraph{Split and Join}
-The \splitN pattern, which is most often combined with a \join, partitions an array into chunks of specific size resulting in an extra dimension.
+The \splitN pattern, which is most often combined with a \join, partitions an array into chunks of specific size, resulting in an extra dimension in the output array.
 
 We start with the definition of the \splitN pattern.
 \begin{definition}
   \label{definition:pattern:split}
   Let $n$ be an integer value.
   Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
-  Let us assume that $m$ is even divisible by $n$.
+  Let us assume that $m$ is evenly divisible by $n$.
   The \splitN pattern is then defined as follows:
   \begin{align*}
     &\splitN\ n\ [x_1, x_2, \dots, x_m] \eqdef\\
@@ -185,11 +188,12 @@ We start with the definition of the \splitN pattern.
 %\end{align}
 
 \noindent
-The corresponding \join pattern does the opposite; it reassembles arrays of arrays by merging dimensions.
+The corresponding \join pattern does the opposite:
+it reassembles an array of arrays by merging dimensions.
 \begin{definition}
   \label{definition:pattern:join}
   Let $\vec{x}$ be an array of size $\frac{m}{n}$ whose elements are arrays of size $n$.
-  We denote the elements of the $i$th inner arrays as $x_{((i-1)\times n) + j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
+  We denote the elements of the $i$th inner array as $x_{((i-1)\times n) + j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
   The \join pattern is then defined as follows:
   \begin{align*}
     &\join\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] \eqdef\\
@@ -204,9 +208,9 @@ The corresponding \join pattern does the opposite; it reassembles arrays of arra
 \end{definition}
 
 \noindent
-From these definitions follow, that the composition of $\splitN\ n$ and \join: $\join \circ \splitN\ n$ for any value $n$ yields back the same type and also does not change any element in the array, \ie, it is equivalent to the identify function \emph{id}.
+From these definitions it follows, that the composition of $\splitN\ n$ and \join: $\join \circ \splitN\ n$ for any value $n$ yields the same type and also does not change any element in the array, \ie, it is equivalent to the identify function \emph{id}.
 
-These two patterns used together are similar to the split-join concept from data flow languages such as StreamIt~\cite{ThiesKaAm2002}.
+These two patterns used together are similar to the split-join concept from data-flow languages such as StreamIt~\cite{ThiesKaAm2002}.
 
 
 \paragraph{Iterate}
@@ -215,7 +219,7 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
 \begin{definition}
   \label{definition:pattern:iterate}
   Let $n$ be an integer value with $n \geq 0$.
-  Let $f$ be a unary function.
+  Let $f$ be a unary function on arrays.
   Let $\vec{x}$ be an array of arbitrary size.
   We define the \iterateN pattern recursively:
   \begin{align*}
@@ -242,7 +246,7 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
 % We automatically allocated and calculate memory requirements based on the information from the input and output type.
 \noindent
 \todo{say more}
-The type of the \iterateN pattern is interesting as its result type depends on the effect $f$ has on the size of its argument.
+The type property of the \iterateN pattern is interesting as its result type depends on the effect $f$ has on the size of its argument.
 
 %\begin{align}
 %  n : int,\ F : (int \rightarrow int),\ f : (\forall k\ .\ [\alpha]_k \rightarrow [\alpha]_{F(k)}),\ xs : [\alpha]_m\ %
@@ -260,7 +264,7 @@ The \reorder pattern is used to specify that the ordering of the elements of an 
   \begin{align*}
     \reorder\ [x_1, \ldots, x_n] &\eqdef [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]
   \end{align*}
-  The types of $\vec{x}$, and \reorder are as follows:
+  The types of $\vec{x}$ and \reorder are as follows:
   \begin{align*}
     \vec{x} &: [\alpha]_n,\\
     \reorder\ \vec{x} &: [\alpha]_n
@@ -268,19 +272,19 @@ The \reorder pattern is used to specify that the ordering of the elements of an 
 \end{definition}
 
 \noindent
-This definition allows the implementation to pick any permutation to reorder the elements of an array arbitrarily which might enable optimizations, as we will see later.
+This definition allows the implementation to pick any permutation to reorder the elements of an array arbitrarily which may enable optimizations, as we will see later.
 
 
 
 
 
-\subsection{Low-level \OpenCL-specific Patterns}
+\subsection{Low-level, \OpenCL-specific Patterns}
 
 % Programming manycore CPU and GPU devices is difficult due to the need for managing parallelism, the memory hierarchy and other hardware specific features.
-In order to achieve the highest performance, programmers often use a set of rules of thumb to drive the optimization of their application.
+In order to achieve the highest performance, programmers often use a set of intuitive ``rules of thumb'' to optimize their applications.
 We extensively discussed one application example in \autoref{section:reduce:case-study}.
-Each hardware vendor provides optimization guides~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide} that extensively cover hardware particularities and optimizations.
-The main idea behind this work is to identify common optimization patterns and express them with the help of low-level patterns coupled with a rewrite-rule system.
+Each hardware vendor provides own optimization guides~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide} that extensively cover vendor's hardware particularities and optimizations.
+The main idea behind our approach is to identify common optimization patterns and express them systematically rather than intuitively, with the help of low-level patterns coupled with a rewrite-rule system.
 
 \autoref{tab:llskel} gives an overview of the \OpenCL-specific patterns we have identified.
 
@@ -323,14 +327,16 @@ The main idea behind this work is to identify common optimization patterns and e
 \end{table}
 
 \paragraph{Parallel Maps}
-The different \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread level parallelism in \OpenCL.
-The execution semantics and types of all these low-level \OpenCL \map patterns are the same as the high-level \map pattern shown in \autoref{definition:pattern:map}.
-In fact, these patterns can be seen as \emph{instantiations} of the high-level \map pattern \emph{interface}, as they provide different possibilities to implement the \map pattern.
+The different \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread-level parallelism in \OpenCL.
+The execution semantics and types of all these low-level \OpenCL \map patterns are the same as of the high-level \map pattern shown in \autoref{definition:pattern:map}.
+In fact, these patterns can be viewed as \emph{instantiations} of the high-level \map pattern \emph{interface}, as they provide different possibilities to implement the \map pattern.
+\todo{sg: was ist ein pattern interface?}
 
-The \mapWorkgroup pattern assigns work to an \OpenCL work-group, \ie, following \autoref{definition:pattern:map} each \OpenCL work-group executed the given function on a different part of the input vector.
+\todo{sg: hier waere ein Bild gut, das diese maps zusammen mit der OpenCL Thread-Hierarchie zeigt}
+The \mapWorkgroup pattern assigns work to an \OpenCL work-group, \ie, following \autoref{definition:pattern:map} each \OpenCL work-group executes the given function on a different part of the input vector.
 
 The \mapLocal pattern assigns work to a local work-item inside a work-group.
-This pattern should only be used in the context of a work-group and is, therefore, only valid when nested inside a \mapWorkgroup pattern, \eg, $\mapWorkgroup\ (\mapLocal\ f)$.
+This pattern should be used in the context of a work-group and is, therefore, only valid when nested inside a \mapWorkgroup pattern, \eg, $\mapWorkgroup\ (\mapLocal\ f)$.
 
 The \mapGlobal pattern can be used to assign work to work-items outside of a work-group.
 This allows us to map computations in different ways to the thread hierarchy of \OpenCL.
@@ -348,14 +354,14 @@ The \mapSeq and \reduceSeq patterns perform a sequential map and reduction, resp
 % In both cases the generated code consists of a loop iterating over the array and calling the customizing function.
 % For the reduction an accumulation variable is initialized with the given initial value and used to accumulate the results produced by the successive calls to to the customizing function.
 
-For the \mapSeq pattern the semantic and type is the same as for the high-level \map pattern shown in \autoref{definition:pattern:map}.
+For the \mapSeq pattern, the semantics and type are the same as for the high-level \map pattern shown in \autoref{definition:pattern:map}.
 This is not the case for the \reduceSeq and \reduce patterns, where their types differ.
-For the high-level \reduce pattern we require the customizing binary function to be associative and commutative to allow for an efficient parallel implementation.
-As the \reduceSeq pattern performs a sequential reduction we can relax these requirements, therefore, we define \reduceSeq separately.
+For the high-level \reduce pattern, we require the customizing binary function to be associative and commutative in order to allow for an efficient parallel implementation.
+As the \reduceSeq pattern performs a sequential reduction, we can relax these requirements, therefore, we define \reduceSeq separately.
 \begin{definition}
   \label{definition:pattern:reduceSeq}
   Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be an binary customizing operator with the corresponding identity element \id.
+  Let $\oplus$ be a binary customizing operator with the identity element \id.
   The \reduceSeq pattern is then defined as follows:
   \begin{equation*}
     \reduceSeq\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
@@ -370,18 +376,21 @@ As the \reduceSeq pattern performs a sequential reduction we can relax these req
   \end{align*}
 \end{definition}
 
+\todo{sg: Table 5.2 hier platzieren}
+
 
 \paragraph{Reorder-stride}
 The \reorderStride pattern enforces a special reordering of an array.
-In our implementation no code is produces, but instead the reordering describes how the data is read from the array.
-The produced strided access pattern ensures that after splitting the workload, consecutive work-items access consecutive memory elements.
-This corresponds to \emph{coalesce memory accesses}, which are beneficial on modern \GPUs as discussed in \autoref{chapter:background}.
+\todo{sg: definition??}
+In our implementation no code is produces, but rather the reordering determines how the data is read from the array.
+The produced strided-access pattern ensures that after splitting the workload, consecutive work-items access consecutive memory elements.
+This corresponds to the \emph{coalesce memory accesses}, which are beneficial on modern \GPUs as discussed in \autoref{chapter:background}.
 
 \begin{definition}
   \label{definition:pattern:reorderStride}
   Let $s$ be an integer value.
-  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
-  Let us assume that $m$ is even divisible by $s$ and that $m = s\times n$ for some integer value $n$.
+  Let $\vec{x}$ be an array of size $m$ with elements $x_i$, where $0 < i \leq m$.
+  Let us assume that $m$ is evenly divisible by $s$ and that $m = s\times n$ for some integer value $n$.
   The \reorderStride pattern is then defined as follows:
   \begin{align*}
     \reorderStride\ s\ [x_1, x_2, \dots, x_m] &\eqdef [y_1, y_2, \dots, y_m], \text{ where}\\
@@ -404,10 +413,10 @@ This corresponds to \emph{coalesce memory accesses}, which are beneficial on mod
 %The type of \pat{reorder-stride} corresponds to the type of the high-level \pat{reorder} pattern.
 
 \paragraph{{\footnotesize to}Local and {\footnotesize to}Global}
-The \toLocal and \toGlobal patterns are used to determine where the result of a given function $f$ should be stored.
+The \toLocal and \toGlobal patterns are used to specify where the result of a given function $f$ should be stored.
 As explained in more detail in \autoref{chapter:background}, \OpenCL defines two distinct address spaces: global and local.
 Global memory is the commonly used large but slow memory.
-On \GPUs, the small local memory has a high bandwidth with low latency and is used to store frequently accessed data.
+On \GPUs, the comparatively small local memory has a high bandwidth with low latency and is used to store frequently accessed data.
 With these two patterns, we can in effect exploit the memory hierarchy defined in \OpenCL.
 
 First, we define \toLocal:
@@ -442,7 +451,7 @@ The definition of \toGlobal is correspondent:
       &\text{ its result in global memory.}
     \end{aligned}
   \end{align*}
-  The types of $f$, and \toLocal are as follows:
+  The types of $f$, and \toGlobal are as follows:
   \begin{align*}
     f &: (\alpha \rightarrow \beta)\\
     \toGlobal\ f &: (\alpha \rightarrow \beta)
@@ -468,8 +477,9 @@ The definition of \toGlobal is correspondent:
 \paragraph{{\footnotesize as}Vector, {\footnotesize as}Scalar, and Vectorize}
 The \OpenCL programming model supports vector data types such as \code{float4} where any operations on this type will be executed in the hardware vector units.
 In the absence of vector units in the hardware, the \OpenCL compiler scalarizes the code automatically.
+\todo{sg: scalarizes, wird das so gesagt?}
 
-The \asVector and \asScalar patterns change the data type into vector elements and scalar elements respectively.
+The \asVector and \asScalar patterns change the data type into vector elements and scalar elements, correspondingly.
 For instance, an array of \code{float} is transformed into an array of \code{float4} as seen in the motivation example (\autoref{fig:codeex}).
 The \vect pattern vectorizes the given function by simply converting all the operations that apply to vector types into vectorized operations. 
 %Our current implementation can only vectorize functions containing simple arithmetic operations such as $+$ or $-$.
@@ -488,7 +498,7 @@ We start by defining the \asVector pattern.
     &\asVector\ n\ [x_1, x_2, \dots, x_m] \eqdef \\
     &\qquad\big[\{x_1, \ldots, x_n\}, \{x_{n+1}, \ldots, x_{2n}\}, \ldots, \{x_{m-n+1}, \ldots, x_m\}\big],
   \end{align*}
-  where $\{x_1,\ldots,x_n\}$ denotes an element of a vector type with vector width $n$.\\
+  where $\{x_1,\ldots,x_n\}$ denotes a vector of width $n$.\\
   The types of $n$, $\vec{x}$, and \asVector are as follows:
   \begin{align*}
     n &: int\\
@@ -502,14 +512,14 @@ We start by defining the \asVector pattern.
 The corresponding \asScalar pattern is defined as follows.
 \begin{definition}
   \label{definition:pattern:asScalar}
-  Let $\vec{x}$ be an array of size $\frac{m}{n}$ whose elements are of a vector type with vector width $n$.
+  Let $\vec{x}$ be an array of size $\frac{m}{n}$ whose elements are vectors of width $n$.
   We denote the individual vector elements of the $i$th element of $\vec{x}$ as $x_{((i-1)\times n)+j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
   The \asScalar pattern is then defined as follows:
   \begin{align*}
     &\asScalar\ \big[\{x_1, \ldots, x_n\}, \{x_{n+1}, \ldots, x_{2n}\}, \ldots, \{x_{m-n+1}, \ldots, x_m\}\big] \eqdef\\
     &\qquad [x_1, x_2, \dots, x_m],
   \end{align*}
-  where $\{x_1,\ldots,x_n\}$ denotes an element of a vector type with vector width $n$.\\
+  where $\{x_1,\ldots,x_n\}$ denotes a vector of width $n$.\\
   The types of $n$, $\vec{x}$, and \asVector are as follows:
   \begin{align*}
     n &: int\\
@@ -543,9 +553,9 @@ Finally, we define th \vect pattern.
 
 \subsection{Summary}
 In this section we introduced two type of \emph{patterns}:
-high-level algorithmic patterns and low-level \OpenCL specific patterns.
-While all of these patterns can be used by the application programmer to describe the solution for a particular problem, we expect the programmer to focus on the algorithmic patterns which should be used to provide an high-level algorithmic implementation.
+high-level algorithmic patterns and low-level, \OpenCL-specific patterns.
+While all of these patterns can be used by the application programmer to describe the solution for a particular problem, we expect the programmer to focus on the algorithmic patterns which should be used to express a high-level algorithmic implementation of the problem solution.
 We will see in the next section how such an implementation composed of our high-level algorithmic patterns can be systematically rewritten using \emph{rewrite rules}.
-During this process the original implementation will be modified and \OpenCL specific patterns will be introduced.
+During this process the original implementation will be modified and \OpenCL-specific patterns will be used.
 
 
