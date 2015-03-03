@@ -24,7 +24,7 @@ The factor in front of the sum can be precomputed and is, therefore, omitted fro
 %
 \begin{figure}
 \begin{lstlisting}[
-  caption={Sequential code for LM OSEM comprises one outer loop with two nested inner loops.},
+  caption={[Sequential code for LM OSEM.]Sequential code for LM OSEM comprises one outer loop with two nested inner loops.},
   label={lst:lmosem:seq_code:2}]
 for (int l = 0; l < subsets; l++) {$\label{lst:lmosem:seq_core:2:loop}$
   // read subset
@@ -163,7 +163,8 @@ However, when using \SkelCL's vector data type, we avoid additional programming 
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{ASHES/loc}
-  \caption{Lines of code for host (light gray) and \GPU (dark gray) of the LM OSEM implementations.}
+  \caption[Lines of code of the LM OSEM implementations.]%
+          {Lines of code for host (light gray) and \GPU (dark gray) of the LM OSEM implementations.}
   \label{fig:list-mode_OSEM:LOC}
 \end{figure}
 
@@ -213,7 +214,8 @@ In conclusion, this example shows that \SkelCL is suitable for implementing a re
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{ASHES/lmosemIteration}
-  \caption{Average runtime of one iteration of the LM OSEM algorithm using \SkelCL, \OpenCL, and \CUDA.}
+  \caption[Average runtime of one iteration of the LM OSEM algorithm.]%
+          {Average runtime of one iteration of the LM OSEM algorithm using \SkelCL, \OpenCL, and \CUDA.}
   \label{fig:list-mode_OSEM:runtime}
 \end{figure}
 

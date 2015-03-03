@@ -14,7 +14,8 @@ Therefore, in \SkelCL the \allpairs skeleton can be used to express matrix multi
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.5\textwidth]{HLPP/mm}
-  \caption{Matrix multiplication $A\times B = C$.
+  \caption[Visalization of matrix multiplication.]%
+          {Matrix multiplication $A\times B = C$.
            The red highlighted element in matrix $C$ is computed by combining the highlighted row of matrix $A$ with the highlighted column of matrix $B$.}
   \label{fig:mm}
 \end{figure}
@@ -93,7 +94,7 @@ We compare six different implementations of matrix multiplication:
 \paragraph{1. OpenCL implementation}
 The kernel of the first, unoptimized OpenCL implementation from~\cite{KirkHw2010} is shown in \autoref{lst:naive_opencl}.
 \begin{lstlisting}[%                                                             
-caption={OpenCL kernel of the matrix multiplication without optimizations~\cite{KirkHw2010}.},%
+caption={[\OpenCL kernel of matrix multiplication without optimizations.]\OpenCL kernel of matrix multiplication without optimizations~\cite{KirkHw2010}.},%
 float=tb,%
 numbers=left,%
 label={lst:naive_opencl}]
@@ -110,7 +111,7 @@ kernel void mm(global float* A, global float* B,
 \paragraph{2. Optimized OpenCL implementations}
 The kernel of the optimized OpenCL implementation from~\cite{KirkHw2010} using local memory is shown in \autoref{lst:local_mem_opencl}.
 \begin{lstlisting}[%                                                             
-caption={OpenCL kernel of the optimized matrix multiplication using local memory~\cite{KirkHw2010}.},%
+caption={[\OpenCL kernel of the optimized matrix multiplication usgin local memory.]\OpenCL kernel of the optimized matrix multiplication using local memory~\cite{KirkHw2010}.},%
 float=tb,%
 numbers=left,%
 label={lst:local_mem_opencl}]
@@ -172,7 +173,8 @@ Furthermore, the skeleton-based implementations are more general, as they can be
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_loc}
-  \caption{Programming effort (Lines of Code) of four \OpenCL-based vs. two \SkelCL-based implementations.}
+  \caption[Programming effort of four \OpenCL-based and two \SkelCL-based matrix multiplication implementations.]%
+          {Programming effort (Lines of Code) of four \OpenCL-based vs. two \SkelCL-based implementations.}
   \label{fig:mat_mult_loc}
 \end{figure}
 \begin{table}[tb]
@@ -193,7 +195,8 @@ Furthermore, the skeleton-based implementations are more general, as they can be
     skeleton\\
     \bottomrule
   \end{tabular}
-  \caption{Lines of Code of all compared implementations.}
+  \caption[Lines of Code of matrix multiplication of all compared implementaitons.]%
+          {Lines of Code of all compared implementations.}
   \label{tab:mat_mult_loc}
 \end{table}
 
@@ -208,7 +211,8 @@ We performed our experiments with the six different implementations 1. -- 6. of 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_sizes}
-  \caption{Runtime of different matrix multiplication implementations on the NVIDIA system for different sizes of the matrices.}
+  \caption[Runtime of different matrix multiplication implementations on an NVIDIA system.]%
+          {Runtime of different matrix multiplication implementations on the NVIDIA system for different sizes of the matrices.}
   \label{fig:mat_mult_single}
 \end{figure}
 \begin{table}[tb]
@@ -230,7 +234,8 @@ We performed our experiments with the six different implementations 1. -- 6. of 
     skeleton\\
     \bottomrule
   \end{tabular}
-  \caption{Runtime results for all implementations on the NVIDIA system.}
+  \caption[Runtime results for all tested implementations of matrix multiplication on an NVIDIA system.]
+          {Runtime results for all tested implementations on the NVIDIA system.}
   \label{tab:mat_mult_single}
 \end{table}
 
@@ -251,7 +256,8 @@ However, the latter implementation can only be used for square matrices and, the
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_sizes_hd6990}
-  \caption{Runtime of all compared implementations for a matrix multiplication on the AMD system using one \GPU.}
+  \caption[Runtime of different matrix multiplication implementations on an AMD ststem.]%
+          {Runtime of all compared implementations for a matrix multiplication on the AMD system using one \GPU.}
   \label{fig:mat_mult_single_amd}
 \end{figure}
 \begin{table}[b]
@@ -272,7 +278,8 @@ However, the latter implementation can only be used for square matrices and, the
     skeleton\\
     \bottomrule
   \end{tabular}
-  \caption{Runtime results for all implementations of matrix multiplication on the AMD system.}
+  \caption[Runtime results for all tested implementations of matrix multiplication on an AMD system.]%
+          {Runtime results for all tested implementations of matrix multiplication on the AMD system.}
   \label{tab:mat_mult_single_amd}
 \end{table}
 
@@ -298,7 +305,8 @@ Similar to the cuBLAS implementation on the Nvidia hardware, it is not surprisin
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_devices}
-  \caption{Runtime of the \allpairs based implementations using multiple \GPUs.}
+  \caption[Runtime of the \allpairs based matrix multiplication implementations using multiple \GPUs.]%
+          {Runtime of the \allpairs based implementations using multiple \GPUs.}
   \label{fig:mat_mult_devices}
 \end{figure}
 \begin{table}[tb]

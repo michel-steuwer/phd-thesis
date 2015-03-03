@@ -24,7 +24,7 @@ For each of the three applications, we compare the performance using our two imp
 
 
 
-\subsection{Gaussian blur}
+\subsection{Gaussian Blur}
 \label{sec:gauss}
 The Gaussian blur is a standard algorithm used in image processing~\cite{Umbaugh1997}.
 One common application is reduction of image noise as shown in \autoref{fig:lena:noise}.
@@ -98,7 +98,8 @@ Matrix<char> gaussianBlur(const Matrix<char>& image) {
 \begin{figure}[tbp]
 	\centering
 	\includegraphics[width=\columnwidth]{HiStencils/LOC.pdf}
-	\caption{Lines of code of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an optimized OpenCL version using local memory, and \SkelCL's \code{MapOverlap} and \code{Stencil} implementations of the \stencil skeleton.}
+	\caption[Lines of code of the Gaussian blur using different implementations.]%
+          {Lines of code of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an optimized OpenCL version using local memory, and \SkelCL's \code{MapOverlap} and \code{Stencil} implementations of the \stencil skeleton.}
 	\label{fig:gaussLOCs}
 \end{figure} 
 
@@ -116,7 +117,8 @@ The implementations using \code{MapOverlap} and \code{Stencil} are only $5-10\%$
 \begin{figure}[tbp]
 	\centering
 	\includegraphics[width=\columnwidth]{HiStencils/GaussOpenCL.pdf}
-	\caption{Runtime of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an OpenCL version using local memory and SkelCL's MapOverlap and Stencil skeletons.}
+	\caption[Runtime of the Gaussian blur using different implementations.]%
+          {Runtime of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an OpenCL version using local memory and SkelCL's MapOverlap and Stencil skeletons.}
 	\label{fig:gaussAbs}
 \end{figure} 
 
@@ -143,7 +145,7 @@ The higher the computational complexity for increasing size of stencil shape, th
 \begin{figure}
 	\centering
 	\includegraphics[width=.85\columnwidth]{HiStencils/SpeedupGauss.pdf}
-	\caption{Speedup on up to four \GPUs.}
+	\caption{Speedup of the Gaussian blur application on up to four \GPUs.}
 	\label{fig:GaussMult}
 \end{figure} 
 
@@ -156,7 +158,7 @@ The higher the computational complexity for increasing size of stencil shape, th
 
 
 
-\subsection{Sobel edge detection}
+\subsection{Sobel Edge Detection}
 \label{sec:sobel}
 The Sobel edge detection produces an output image in which the detected edges in the input image are marked in white and plain areas are shown in black.
 The effect is shown in \autoref{fig:sobel:lena}, where the original image is shown on the left and the output of Sobel edge detection applied to it on the right.
@@ -174,7 +176,8 @@ The effect is shown in \autoref{fig:sobel:lena}, where the original image is sho
     \caption{Image after Sobel edge detection.}
     \label{fig:lena:sobel}
   \end{subfigure}
-  \caption{The Lena image~\cite{Lena} often used as an example in image processing before (left) and after (right) applying Sobel edge detection.}
+  \caption[The Lena image before and after applying Sobel edge detection.]%
+          {The Lena image~\cite{Lena} often used as an example in image processing before (left) and after (right) applying Sobel edge detection.}
   \label{fig:sobel:lena}
 \end{figure}
 
@@ -348,7 +351,8 @@ During execution (line~\ref{lst:skelcl:canny:call}), the stencil operations are 
 \begin{figure}[tbp]
 	\centering
 	\includegraphics[width=.9\columnwidth]{HiStencils/Canny.pdf}
-	\caption{Runtime of the Canny edge detection algorithm comparing the \code{MapOverlap} and \code{Stencil} skeleton implementations.}
+	\caption[Runtime of the Canny edge detection algorithm.]%
+          {Runtime of the Canny edge detection algorithm comparing the \code{MapOverlap} and \code{Stencil} skeleton implementations.}
 	\label{fig:canny}
 \end{figure} 
 

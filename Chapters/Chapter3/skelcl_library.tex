@@ -33,7 +33,7 @@ We create the two input \code{Vector}s from C style pointers (line~\autoref{lst:
 In line~\autoref{lst:skelcl:dotproduct:apply} we perform the computation by applying the customized skeletons to the data, before we finally return the computed result in line~\autoref{lst:skelcl:dotproduct:return}.
 
 \begin{lstlisting}[%                                                             
-caption={Implementation of the dot product computation in SkelCL},%
+caption={Implementation of the dot product computation in \SkelCL.},%
 float=t,%
 numbers=left,%
 label={lst:skelcl:dotproduct}]
@@ -97,11 +97,11 @@ LLVM and the related Clang project offer well-defined application programming in
 In particular the \emph{LibTooling} API allows for writing tools which search for particular patterns in the abstract syntax tree (AST) which is representing the source code and perform actions on the found code fragments.
 The \code{skelclc} custom compiler does exactly this.
 For example, the custom compiler searches for expressions like this:
-\begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={Code snippet before transformation.}]
+\begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={\SkelCL code snippet before transformation.}]
 auto mult = zip( [](float x, float y){ return x*y; } );
 \end{lstlisting}
 and replaces it with:
-\begin{lstlisting}[numbers=none,label={lst:skelclc:after},caption={Code snippet after transformation.}]
+\begin{lstlisting}[numbers=none,label={lst:skelclc:after},caption={\SkelCL code snippet after transformation.}]
 auto mult = Zip<Container<float>(Container<float>,
                                  Container<float>)>(
               Source("float func(float x, float y)"
@@ -198,7 +198,8 @@ The reason for these restrictions is that when executing the lambda expression o
 Furthermore, as the lambda expression will be executed multiple times in parallel as part of the skeletons execution, it is likely that race conditions occur when writing to the captured reference.
 We can rewrite the $saxpy$ example using a lambda expression capturing the variable $a$ as shown in \autoref{lst:saxpy:capture}.
 \begin{lstlisting}[%
-  caption={The BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing the variable $a$.},%
+  caption={[The BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing a variable.]
+           The BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing the variable $a$.},%
   float=tbp,%
   label={lst:saxpy:capture}]
 float a = initScalar();
@@ -414,7 +415,8 @@ This produces the final result, as shown in the bottom line.
 \begin{figure*}[tbp]
     \centering
     \includegraphics[width=.9\textwidth]{ASHES/scan}
-    \caption{Implementation of the \scan skeleton visualized for four GPUs:
+    \caption[Implementation of the \scan skeleton.]%
+            {Implementation of the \scan skeleton visualized for four GPUs:
             (1) All GPUs scan their parts independently.
             (2) \map skeletons are created automatically and
              executed to produce the result.}
@@ -464,7 +466,8 @@ The second and third argument of the factory function define the range of the st
 The actual computation of the Gaussian blur is omitted from \autoref{lst:mapoverlap} for brevity reasons.
 
 \begin{lstlisting}[%
-caption={Implementation of Gaussian blur using the \code{MapOverlap} implementaion of the \stencil skeleton.},%
+caption={[Implementation of Gaussian blur using the \stencil skeleton.]%
+         Implementation of Gaussian blur using the \code{MapOverlap} implementaion of the \stencil skeleton.},%
 float={tb},
 label={lst:mapoverlap}]
 auto gauss = mapOverlap($\label{lst:mapoverlap:factory}$
@@ -631,7 +634,8 @@ Within the outer vector, the inner vectors are swapped pair-wise on the host, so
 \begin{figure}[tb]
   \centering
   \includegraphics[width=.75\columnwidth]{HiStencils/data_exchange}
-  \caption{\small Device synchronization for three devices. Equally patterned and colored chunks represent the border regions and their matching inner border region. After the download of the appropriate inner border regions, they are swapped pair-wise on the host. Then the inner border regions are uploaded in order to replace the outdated border regions.}
+  \caption[Device synchronization for three devices during the execution of the \stencil skeleton.]
+          {\small Device synchronization for three devices. Equally patterned and colored chunks represent the border regions and their matching inner border region. After the download of the appropriate inner border regions, they are swapped pair-wise on the host. Then the inner border regions are uploaded in order to replace the outdated border regions.}
   \label{fig:syncDevices}
   \vspace{1em}
 \end{figure}
@@ -779,7 +783,8 @@ We will report measurements of the performance difference for the two skeleton i
 \begin{figure}[b]
   \centering
   \includegraphics[width=.3\textwidth]{HLPP/multi_gpu}
-  \caption{Data distributions used for a system with two GPUs: matrices $A$ and $C$ are \emph{block} distributed, matrix $B$ is \emph{copy} distributed.}
+  \caption[Data distributions used for the \allpairs skeleton for a system with two \GPUs.]%
+          {Data distributions used for a system with two \GPUs: matrices $A$ and $C$ are \emph{block} distributed, matrix $B$ is \emph{copy} distributed.}
   \label{fig:multi_gpu}
 \end{figure}
 

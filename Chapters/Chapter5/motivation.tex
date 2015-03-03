@@ -1,4 +1,4 @@
-\section{A case study of OpenCL optimizations}
+\section{A Case Study of OpenCL Optimizations}
 \label{sec:reduce:case-study}
 \label{section:reduce:case-study}
 To understand the problems of performance and portability in the context of modern parallel processors, we will study a simple application example: parallel reduction.
@@ -14,8 +14,8 @@ Then we will see how the optimized implementations perform on an AMD \GPU and In
 Finally, we will use our observations to motivate the need for a pattern-based code generator for achieving performance portability.
 
 
-\todo{sg: daran gibt es doch auch verschiedene??}
-\subsection{Optimizing parallel reduction for an Nvidia \GPU}
+\todo{sg: davon gibt es doch auch verschiedene??}
+\subsection{Optimizing Parallel Reduction for an Nvidia \GPU}
 For implementing the parallel summation of an array, we study an approach using two \OpenCL kernels.
 \todo{sg: kurz erinnern, dass die Elemente in den Blättern sind}
 The first \OpenCL kernel is executed in parallel by multiple \OpenCL work-groups, as shown in \autoref{fig:reduce:tree}.
@@ -28,7 +28,8 @@ The synchronization inside the second kernel ensures correctness when computing 
 \begin{figure}[t]
   \centering
   \includegraphics[width=.75\linewidth]{ReduceTree}
-  \caption{The first \OpenCL kernel is executed by four work-groups in parallel:
+  \caption[Parallel Reduction in \OpenCL.]%
+    {The first \OpenCL kernel is executed by four work-groups in parallel:
     \ \protect\firstBox{}\,\,work-group $0$,\ \protect\secondBox{}\,\,work-group $1$,\ \protect\thirdBox{}\,\,work-group $2$, \protect\fourthBox{}\,\,work-group $3$.
            The second \OpenCL kernel is only executed by the first work-group.}
   \label{fig:reduce:tree}
@@ -62,7 +63,8 @@ Despite being difficult to program, this implementation does not provide high pe
 \citeauthor{Harris2007} reports that only 2.41\% of the theoretical peak memory bandwidth are utilized. 
 
 \begin{lstlisting}[%                                                             
-caption={First \OpenCL implementation of the parallel reduction achieving 2.41\% of the theoretical peak memory bandwith performance.},%
+caption={[First \OpenCL implementation of the parallel reduction.]%
+         First \OpenCL implementation of the parallel reduction achieving 2.41\% of the theoretical peak memory bandwith performance.},%
 numbers=left,%
 float=tb,
 label={lst:reduce0}]
@@ -103,7 +105,8 @@ The performance improves by a factor of 2.33 as compared to the first implementa
 However, still only 5.62\% of the theoretically available memory bandwidth are used by this version.
 
 \begin{lstlisting}[%                                                             
-caption={\OpenCL implementation of the parallel reduction avoiding divergent branching.
+caption={[\OpenCL implementation of the parallel reduction avoiding divergent branching.]%
+         \OpenCL implementation of the parallel reduction avoiding divergent branching.
          This implementation achieves 5.62\% of the theoretical peak memory bandwidth performance.},%
 numbers=left,%
 float=tb,
@@ -148,7 +151,8 @@ With this version 11.27\% of the theoretically available memory bandwidth are us
 
 
 \begin{lstlisting}[%                                                             
-caption={\OpenCL implementation of the parallel reduction avoiding local memory bank conflicts.
+caption={[\OpenCL implementation of the parallel reduction avoiding local memory bank conflicts.]%
+         \OpenCL implementation of the parallel reduction avoiding local memory bank conflicts.
          This implementation achieves 11.27\% of the theoretical peak memory bandwidth performance.},%
 numbers=left,%
 float=tb,
@@ -189,7 +193,8 @@ With this version, 20.11\% of the theoretically available memory bandwidth are u
 
 
 \begin{lstlisting}[%                                                             
-caption={\OpenCL implementation of the parallel reduction. Each work-item performs an addition when loading data from global memory.
+caption={[\OpenCL implementation of the parallel reduction. Each work-item performs an addition when loading data from global memory.]%
+         \OpenCL implementation of the parallel reduction. Each work-item performs an addition when loading data from global memory.
          This implementation achieves 20.11\% of the theoretical peak memory bandwidth performance.},%
 numbers=left,%
 float=tb,
@@ -237,7 +242,10 @@ The performance improves by a factor of 1.8 as compared to the previous implemen
 With this version, 36.21\% of the theoretically available memory bandwidth are used.
 
 \begin{lstlisting}[%                                                             
-caption={\OpenCL implementation of the parallel reduction.
+caption={
+         [\OpenCL implementation of the parallel reduction.
+         Synchronization inside a warp is avoided by unrolling the loop for the last 32 work-items.]
+         \OpenCL implementation of the parallel reduction.
          Synchronization inside a warp is avoided by unrolling the loop for the last 32 work-items.
          This implementation achieves 36.21\% of the theoretical peak memory bandwidth performance.},%
 numbers=left,%
@@ -293,7 +301,8 @@ The performance improves by a factor of 1.41 as compared to the previous impleme
 With this version, 56.92\% of the theoretically available memory bandwidth are used.
 
 \begin{lstlisting}[%                                                             
-caption={\OpenCL implementation of the parallel reduction with a completly unrolled loop.
+caption={[\OpenCL implementation of the parallel reduction with a completly unrolled loop.]
+         \OpenCL implementation of the parallel reduction with a completly unrolled loop.
          This implementation achieves 56.92\% of the theoretical peak memory bandwidth performance.},%
 numbers=left,%
 float=p,
@@ -353,7 +362,8 @@ The performance improves by a factor of 1.42 as compared to the previous impleme
 With this version, 72.53\% of the theoretically available memory bandwidth are used.
 
 \begin{lstlisting}[%                                                             
-caption={Fully optimized \OpenCL implementation of the parallel reduction.
+caption={[Fully optimized \OpenCL implementation of the parallel reduction.]
+         Fully optimized \OpenCL implementation of the parallel reduction.
          This implementation achieves 72.53\% of the theoretical peak memory bandwidth performance.},%
 numbers=left,%
 float=p,
@@ -422,7 +432,7 @@ Turning the theoretical performance into practical performance by applying such 
 
 
 
-\subsection{Portability of the optimized parallel reduction}
+\subsection{Portability of the Optimized Parallel Reduction}
 After we have established how crucial but hard to achieve optimizations are, we now will investigate their portability.
 To do so, we run the code shown in \autoref{lst:reduce0}--\ref{lst:reduce6} on three different hardware architectures:
 Nvidia's Fermi \GPU architecture~\cite{CUDAFermi2009} which we have used in our analysis in the previous section, AMD's Graphics Core Next \GPU architecture~\cite{AMDGCN2012}, and Intel's Nehalem \CPU architecture~\cite{IntelNehalem2008}.
@@ -508,7 +518,7 @@ We aim at developing an approach which can systematically apply optimizations an
 
 \todo{This approach should be able to apply all optimizations we just discussed ...}
 
-\subsection{The need for a pattern-based code generator}
+\subsection{The Need for a Pattern-Based Code Generator}
 
 Our goal in this chapter is to develop a systematic approach to achieve \emph{performance portability}, \ie, to achieve high relative performance for a given application across a set of different parallel processors.
 As we saw in the previous section, traditional approaches, like \OpenCL, are not performance portable.

@@ -1,11 +1,11 @@
-\section{The need for high-level abstractions}
+\section{The Need for High-Level Abstractions}
 We start the discussion of programming for parallel systems and in particular for \GPU systems by looking thoroughly at an application example.
 By doing so we will identify challenges faced by application developers which arise from typical characteristics of parallel hardware architectures.
 We will then derive from these challenges requirements for a potential high-level programming model.
 
 
 % ============================================================================ %
-\subsection{Challenges of \GPU programming}
+\subsection{Challenges of \GPU Programming}
 \label{section:opencl-example}
 We choose to investigate a real-world application rather than a simple benchmark, in order to identify not only fundamental challenges every application developer targeting \GPU systems faces, but also practical programming challenges which become only visible for more complex applications, \eg, managing the execution of multiple compute kernels.
 
@@ -44,7 +44,7 @@ the local error for row $A_i$ is computed and, finally, added to $c_l$.
 The second inner loop (step 2, lines~\autoref{lst:lmosem:seq_code:step2:begin}--\autoref{lst:lmosem:seq_code:step2:end}) iterates over all elements of $f_l$ and $c_l$ to compute $f_{l+1}$.
 \begin{figure}
 \begin{lstlisting}[
-  caption={Sequential code for LM OSEM comprises one outer loop with two nested inner loops.},
+  caption={[Sequential code for LM OSEM.]Sequential code for LM OSEM comprises one outer loop with two nested inner loops.},
   label={lst:lmosem:seq_code}]
 for (int l = 0; l < subsets; l++) {
   // read subset
@@ -99,7 +99,7 @@ We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (
 Altogether eleven such memory operations -- each with different amounts of bytes and offsets -- appear in the \OpenCL source code.
 
 \begin{lstlisting}[float,
-  caption={Implementation of the upload phase in \OpenCL (omitting error checks for brevity)},
+  caption={[Implementation of the upload phase of the LM OSEM in \OpenCL.]Implementation of the upload phase in \OpenCL (omitting error checks for brevity).},
   label={lst:lmosem:upload}]
 for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
   // upload $S$
@@ -157,7 +157,7 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 
 \autoref{lst:lmosem:redistribution} shows an \OpenCL pseudocode for the redistribution phase.
 To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function (line~\ref{lst:lmosem:redistribution:operation}) and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
-For such synchronization, \OpenCL uses \emph{events}, associated with an operation (line~\ref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
+For such synchronizations, \OpenCL uses \emph{events}, associated with an operation (line~\ref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
 After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (line \autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
 Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in any version of \OpenCL.
 
@@ -176,7 +176,7 @@ For executing the computations of step 2, we have to perform the following steps
   \item launch the kernel (line \autoref{lst:lmosem:step_2:kernel:start} -- \autoref{lst:lmosem:step_2:kernel:stop}).
 \end{itemize}
 \begin{lstlisting}[float,
-  caption={Implementation of step 2 in \OpenCL (omitting error checks for brevity)},
+  caption={[Implementation of step 2 of the LM OSEM in \OpenCL.]Implementation of step 2 in \OpenCL (omitting error checks for brevity).},
   label={lst:lmosem:step_2}]
 // step 2 (in $\autoref{fig:lmosem:em_distribution}$)
 source_code_step_2 =
@@ -220,10 +220,10 @@ The implementation of the download phase is similar to the upload phase as shown
 
 
 % ============================================================================ %
-\subsection{Requirements for a High-Level Programming Model}
+\subsection[Requirements for a High-Level\\ Programming Model]{Requirements for a High-Level Programming Model}
 \label{section:requirements}
 The described implementation of the example application reveals the main problems and challenges that application developers have to overcome when targeting \GPU systems.
-Our analysis show that to simplify programming for a system with multiple \GPUs, at least the following three high-level abstraction are desirable:
+Our analysis shows that to simplify programming for a system with multiple \GPUs, at least the following three high-level abstraction are desirable:
 
 \paragraph{Parallel container data types}
 Compute-intensive applications typically operate on a (possibly big) set of data items.

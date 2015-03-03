@@ -11,7 +11,7 @@ These are systematically transformed into low-level \OpenCL patterns using a rul
 \end{figure}
 
 \newpage
-\section{Overview}
+\section{Overview of our Code Generation Approach}
 \label{section:code-generation:overview}
 
 The overview of our pattern-based code generation approach is presented in \autoref{fig:highlevel}.
@@ -118,7 +118,7 @@ kernel vectorScal(global float* in,
 \caption{\textbf{OpenCL program} produced by our code generator.}
 \label{fig:codeex:ocl}
 \end{subfigure}
-\caption{
+\caption[Introductory example: vector scaling.]{
 Pseudo-code representing vector scaling.
 The user maps the \code{mul3} function over the input array~(\subref{fig:codeex:map}).
 This high-level expression is transformed into a low-level expression~(\subref{fig:codeex:impl}) using rewrite rules.
