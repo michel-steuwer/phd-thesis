@@ -1,8 +1,19 @@
 \section{Linear Algebra Applications}
 \label{section:skelcl:evaluation:linearAlgebra}
 
-BLAS ... important building blocks ...
-\todo{Write stuff}
+In this section we are going to evaluate \SkelCL using three linear algebra applications:
+\begin{itemize}
+  \item the sum of absolute values of a vector,
+  \item the dot product of two vectors, and
+  \item the multiplication of two dense matrices.
+\end{itemize}
+
+These three applications are all included in BLAS~\cite{Dongarra2002,Dongarra2002a}, the well known library of basic linear algebra functions.
+The BLAS functions are used as basic building blocks by many HPC applications.
+Especially dense matrix multiplication is an important operation found in numerous scientific applications.
+
+Here we want to investigate how easily these three applications can be expressed with skeletons in \SkelCL.
+Furthermore, we are interested in the runtime performance of the \SkelCL implementations.
 
 \subsection{Sum of Absolute Values}
 \label{sec:asum}
@@ -26,7 +37,7 @@ In the \SkelCL programming model we can express \emph{asum} using the \map and \
     \right.\nonumber
 \end{align}
 
-The \map skeleton applies the $abs$ function to each element of the input vector before the \reduce skeleton is used to sum up the elements.
+The \map skeleton applies the $(|\, .\, |)$ function to each element of the input vector before the \reduce skeleton is used to sum up the elements.
 
 The implementation using the \SkelCL library is shown in \autoref{lst:skelcl:asum}.
 In lines~\ref{lst:skelcl:asum:skeletons:start}--\ref{lst:skelcl:asum:skeletons:end} the customized skeletons are defined.
@@ -59,6 +70,7 @@ We compare this implementation against a native OpenCL implementation and an imp
 \subsubsection*{Performance experiments}
 \todo{...}
 
+\paragraph{Discussion}
 As discussed in \autoref{chapter:skelcl} the \SkelCL library implementation generates one (or more) OpenCL kernel for each skeleton.
 This procedure makes it difficult to \emph{merge} multiple OpenCL kernels into a single one, which would be required to achieve a competitive performance to the native OpenCL implementation.
 In \autoref{ch:fifth}, we will discuss a novel compilation technique addressing this challenge.
