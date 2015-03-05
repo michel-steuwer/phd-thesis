@@ -8,8 +8,7 @@ We will also discuss the hardware used in the experiments.
 We want to evaluate the programmability, \ie, the ease of programming, and performance of the \SkelCL programming model and library.
 
 Directly measuring programmability is difficult.
-\todo{find metrics}
-Various metrics~\cite{} have been proposed to measure how convenient a certain style of programming or a certain programming model is.
+Various studies~\cite{HochsteinCSAB2005,HochsteinBVG2008} have been conducted and metrics~\cite{VanderwielNL1997} have been proposed to measure how convenient a certain style of programming or a certain programming model is.
 None of these metrics is widely established in the scientific or industrial communities.
 We chose to use one of the simples metrics possible to quantify programming effort: counting the \emph{Lines Of source Code} (LOC).
 The author wants to emphasize that this metric is not always a good representation of programmability.
@@ -30,7 +29,7 @@ The system is connected to a Nvidia Tesla S1070 computing system consisting of f
 The S1070 has 16\,GB of dedicated memory (4\,GB per \GPU) which is accessed with up to 408\,GB/s (102\,GB/s per \GPU).
 Each \GPU comprises 240 streaming processor cores running at up to 1.44\,GHz.
 The Linux based Ubuntu operating system was used.
-The runtime experiments where conducted at different times from 2010 until 2014.
+The runtime experiments where conducted at different times from 2010 until 2015.
 For each experiment the latest Nvidia \GPU driver available was used.
 
 This hardware setup represents a common heterogeneous system comprising four \CPU cores and 960 \GPU streaming processor cores with a total of 28\,GB of memory.

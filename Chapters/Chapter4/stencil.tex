@@ -339,12 +339,11 @@ Matrix<char> sobelEdge(const Matrix<char>& image) {
   return canny(image); }$\label{lst:skelcl:canny:call}$
 \end{lstlisting}
 
-To implement the Canny algorithm in SkelCL, the single steps can be combined as shown in \autoref{lst:skelcl:canny}.
+To implement the Canny algorithm in \SkelCL, the single steps can be combined as shown in \autoref{lst:skelcl:canny}.
 The individual steps are defined in lines~\ref{lst:skelcl:canny:step1}--\ref{lst:skelcl:canny:stepN} and then combined to a sequence of stencils in line~\ref{lst:skelcl:canny:combine}.
 During execution (line~\ref{lst:skelcl:canny:call}), the stencil operations are performed in the order which is specified when creating the \emph{StencilSequence} object.
 
-\subsubsection*{Programming effort}
-\todo{...}
+%\subsubsection*{Programming effort}
 
 \subsubsection*{Performance experiments}
 

@@ -64,7 +64,25 @@ In this section we will look at the basic skeletons, the advanced skeletons will
 The four basic skeletons have been selected, because they have been proven to be useful for a broad range of applications.
 Moreover, these skeletons can be efficiently implemented on \GPUs as their computation patterns match the data-parallel \SIMD (Singe Instruction, Multiple Data) execution model implemented by \GPUs.
 
-\todo{Add paragraph explaining the syntax used}
+\paragraph{Notation}
+\label{par:notation}
+We will use a notation strongly inspired by the Bird-Meertens formalism~\cite{Bird88}.
+Function application is written with a space between the function name and the argument, \ie, $f\ x$.
+We use parenthesis solely for enforcing precedence or for structuring complex expressions to make them easier to understand.
+Function application is left associative and functions are curried, \ie, $f\ x\ y$ means $(f\ x)\ y$ and not $f\ (x\ y)$.
+For sequential function composition we use the $\circ$ operator, \ie, $(f\circ g)\ x = f\ (g\ x)$.
+Function application binds stronger than any other operation, \eg, $f\ x \circ g\ y = (f\ x) \circ (g\ y)$.
+
+We use various symbols, \eg, $\oplus$ and $\otimes$ as binary operators.
+We write these operators using infix notation, \ie, $x\ \oplus\ y$.
+Using parenthesis we can \emph{section} a binary operator which we write using prefix notation:
+\begin{align*}
+  (\oplus)\ x\ y &= x \oplus y\\
+  (x\ \oplus)\ y &=  x \oplus y\\
+  (\oplus\ y)\ x &=  x \oplus y
+\end{align*}
+
+As our data structures we use vectors written as $[x_1, x_2, \ldots, x_n]$ and matrices written as $\DottedMatrix{m_{1,1}}{m_{1,m}}{m_{n,1}}{m_{n,m}}$.
 
 \paragraph{The Map skeleton}
 The \map skeleton is a well-known basic algorithmic skeleton, applying the customizing function to each element of a container in parallel.
@@ -113,7 +131,7 @@ As the \map skeleton it is defined for vectors and matrices as well.
   The algorithmic skeleton \zip is defined as follows:
   \begin{equation*}
     \begin{split}
-      \zip\ \oplus\ [x_1, x_2, \dots, x_n]\ [y_1, y_2, \dots, y_n]\\
+      \zip\ (\oplus)\ [x_1, x_2, \dots, x_n]\ [y_1, y_2, \dots, y_n]\\
       \eqdef [x_1 \oplus y_1, x_2 \oplus y_2, \dots, x_n \oplus y_n]
     \end{split}
   \end{equation*}
@@ -127,7 +145,7 @@ Again the definition for matrices is similar:
   The algorithmic skeleton \zip is defined as follows:
   \begin{equation*}
     \begin{split}
-      \zip\ f\ {\DottedMatrix{m_{1,1}}{m_{1,m}}{m_{n,1}}{m_{n,m}}}\
+      \zip\ (\oplus)\ {\DottedMatrix{m_{1,1}}{m_{1,m}}{m_{n,1}}{m_{n,m}}}\
             {\DottedMatrix{n_{1,1}}{n_{1,m}}{n_{n,1}}{n_{n,m}}} \\
       \eqdef \DottedMatrix{m_{1,1} \oplus n_{1,1}}{m_{1,m} \oplus n_{1,m}}{m_{n,1} \oplus n_{n,1}}{m_{n,m} \oplus n_{n,m}}
     \end{split}
@@ -152,7 +170,7 @@ In \SkelCL, the \reduce skeleton is only defined on vectors:
   Let $\oplus$ be an associative and commutative binary customizing operator with the corresponding identity element \id.
   The algorithmic skeleton \reduce is defined as follows:
   \begin{equation*}
-    \reduce\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
+    \reduce\ (\oplus)\ \id\ [x_1, x_2, \dots, x_n]
       \eqdef x_1 \oplus x_2 \oplus \dots \oplus x_n
   \end{equation*}
 \end{definition}
@@ -183,7 +201,7 @@ In \SkelCL, the \scan skeleton is only defined on vectors:
   The algorithmic skeleton \scan is defined as follows:
   \begin{equation*}
     \begin{split}
-      \scan&\ \oplus\ \id\ [x_1, x_2, \dots, x_n] \\
+      \scan&\ (\oplus)\ \id\ [x_1, x_2, \dots, x_n] \\
       &\eqdef [\id, x_1, x_1 \oplus x_2,\ \dots,x_1 \oplus x_2 \oplus \cdots \oplus x_{n-1}]
     \end{split}
   \end{equation*}
@@ -223,7 +241,8 @@ For computing the sum of absolute values we combine a \map and \reduce skeleton.
       \end{array}
     \right.
 \end{align*}
-This definition can also be expressed in a more compositional style without mentioning the input vector $\vec{x}$ and by using the $\circ$ operator denoting sequential function composition, \ie, $(f \circ g)\ x = f\ (g\ x)$:
+This definition can also be expressed in a more compositional style, also known as \emph{point-free style}, without mentioning the input vector $\vec{x}$ and by using the $\circ$ operator:
+%denoting sequential function composition, \ie, $(f \circ g)\ x = f\ (g\ x)$:
 \begin{align*}
   asum &= \reduce\ (+)\ 0\ \circ\ \map\ (|\, .\, |)
 \end{align*}
@@ -555,7 +574,7 @@ where $B^T$ is the transpose of matrix $B$.
 %   \caption{Data distributions used for a system with two GPUs: matrices $A$ and $C$ are \emph{block} distributed, matrix $B$ is \emph{copy} distributed.}
 %   \label{fig:multi_gpu}
 % \end{figure}
-% 
+%
 % The \allpairs skeleton can be efficiently implemented not only on systems with a single \GPU, but on multi-\GPU systems as well.
 % The necessary data distribution can be easily expressed using two of \SkelCL's \emph{distributions}, as shown in \autoref{fig:multi_gpu}:
 % Matrix $B$ is \emph{copy} distributed, \ie, it is copied entirely to all \GPUs in the system.
@@ -604,7 +623,7 @@ For the \reduce skeleton customized with $\oplus$ and corresponding identity ele
 This composition of the two customized skeletons yields a function which we denote \zipReduce; it takes two input vectors and produces a single scalar value:
 
 \begin{equation*}
-  \zipReduce\ (\oplus)\ \id\ (\otimes)\ \vec{a}\ \vec{b} \eqdef 
+  \zipReduce\ (\oplus)\ \id\ (\otimes)\ \vec{a}\ \vec{b} \eqdef
   \reduce\ (\oplus)\ \id\ \big(\ \zip\ (\otimes)\ \vec{a}\ \vec{b}\ \big)
 \end{equation*}
 
@@ -660,7 +679,7 @@ The popular \emph{MapReduce} programming model by Google has been inspired by a 
 % By expressing the customizing function of the \allpairs skeleton as a \zip-\reduce composition, we provide additional semantic information about the memory access pattern of the customizing function to the skeleton implementation, thus allowing for improving the performance.
 % Our idea of optimization is based on the \OpenCL programming model that organizes \emph{work-items} (i.\,e., threads executing a kernel) in \emph{work-groups} which share the same \GPU local memory.
 % By loading data needed by multiple work-items of the same work-group into the local memory, we can avoid repetitive accesses to the global memory.
-% 
+%
 % \begin{figure}[b]
 %   \centering
 %   \includegraphics[width=.4\textwidth]{HLPP/memory_access}
@@ -677,7 +696,7 @@ The popular \emph{MapReduce} programming model by Google has been inspired by a 
 % The intermediate result is stored in block \circled{8}.
 % In the second iteration, the algorithm continues in the same manner with blocks \circled{4}, \circled{5}, and \circled{6}, but this time, the elements of the blocks are also combined with the intermediate results of the first iteration, which are stored in blocks \circled{7} and \circled{8}.
 % The advantage of computing multiple blocks by the same work-group is that we keep the elements of $B$ in the local memory when computing the intermediate results, \ie, we do not reload block \circled{2} twice for the computation of blocks \circled{7} and \circled{8}.
-% 
+%
 % Every element loaded from the global memory is used by multiple work-items:
 % \eg, the upper left element of block \circled{1} is loaded only once from the global memory, but used three times:
 % in the computation of the upper left, upper middle, and upper right elements of \circled{7}.
@@ -693,8 +712,8 @@ The popular \emph{MapReduce} programming model by Google has been inspired by a 
 % While the parameters can be chosen independently of the matrix sizes, we have to consider the amount of available local memory.
 % \cite{Friese2013}~and~\cite{SarjeAl2013}~discusses how suitable parameters can be found by performing runtime experiments.
 % In~\cite{Friese2013} the parameters $c = 32$, $r=8$, $s=32$, and $k=64$ are used on modern \GPU hardware showing good performance.
-% 
+%
 % We will report measurements of the performance difference for the two skeleton implementations on real hardware in \autoref{chapter:skelcl:apps}.
-% 
-% 
+%
+%
 
