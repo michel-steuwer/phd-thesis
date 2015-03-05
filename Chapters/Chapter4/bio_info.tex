@@ -1,0 +1,33 @@
+\section{Bioinformatics}
+\label{sec:bioinfo}
+
+Bioinformatics is a field applying computational methods for addressing biological challenges.
+This is of especial interest in areas where the amount of biological data is so large that other means of processing the data is infeasible.
+One prominent area of biology where this is the case is sequence analysis, where huge amounts of DNA sequences are analyzed to understand biological phenomena or make useful predictions.
+
+In this section we study such a bioinformatics application, called T-CUP~\cite{DybowskiHeHo2010}, concerned with predicting the resistance of a patient to certain types of \HIV drugs.
+T-CUP uses machine learning as a statistical method to build a model based on millions of analyzed DNA sequences.
+Based on this model the software can predict the resistance of a patient to a particular type of \HIV drugs which is of obvious practical use when determine which drugs to use for treating the patient.
+T-CUP is designed to replace an expensive and time-consuming blood analysis which is currently used.
+
+\subsection*{Biological Background}
+There exists three classes of \HIV viruses, called R5, X4 and X4R5.
+The names relate to the co-receptors the virus uses to connect to the host cell it infects:
+the R5 virus uses the {\small CCR5} co-receptor, the X4 virus the {\small CXCR4} co-receptor, and the X4R5 virus uses both.
+\autoref{fig:hiv} shows a cell with the co-receptors.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=.85\textwidth]{HIV.png}
+  \caption[]%
+          {}
+  \label{fig:hiv}
+\end{figure}
+Certain HIV drugs work by blocking the {\small CCR5} co-receptor and, thus, make it unavailable for the HIV virus.
+Obviously, these drugs are only effective against the R5 and X4R5 types of the HIV virus.
+It is, therefore, of interest when choosing the appropriate drug for treating a patient with which type of HIV virus the patient is infected.
+There exists a blood test which can be used to determine the HIV virus type.
+Unfortunately is this test expensive and time-consuming, so that often the treatment starts before the results of the test are known.
+
+\subsection*{T-CUP}
+The T-CUP software tries
+
