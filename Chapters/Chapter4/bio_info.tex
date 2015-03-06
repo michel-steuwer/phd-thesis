@@ -30,5 +30,36 @@ Unfortunately is this test expensive and time-consuming, so that often the treat
 
 \subsection*{T-CUP}
 The T-CUP software attempts to predict the type of the HIV virus from analyzing a large amount of DNA sequences.
-Recently, \emph{next-generation sequencing} ({\small NGS}) 
+Using \emph{next-generation sequencing} ({\small NGS}) millions or even billions of reads of DNA sequences can be obtained from a single sample.
+This large number of reads require substantial computational power to be processed ans analyzed.
+
+The existing T-CUP software was implemented using the statistical language R which has an easy to use interface for statistics tasks and offers a rich ecosystem of packages concerned with typical bioinformatics challenges.
+Unfortunately, R is an interpreted language lacking of execution speed compared to statically compiled languages like C.
+The original R implementation of T-CUP was able to process 9 DNA sequences per seconds making the processing a millions of DNA sequences infeasible.
+By rewriting the core computational part in C one can obtain a large performance improvement processing about 4000 DNA sequences per seconds and, thus, bringing the runtime from months and weeks down to hours.
+We will discuss in the following how we can further reduce the runtime to a matter of minutes by parallelizing the application.
+
+Fortunately, most of the T-CUP software can be fairly easily parallelized as each individual sequence can be analyzed largely independently.
+\autoref{fig:tcup} shows an overview of the steps performed by T-CUP.
+\begin{figure}
+  \centering
+  \includegraphics[width=.85\textwidth]{HIV.png}
+  \caption[]%
+          {}
+  \label{fig:tcup}
+\end{figure}
+We will focus our discussion on the four most time-consuming steps comprising more than 75\% of the overall runtime of the application.
+These steps are: alignment, translation, ESP computation, and classification.
+
+\paragraph{Alignment}
+In the alignment step all processed DNA sequences are aligned against a reference sequence to find the section of each DNA sequence we are interested in.
+The Needleman-Wunsch algorithm~\cite{} is a widely used algorithm for aligning two sequences.
+To perform the alignment both sequences are arranged on the columns and rows of a matrix as shown in \autoref{fig:needlemanWunsch}.
+The algorithm computes each entry in the matrix following
+
+\subsection*{\SkelCL implementation}
+
+\subsection*{Programming effort}
+
+\subsection*{Performance experiments}
 
