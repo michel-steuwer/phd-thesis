@@ -8,8 +8,7 @@ As we will also introduce patterns which we have not seen so far and which do no
 
 The key idea of our approach is to expose algorithmic choices and hardware-specific program optimizations as patterns that are systematically derived using a rule rewriting system (discussed later in \autoref{section:rules}).
 The high-level algorithmic patterns represent structured parallelism.
-They can either be used by the programmer directly as a stand-alone language (or embedded domain specific language) or used as an intermediate representation targeted by the compiler of another language.
-\todo{sg: embedded worin?}
+They can either be used by the programmer directly as a stand-alone language, as a domain specific language embedded in a general purpose programming language, or used as an intermediate representation targeted by the compiler of another language.
 Once a program is represented with our high-level patterns, we automatically transform the program into low-level patterns.
 The low-level patterns represent hardware-specific concepts expressed by a programming model such as \OpenCL, which is the target chosen for this thesis.
 Following the same approach, a different set of low-level patterns could be designed to target other low-level programming models such as Pthreads or MPI.
@@ -24,14 +23,16 @@ The only exceptions are the user-defined functions, such as the \code{mul3} func
 \autoref{tab:hlskel} presents our high-level patterns used to define programs at the algorithmic level.
 Most of the patterns are well known in functional programming, like \map and \reduce.
 The \zip, \splitN and \join patterns transform the shape of the data.
-For arrays we store the number of dimensions and size of each dimension in the type system, as we will see.
-\todo{sg: we store ... in the type system. Wird das so gesagt?}
+For arrays the number of dimensions and the size of each dimension is part of their types, as we will see.
 The \iterateN pattern iteratively applies a function multiple times.
 Finally, the \reorder pattern lets our system know that it is safe to reorder the elements of an array arbitrarily, which enables additional optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
 
 In the following, we discuss each high-level algorithmic pattern in more detail including their formal definitions.
-As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism~\cite{} as our syntax for the patterns.
-\todo{add citation}
+As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism~\cite{Bird88} as inspiration for our notation of the patterns.
+For full details see~\autoref{par:notation} on page~\pageref{par:notation}.
+Here is a short reminder:
+we write function application using space and functions are often curried;
+binary operators (\eg, $\oplus$) are written using infix notation and can be written using prefix notation when being sectioned using parenthesis: $(\oplus)$.
 
 In this chapter we are especially interested in how patterns can be composed and nested.
 As \emph{types} formally specify which compositions and nesting of patterns are legal, we will precisely define the type of each pattern.
@@ -43,6 +44,8 @@ Tuple types are written as $\langle\alpha, \beta\rangle$.
 Finally, arrays have their length denoted as part of their type:
 for an array with elements of type $\alpha$ and length $n$, we write $[\alpha]_n$.
 
+A more formal description of a core subset of the patterns described in this section can be found in~\cite{SteuwerFeLiDu2015}, where formal syntax, typing rules, and formal semantics are given.
+
 \begin{table}[t]
 \centering
 \begin{tabular}{p{.1\textwidth}p{.85\textwidth}}
@@ -50,7 +53,7 @@ for an array with elements of type $\alpha$ and length $n$, we write $[\alpha]_n
 \tabhead{Pattern} & \tabhead{Description}\\
 \midrule
  \map
-     & Apply a given function to every element of an input array.\\ 
+     & Apply a given function to every element of an input array.\\
  \reduce
      & Perform a reduction of an input array using a user-defined binary function and an initial value.\\
  \zip
@@ -99,13 +102,12 @@ In this chapter we represent matrices as nested arrays, therefore, performing an
 \end{align*}
 Let us assume that $X$ represents an $n\times m$ matrix with elements of type $\alpha$, then its type is $\big[[\alpha]_m\big]_n$.
 The outer \map applies its customizing function to every row of matrix $X$.
-The customizing function is defined by \emph{currying}~\cite{} \map and $f$, thus, producing a function which applies $f$ to every element of its argument array.
-\todo{add citation for currying}
+The customizing function is defined by currying \map and $f$, thus, producing a function which applies $f$ to every element of its argument array.
 Therefore, $f$ will be applied to every element of matrix $X$.
 
 \paragraph{Reduce}
-The \reduce pattern (\aka, fold or accumulate) uses a given binary function $f$ to combine all elements of the input array.
-We require the function $f$ to be associative and commutative which allows for an efficient parallel implementation.
+The \reduce pattern (\aka, fold or accumulate) uses a given binary operator $\oplus$ to combine all elements of the input array.
+We require the operator $\oplus$ to be associative and commutative which allows for an efficient parallel implementation.
 By requiring commutativity, our system can also generate vectorized implementations of the reduction and utilize the efficient coalesced memory access pattern, as we saw in \autoref{section:reduce:case-study}.
 In \autoref{chapter:skelcl} we defined \reduce as an algorithmic skeleton (see \autoref{definition:reduce}).
 The same definition holds here.
@@ -113,21 +115,20 @@ We repeat it here for completeness and we add the type information:
 \begin{definition}
   \label{definition:pattern:reduce}
   Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be an associative and commutative binary customizing operator with the identity element \id.
+  Let $\oplus$ be an associative and commutative binary customizing operator with the identity element $\id_\oplus$.
   The \reduce pattern is then defined as follows:
   \begin{equation*}
-    \reduce\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
+    \reduce\ (\oplus)\ \id_\oplus\ [x_1, x_2, \dots, x_n]
       \eqdef x_1 \oplus x_2 \oplus \dots \oplus x_n
   \end{equation*}
-  The types of $\oplus$, $\id$, $\vec{x}$, and \reduce are as follows:
+  The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \reduce are as follows:
   \begin{align*}
-    \oplus &: ((\alpha, \alpha) \rightarrow \alpha),\\
-    \id &: \alpha,\\
+    (\oplus) &: ((\alpha, \alpha) \rightarrow \alpha),\\
+    \id_\oplus &: \alpha,\\
     \vec{x} &: [\alpha]_n,\\
-    \reduce\ \oplus\ \id\ \vec{x} &: [\alpha]_1
+    \reduce\ \oplus\ \id_\oplus\ \vec{x} &: [\alpha]_1
   \end{align*}
 \end{definition}
-\todo{sg: vielleicht sagen, dass wir id manchmal omitten reduce (+) [ ]?}
 
 
 \paragraph{Zip}
@@ -229,7 +230,7 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
   The types of $n$, $f$, $\vec{x}$, and \iterateN are as follows:
   \begin{align*}
     n &: int,\\
-    f &: ([\alpha]_k \rightarrow [\alpha]_{F(k)}), 
+    f &: ([\alpha]_k \rightarrow [\alpha]_{F(k)}),
       \begin{aligned}[t]
         & \forall k \text{ and where } \\
         &F : (int\rightarrow int) \text{ describes the change}\\
@@ -245,8 +246,11 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
 % After each iteration, we swap the pointers, so that the output of the last iteration becomes the input for the next one.
 % We automatically allocated and calculate memory requirements based on the information from the input and output type.
 \noindent
-\todo{say more}
 The type property of the \iterateN pattern is interesting as its result type depends on the effect $f$ has on the size of its argument.
+The index function $F$ describes the effect the function $f$ has on the size of its input array.
+This index function is used to compute the effect the \iterateN function has when applying $f$ $n$ times on its input array.
+Please note, that the size of the input array of $f$, \ie, $k$, possibly changes every time $f$ is applied by \iterateN.
+A more formal treatment of the topic can be found in~\cite{SteuwerFeLiDu2015}.
 
 %\begin{align}
 %  n : int,\ F : (int \rightarrow int),\ f : (\forall k\ .\ [\alpha]_k \rightarrow [\alpha]_{F(k)}),\ xs : [\alpha]_m\ %
@@ -284,7 +288,7 @@ This definition allows the implementation to pick any permutation to reorder the
 In order to achieve the highest performance, programmers often use a set of intuitive ``rules of thumb'' to optimize their applications.
 We extensively discussed one application example in \autoref{section:reduce:case-study}.
 Each hardware vendor provides own optimization guides~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide} that extensively cover vendor's hardware particularities and optimizations.
-The main idea behind our approach is to identify common optimization patterns and express them systematically rather than intuitively, with the help of low-level patterns coupled with a rewrite-rule system.
+The main idea behind our approach is to identify common optimization patterns and express them systematically rather than intuitively, using low-level patterns coupled with a rewrite-rule system.
 
 \autoref{tab:llskel} gives an overview of the \OpenCL-specific patterns we have identified.
 
@@ -297,9 +301,9 @@ The main idea behind our approach is to identify common optimization patterns an
  \mapWorkgroup
      & Each \OpenCL \textbf{work-group} applies the given function to an element of the input array.\\
  \mapLocal
-     & Each \textbf{local work-item} of a work-group applies the given function to an element of the input array.\\ 
+     & Each \textbf{local work-item} of a work-group applies the given function to an element of the input array.\\
  \mapGlobal
-     & Each \textbf{global work-item} applies the given function to an element of the input array.\\ 
+     & Each \textbf{global work-item} applies the given function to an element of the input array.\\
  \mapWarp
      & Each \textbf{warp} applies the given function to an element of the input array.\newline Only available for Nvidia \GPUs.\\
  \mapLane
@@ -307,7 +311,7 @@ The main idea behind our approach is to identify common optimization patterns an
  \mapSeq
       & Apply the given function to every element of the input array \textbf{sequentially}.\\
  \reduceSeq
-      & Perform the reduction using the given binary reduction function and initial value on the input array \textbf{sequentially}.\\  
+      & Perform the reduction using the given binary reduction function and initial value on the input array \textbf{sequentially}.\\
  \reorderStride
       & Access input array with a given stride to maintain \textbf{memory coalescing}.\\
  \toLocal
@@ -329,9 +333,9 @@ The main idea behind our approach is to identify common optimization patterns an
 \paragraph{Parallel Maps}
 The different \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread-level parallelism in \OpenCL.
 The execution semantics and types of all these low-level \OpenCL \map patterns are the same as of the high-level \map pattern shown in \autoref{definition:pattern:map}.
-In fact, these patterns can be viewed as \emph{instantiations} of the high-level \map pattern \emph{interface}, as they provide different possibilities to implement the \map pattern.
-\todo{sg: was ist ein pattern interface?}
+In fact, these patterns can be viewed as \emph{instantiations} of the \emph{interface} the high-level \map pattern define, as the low-level \OpenCL pattern provide different possibilities to implement the \map pattern.
 
+\todo{describe map-warp and map-lane}
 \todo{sg: hier waere ein Bild gut, das diese maps zusammen mit der OpenCL Thread-Hierarchie zeigt}
 The \mapWorkgroup pattern assigns work to an \OpenCL work-group, \ie, following \autoref{definition:pattern:map} each \OpenCL work-group executes the given function on a different part of the input vector.
 
@@ -349,6 +353,8 @@ This allows us to map computations in different ways to the thread hierarchy of 
 %Finally, an appropriate synchronization mechanism for the given map pattern is added.
 %For instance after a \pat{map-local} we add a barrier synchronization to synchronize the threads inside of the work-group.
 
+\FloatBarrier
+
 \paragraph{Sequential Map and Reduce}
 The \mapSeq and \reduceSeq patterns perform a sequential map and reduction, respectively, within a single work-item.
 % In both cases the generated code consists of a loop iterating over the array and calling the customizing function.
@@ -356,18 +362,18 @@ The \mapSeq and \reduceSeq patterns perform a sequential map and reduction, resp
 
 For the \mapSeq pattern, the semantics and type are the same as for the high-level \map pattern shown in \autoref{definition:pattern:map}.
 This is not the case for the \reduceSeq and \reduce patterns, where their types differ.
-For the high-level \reduce pattern, we require the customizing binary function to be associative and commutative in order to allow for an efficient parallel implementation.
+For the high-level \reduce pattern, we require the customizing binary operator to be associative and commutative in order to allow for an efficient parallel implementation.
 As the \reduceSeq pattern performs a sequential reduction, we can relax these requirements, therefore, we define \reduceSeq separately.
 \begin{definition}
   \label{definition:pattern:reduceSeq}
   Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
-  Let $\oplus$ be a binary customizing operator with the identity element \id.
+  Let $\oplus$ be a binary customizing operator with the identity element $\id_\oplus$.
   The \reduceSeq pattern is then defined as follows:
   \begin{equation*}
-    \reduceSeq\ \oplus\ \id\ [x_1, x_2, \dots, x_n]
-      \eqdef (\dots((id \oplus x_1) \oplus x_2) \ldots \oplus x_n)
+    \reduceSeq\ (\oplus)\ \id_\oplus\ [x_1, x_2, \dots, x_n]
+      \eqdef (\dots((id_\oplus \oplus x_1) \oplus x_2) \ldots \oplus x_n)
   \end{equation*}
-  The types of $\oplus$, $\id$, $\vec{x}$, and \reduce are as follows:
+  The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \reduce are as follows:
   \begin{align*}
     \oplus &: ((\alpha, \beta) \rightarrow \alpha),\\
     \id &: \alpha,\\
@@ -376,16 +382,11 @@ As the \reduceSeq pattern performs a sequential reduction, we can relax these re
   \end{align*}
 \end{definition}
 
-\todo{sg: Table 5.2 hier platzieren}
-
 
 \paragraph{Reorder-stride}
 The \reorderStride pattern enforces a special reordering of an array.
-\todo{sg: definition??}
-In our implementation no code is produces, but rather the reordering determines how the data is read from the array.
 The produced strided-access pattern ensures that after splitting the workload, consecutive work-items access consecutive memory elements.
 This corresponds to the \emph{coalesce memory accesses}, which are beneficial on modern \GPUs as discussed in \autoref{chapter:background}.
-
 \begin{definition}
   \label{definition:pattern:reorderStride}
   Let $s$ be an integer value.
@@ -403,6 +404,8 @@ This corresponds to the \emph{coalesce memory accesses}, which are beneficial on
     \reorderStride\ s\ \vec{x} &: [\alpha]_m
   \end{align*}
 \end{definition}
+
+In our implementation no code is produces, but rather the reordering determines how the data is read from the array.
 
 %\noindent
 \todo{Maybe a figure visualizing the reordering ...}
@@ -476,12 +479,11 @@ The definition of \toGlobal is correspondent:
 
 \paragraph{{\footnotesize as}Vector, {\footnotesize as}Scalar, and Vectorize}
 The \OpenCL programming model supports vector data types such as \code{float4} where any operations on this type will be executed in the hardware vector units.
-In the absence of vector units in the hardware, the \OpenCL compiler scalarizes the code automatically.
-\todo{sg: scalarizes, wird das so gesagt?}
+In the absence of vector units in the hardware, the \OpenCL compiler generates a version of the code solely using scalar data types automatically.
 
 The \asVector and \asScalar patterns change the data type into vector elements and scalar elements, correspondingly.
 For instance, an array of \code{float} is transformed into an array of \code{float4} as seen in the motivation example (\autoref{fig:codeex}).
-The \vect pattern vectorizes the given function by simply converting all the operations that apply to vector types into vectorized operations. 
+The \vect pattern vectorizes the given function by simply converting all the operations that apply to vector types into vectorized operations.
 %Our current implementation can only vectorize functions containing simple arithmetic operations such as $+$ or $-$.
 In case of more complex functions, we rely on external tools~\cite{KarrenbergHa2011} for vectorizing the operations.
 %These tools are not required to performing further analysis to find opportunities for vectorization.
@@ -530,7 +532,7 @@ The corresponding \asScalar pattern is defined as follows.
 \end{definition}
 
 \noindent
-Finally, we define th \vect pattern.
+Finally, we define the \vect pattern.
 \begin{definition}
   \label{definition:pattern:vect}
   Let $n$ be an integer value.

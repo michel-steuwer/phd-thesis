@@ -10,7 +10,6 @@ These are systematically transformed into low-level \OpenCL patterns using a rul
 \label{fig:highlevel}
 \end{figure}
 
-\newpage
 \section{Overview of our Code Generation Approach}
 \label{section:code-generation:overview}
 
@@ -24,7 +23,6 @@ all optimization decisions are made earlier on in the rule rewrite system.
 This results in a clear separation of concern between the high-level patterns used by the application developer and the low-level hardware paradigms that enable performance portability.
 
 
-\newpage
 \subsection{Introductory Example}
 
 \begin{figure}[t]
@@ -135,18 +133,18 @@ As common in functional programming, the $\circ$ operator represents sequential 
 Our technique first rewrites the high-level expression into a representation closer to the \OpenCL programming model.
 This is achieved by applying rewrite rules which are presented later in \autoref{section:rules}.
 \autoref{fig:codeex:impl} shows one possible derivation of the original high-level expression.
-In the derived low-level expression, starting from the last line, the input is split into chunks of 1024 elements.
+Other derivations are possible with different optimizations applied.
+The particular expression shown in \autoref{fig:codeex:impl} features vectorization as one possible optimization technique.
+In the derived low-level expression, starting from the last line, the input is split into chunks of a fixed number of elements, 1024 in the example.
 Each chunk is then mapped onto an \OpenCL work-group with the \pat{map-workgroup} low-level pattern (line~\ref{fig:codeex:impl:map-wg}).
 Within a work-group (lines~\ref{fig:codeex:impl:map-wg:start}--\ref{fig:codeex:impl:map-wg:stop}), we vectorize the elements (line~\ref{fig:codeex:impl:asVec}), each mapped to a local work-item inside a work-group via the \pat{map-local} pattern (line~\ref{fig:codeex:impl:map-wg:start}).
-\todo{sg: warum vectorize?}
 Each local work-item now processes 4 elements, enclosed in a vector type.
 Finally, the \pat{vect-4} pattern (line~\ref{fig:codeex:impl:vec}) vectorizes the user-defined function \code{mul3}.
-The exact meaning of our patterns will be given later in \autoref{section:patterns}.
+The exact meaning of our patterns will be given in \autoref{section:patterns}.
 
 The last step consists of traversing the low-level expression and generating \OpenCL code for each low-level pattern encountered (\autoref{fig:codeex:ocl}).
 The two map patterns generate the for-loops (line~\ref{fig:codeex:ocl:loop1:start}--\ref{fig:codeex:ocl:loop1:end} and~\ref{fig:codeex:ocl:loop2:start}--\ref{fig:codeex:ocl:loop2:end}) that iterate over the input array assigning work to the work-groups and local work-item.
 The information of how many chunks each work-group and work-items processes comes from the corresponding \pat{split}.
-\todo{sg: Warum 1024?}
 In line~\ref{fig:codeex:ocl:call} the vectorized version of the user-defined \code{mul3} function (defined in line~\ref{fig:codeex:ocl:def}) is finally applied to the input array.
 
 To summarize, our approach consists in generating \OpenCL code starting from a high-level program representation of a program.

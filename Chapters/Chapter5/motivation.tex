@@ -9,25 +9,26 @@ In \autoref{chapter:skelcl} we saw that we can express a parallel reduction usin
 Here we look at how efficient \OpenCL implementations of this algorithm or, more precisely, the parallel summation of an array, look like.
 We are especially interested in gradually optimizing this application to see how beneficial the single optimization steps are and how they change the source code.
 
-We will first start by looking at the implementation and optimizations on one particular hardware architecture, using an Nvidia \GPU as our example.
+We will first start by looking at the implementation and optimizations on one particular hardware architecture, using a Nvidia \GPU as our example.
 Then we will see how the optimized implementations perform on an AMD \GPU and Intel \CPU, to evaluate their portability.
 Finally, we will use our observations to motivate the need for a pattern-based code generator for achieving performance portability.
 
-
-\todo{sg: davon gibt es doch auch verschiedene??}
-\subsection{Optimizing Parallel Reduction for an Nvidia \GPU}
+\subsection{Optimizing Parallel Reduction for Nvidia \GPUs}
 For implementing the parallel summation of an array, we study an approach using two \OpenCL kernels.
-\todo{sg: kurz erinnern, dass die Elemente in den Blättern sind}
-The first \OpenCL kernel is executed in parallel by multiple \OpenCL work-groups, as shown in \autoref{fig:reduce:tree}.
+We start with the elements to be reduced in the leafs of the reduction tree shown in \autoref{fig:reduce:tree}.
+The first \OpenCL kernel is executed in parallel by multiple \OpenCL work-groups, four work-groups in the example shown in \autoref{fig:reduce:tree}.
 Each work-group produces a temporary result, then the second \OpenCL kernel is executed by a single \OpenCL work-group producing the final result.
-This strategy is applied as global synchronization, \ie, synchronization across work-groups, is prohibited in \OpenCL.
-By using the two-kernel approach, massive parallelism can be exploited in the first phase as multiple work-groups operate concurrently on independent parts of the input array.
-The synchronization inside the second kernel ensures correctness when computing the final result.
-\todo{sg: Paragraph is unclear. Bitte Syncronization Problematik kurz erklären}
+This strategy is applied as global synchronization, \ie, synchronization across work-groups, is prohibited inside a single \OpenCL kernel, but the parallel tree-based reduction requires synchronization at each level of the reduction tree.
+An implementation with a single \OpenCL kernel would, therefore, be restricted to launch a single \OpenCL work-group and, thus, limit the exploited parallelism.
 
+By using the two-kernel approach, massive parallelism can be exploited in the first phase as multiple work-groups operate concurrently on independent parts of the input array.
+The second kernel is launched with a single work-group using synchronization inside the work-group to compute the final result.
+The vast majority of the work is done in the first phase and the input size to the second phase is comparable small, therefore, the limited exploitation of parallelism in the second phase does not effect overall performance much.
+
+  \todo{Mare bigger. Include (+), synchronization points, ...}
 \begin{figure}[t]
   \centering
-  \includegraphics[width=.75\linewidth]{ReduceTree}
+  \includegraphics[width=.95\linewidth]{ReduceTree}
   \caption[Parallel Reduction in \OpenCL.]%
     {The first \OpenCL kernel is executed by four work-groups in parallel:
     \ \protect\firstBox{}\,\,work-group $0$,\ \protect\secondBox{}\,\,work-group $1$,\ \protect\thirdBox{}\,\,work-group $2$, \protect\fourthBox{}\,\,work-group $3$.
@@ -35,36 +36,23 @@ The synchronization inside the second kernel ensures correctness when computing 
   \label{fig:reduce:tree}
 \end{figure}
 
-We will follow the methodology in~\cite{Harris2007} and evaluate the performance of the different versions using the measured memory bandwidth as our metric.
-\todo{sg: Wo genau wird die Bandwidth gemessen in der Speicherhierarchie, bzw. wo im CPU-GPU Verbund}
-This is reasonable as the reduction has a very low arithmetic intensity and its performance is, therefore, bound by the available memory bandwidth.
-By investigating the memory bandwidth, we can see which fraction of the maximum memory bandwidth available has been utilized.
+We will follow the methodology in~\cite{Harris2007} and evaluate the performance of the different versions using the measured \GPU memory bandwidth as our metric.
+This is reasonable as the reduction has a very low arithmetic intensity and its performance is, therefore, bound by the available \GPU memory bandwidth.
+By investigating the memory bandwidth of the \GPU memory, we can see which fraction of the maximum memory bandwidth available has been utilized.
 
 All following implementations are provided by Nvidia as part of their software development kit and presented in~\cite{Harris2007}.
+These implementations have originally been developed for Nvidia's Tesla \GPU architecture~\cite{LindholmNOM2008} and not been updated by Nvidia for more recent \GPU architectures.
+Nevertheless, the optimizations discussed are still valid on more modern Nvidia \GPUs -- as we will see.
+All performance numbers in this section have been measured on a Nvidia GTX 480 \GPU featuring the Nvidia Fermi architecture~\cite{CUDAFermi2009}.
+
+\newpage
 
 \paragraph{First \OpenCL implementation}
 \autoref{lst:reduce0} shows the first version of the parallel reduction in \OpenCL.
-% This will be our starting point for the following optimizations.
-First each work-item loads an element into the local memory (line~\ref{lst:reduce0:load}).
-After a synchronization (line~\ref{lst:reduce0:firstBarrier}) all work-items of a work-group execute a for loop (lines~\ref{lst:reduce0:for:start}--\ref{lst:reduce0:for:end}) to perform a collective tree-based reduction.
-In every iteration the if statement (line~\ref{lst:reduce0:if}) ensures that a declining number of work-items remain active performing partial reductions in the shrinking reduction tree.
-The second barrier in line~\ref{lst:reduce0:for:end} ensures that no race conditions occur when accessing the shared local memory.
-Finally, the work-item in the work-group with id$=0$ writes back the computed result to the global memory in line~\ref{lst:reduce0:writeBack}.
-
-The implementation presented in \autoref{lst:reduce0} is not straightforward to develop.
-The application developer has to be familiar with the parallel execution model of \OpenCL to avoid race conditions and deadlocks.
-For example, it is important that the second barrier in line~\ref{lst:reduce0:for:end} is placed \emph{after} and not \emph{inside} the if statement.
-This is true, even though work-items not entering the if statement will never read from or write to memory and, therefore, can never be influenced by a race condition.
-Nevertheless, \OpenCL requires all work-items of a work-group to execute all barrier statements in a kernel exactly the same number of times.
-The application developer is responsible to ensure that this condition is met, otherwise a deadlock will occur.
-
-Despite being difficult to program, this implementation does not provide high performance either.
-\todo{replace with measured data}
-\citeauthor{Harris2007} reports that only 2.41\% of the theoretical peak memory bandwidth are utilized. 
-
-\begin{lstlisting}[%                                                             
+%
+\begin{lstlisting}[%
 caption={[First \OpenCL implementation of the parallel reduction.]%
-         First \OpenCL implementation of the parallel reduction achieving 2.41\% of the theoretical peak memory bandwith performance.},%
+         First \OpenCL implementation of the parallel reduction achieving 6.64\% of the memory bandwith limit.},%
 numbers=left,%
 float=tb,
 label={lst:reduce0}]
@@ -83,31 +71,28 @@ void reduce0(global float* g_idata, global float* g_odata,
   // write result for this work-group to global memory
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }$\label{lst:reduce0:writeBack}$
 \end{lstlisting}
+% This will be our starting point for the following optimizations.
+First each work-item loads an element into the local memory (line~\ref{lst:reduce0:load}).
+After a synchronization (line~\ref{lst:reduce0:firstBarrier}) all work-items of a work-group execute a for loop (lines~\ref{lst:reduce0:for:start}--\ref{lst:reduce0:for:end}) to perform a collective tree-based reduction.
+In every iteration the if statement (line~\ref{lst:reduce0:if}) ensures that a declining number of work-items remain active performing partial reductions in the shrinking reduction tree.
+The second barrier in line~\ref{lst:reduce0:for:end} ensures that no race conditions occur when accessing the shared local memory.
+Finally, the work-item in the work-group with id$=0$ writes back the computed result to the global memory in line~\ref{lst:reduce0:writeBack}.
 
-\FloatBarrier
-\newpage
 
-\paragraph{Avoid divergent branching}
+The implementation presented in \autoref{lst:reduce0} is not straightforward to develop.
+The application developer has to be familiar with the parallel execution model of \OpenCL to avoid race conditions and deadlocks.
+For example, it is important that the second barrier in line~\ref{lst:reduce0:for:end} is placed \emph{after} and not \emph{inside} the if statement.
+This is true, even though work-items not entering the if statement will never read from or write to memory and, therefore, can never be influenced by a race condition.
+Nevertheless, \OpenCL requires all work-items of a work-group to execute all barrier statements in a kernel exactly the same number of times.
+The application developer is responsible to ensure that this condition is met, otherwise a deadlock will occur.
 
-\autoref{lst:reduce1} shows the second implementation.
-The differences from the previous implementation are highlighted in the code.
+Despite being difficult to program, this implementation does not provide high performance either.
+Only 6.64\% of the available bandwidth is utilized.
 
-When performing the collective tree-based reduction in a work-group, a shrinking number of work-items remain active until the last remaining work-item computes the result of the entire work-group.
-In the previous version the modulo operator was used to determine which work-item remains active (see line~\ref{lst:reduce0:if} in \autoref{lst:reduce0}).
-This leads to a situation were not the consecutive work-items remain active, but rather work-items which id is divisible by 2, then by 4, then by 8, and so on.
-In Nvidia's \GPU architectures, 32 work-items are grouped into a \emph{warp} and executed together, as described in \autoref{chapter:background}.
-It is highly beneficial to program in a style where all 32 work-items grouped into a warp perform the same instructions, especially, to avoid divergent branching between work-items of a warp.
-Using the modulo operator to determine the active work-items leads to highly divergent branching.
-The second implementation in \autoref{lst:reduce1}, therefore, uses a different formula (line~\ref{lst:reduce1:index}) for determining the active work-items, which avoids divergent branching.
-
-\todo{provide new numbers}
-The performance improves by a factor of 2.33 as compared to the first implementation.
-However, still only 5.62\% of the theoretically available memory bandwidth are used by this version.
-
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={[\OpenCL implementation of the parallel reduction avoiding divergent branching.]%
          \OpenCL implementation of the parallel reduction avoiding divergent branching.
-         This implementation achieves 5.62\% of the theoretical peak memory bandwidth performance.},%
+         This implementation utilizes 9.73\% of the memory bandwidth limit.},%
 numbers=left,%
 float=tb,
 label={lst:reduce1}]
@@ -129,31 +114,28 @@ void reduce1(global float* g_idata, global float* g_odata,
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
 \end{lstlisting}
 
+\paragraph{Avoid divergent branching}
 
-\paragraph{Avoid interleaved addressing}
-
-\autoref{lst:reduce2} shows the third implementation.
+\autoref{lst:reduce1} shows the second implementation.
 The differences from the previous implementation are highlighted in the code.
 
-On modern \GPUs the fast local memory is organized in multiple \emph{banks}.
-When two, or more, work-items simultaneously access memory locations in the same bank a \emph{bank conflict} occurs which means that all memory requests are processed sequentially and not in parallel as usual.
-This is described in more detail in~\autoref{chapter:background}.
-The previous two implementations use an access pattern for the local memory which makes bank conflicts likely.
-% When reading memory from the local memory in line~\ref{lst:reduce1:read} of \autoref{lst:reduce1} each work-item reads interleaved from two locations: \lstinline!index! and \lstinline!index+s!.
-The third implementation in \autoref{lst:reduce2} avoids this problematic local memory access pattern.
-Instead an access pattern is used where bank conflicts are unlikely and, thus, performance is improved.
-% This is achieved by directly using the local id as index together with a different definition of \lstinline!s! in line~\ref{lst:reduce2:s}.
-This better access pattern requires the reduction operation to be commutative, as the order of element is not respected when reading from global memory.
+When performing the collective tree-based reduction in a work-group, a shrinking number of work-items remain active until the last remaining work-item computes the result of the entire work-group.
+In the previous version the modulo operator was used to determine which work-item remains active (see line~\ref{lst:reduce0:if} in \autoref{lst:reduce0}).
+This leads to a situation were not the consecutive work-items remain active, but rather work-items which id is divisible by 2, then by 4, then by 8, and so on.
+In Nvidia's \GPU architectures, 32 work-items are grouped into a \emph{warp} and executed together, as described in \autoref{chapter:background}.
+It is highly beneficial to program in a style where all 32 work-items grouped into a warp perform the same instructions, especially, to avoid divergent branching between work-items of a warp.
+Using the modulo operator to determine the active work-items leads to highly divergent branching.
+The second implementation in \autoref{lst:reduce1}, therefore, uses a different formula (line~\ref{lst:reduce1:index}) for determining the active work-items, which avoids divergent branching.
 
-\todo{new numbers}
-The performance improves by a factor of 2.01 as compared to the previous implementation and 4.68 to the initial implementation.
-With this version 11.27\% of the theoretically available memory bandwidth are used.
+The performance improves by a factor of 2.33 as compared to the first implementation.
+However, still only 9.73\% of the theoretically available memory bandwidth are used by this version.
 
 
-\begin{lstlisting}[%                                                             
+\FloatBarrier
+\begin{lstlisting}[%
 caption={[\OpenCL implementation of the parallel reduction avoiding local memory bank conflicts.]%
          \OpenCL implementation of the parallel reduction avoiding local memory bank conflicts.
-         This implementation achieves 11.27\% of the theoretical peak memory bandwidth performance.},%
+         This implementation utilizes 12.61\% of the memory bandwidth limit.},%
 numbers=left,%
 float=tb,
 label={lst:reduce2}]
@@ -175,27 +157,37 @@ void reduce2(global float* g_idata, global float* g_odata,
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
 \end{lstlisting}
 
+\paragraph{Avoid interleaved addressing}
+
+\autoref{lst:reduce2} shows the third implementation.
+The differences from the previous implementation are highlighted in the code.
+
+On modern \GPUs the fast local memory is organized in multiple \emph{banks}.
+When two, or more, work-items simultaneously access memory locations in the same bank a \emph{bank conflict} occurs which means that all memory requests are processed sequentially and not in parallel as usual.
+This is described in more detail in~\autoref{chapter:background}.
+The previous two implementations use an access pattern for the local memory which makes bank conflicts likely.
+% When reading memory from the local memory in line~\ref{lst:reduce1:read} of \autoref{lst:reduce1} each work-item reads interleaved from two locations: \lstinline!index! and \lstinline!index+s!.
+The third implementation in \autoref{lst:reduce2} avoids this problematic local memory access pattern.
+Instead an access pattern is used where bank conflicts are unlikely and, thus, performance is improved.
+% This is achieved by directly using the local id as index together with a different definition of \lstinline!s! in line~\ref{lst:reduce2:s}.
+This better access pattern requires the reduction operation to be commutative, as the order of element is not respected when reading from global memory.
+
+The performance improves by a factor of 2.01 as compared to the previous implementation and 4.68 to the initial implementation.
+With this version 12.61\% of the theoretically available memory bandwidth are used.
+
+
+
+\FloatBarrier
 \newpage
 
 \paragraph{Increase computational intensity per work-item}
 
 \autoref{lst:reduce3} shows the fourth implementation.
 The differences from the previous implementation are highlighted in the code.
-
-In the previous versions, each work-item loads one element from the global into local memory before the work-items of the work-group collectively performa tree-based reduction.
-That means that half of the work-items are idle after performing a single copy operation, which is highly wasteful.
-The fourth implementation in \autoref{lst:reduce3} avoids this by letting each work-item load two elements from global memory, perform an addition, and store the computed result in local memory (line~\ref{lst:reduce3:comp}).
-Assuming the same input size this reduces the number of work-items to start by half and, therefore, increases the computational intensity for every work-item.
-
-\todo{new numbers}
-The performance improves by a factor of 1.78 as compared to the previous implementation and 8.34 to the initial implementation.
-With this version, 20.11\% of the theoretically available memory bandwidth are used.
-
-
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={[\OpenCL implementation of the parallel reduction. Each work-item performs an addition when loading data from global memory.]%
          \OpenCL implementation of the parallel reduction. Each work-item performs an addition when loading data from global memory.
-         This implementation achieves 20.11\% of the theoretical peak memory bandwidth performance.},%
+         This implementation utilizes 23.71\% of the memory bandwidth limit.},%
 numbers=left,%
 float=tb,
 escapechar=\`,
@@ -220,8 +212,18 @@ void reduce3(global float* g_idata, global float* g_odata,
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
 \end{lstlisting}
 
-\newpage
+In the previous versions, each work-item loads one element from the global into local memory before the work-items of the work-group collectively performa tree-based reduction.
+That means that half of the work-items are idle after performing a single copy operation, which is highly wasteful.
+The fourth implementation in \autoref{lst:reduce3} avoids this by letting each work-item load two elements from global memory, perform an addition, and store the computed result in local memory (line~\ref{lst:reduce3:comp}).
+Assuming the same input size this reduces the number of work-items to start by half and, therefore, increases the computational intensity for every work-item.
 
+The performance improves by a factor of 1.78 as compared to the previous implementation and 8.34 to the initial implementation.
+With this version, 23.71\% of the theoretically available memory bandwidth is used.
+
+
+
+\FloatBarrier
+\newpage
 \paragraph{Avoid synchronization inside a warp}
 
 \autoref{lst:reduce4} shows the fifth implementation.
@@ -237,17 +239,16 @@ Lines~\ref{lst:reduce4:warp:start}--\ref{lst:reduce4:warp:end} shows the special
 The code shown here effectively unrolled the last six iterations of the for loop in line~\ref{lst:reduce4:for}.
 As warps are specific to Nvidia's \GPU architectures, this implementation is not a portable \OpenCL code and might produce incorrect results on other \OpenCL devices.
 
-\todo{new numbers}
 The performance improves by a factor of 1.8 as compared to the previous implementation and 15.01 to the initial implementation.
-With this version, 36.21\% of the theoretically available memory bandwidth are used.
+With this version, 32.59\% of the theoretically available memory bandwidth is used.
 
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={
          [\OpenCL implementation of the parallel reduction.
          Synchronization inside a warp is avoided by unrolling the loop for the last 32 work-items.]
          \OpenCL implementation of the parallel reduction.
          Synchronization inside a warp is avoided by unrolling the loop for the last 32 work-items.
-         This implementation achieves 36.21\% of the theoretical peak memory bandwidth performance.},%
+         This implementation utilizes 32.59\% of the memory bandwidth limit.},%
 numbers=left,%
 float=p,
 label={lst:reduce4}]
@@ -258,8 +259,8 @@ void reduce4(global float* g_idata, global float* g_odata,
   unsigned int i = get_group_id(0) * (get_local_size(0)*2)
                                    + get_local_id(0);
   l_data[tid] = (i < n) ? g_idata[i] : 0;
-  if (i + get_local_size(0) < n) 
-      l_data[tid] += g_idata[i+get_local_size(0)];  
+  if (i + get_local_size(0) < n)
+      l_data[tid] += g_idata[i+get_local_size(0)];
   barrier(CLK_LOCAL_MEM_FENCE);
 
   // prevent further unrolling (see next version)
@@ -285,7 +286,7 @@ void reduce4(global float* g_idata, global float* g_odata,
 
 \paragraph{Complete loop unrolling}
 
-\autoref{lst:reduce5} shows the sixth implementation.
+\autoref{lst:reduce5} on page~\pageref{lst:reduce5} shows the sixth implementation.
 The differences from the previous implementation are highlighted in the code.
 
 In the previous implementation we made a special case for the last six iterations of the for loop and provided special code handling for each iteration separately.
@@ -296,14 +297,13 @@ Each if statement replaces one iteration of the loop.
 This code assumes that \code{WG\_SIZE} is a compile-time constant and, therefore, the if statements will be evaluated at compile time, avoiding costly branches at runtime.
 Different to the previous optimization, we still have to provide a barrier to ensure correct synchronization, as multiple warps are involved here.
 
-\todo{new numbers}
 The performance improves by a factor of 1.41 as compared to the previous implementation and 21.16 to the initial implementation.
-With this version, 56.92\% of the theoretically available memory bandwidth are used.
+With this version, 36.77\% of the theoretically available memory bandwidth are used.
 
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={[\OpenCL implementation of the parallel reduction with a completly unrolled loop.]
          \OpenCL implementation of the parallel reduction with a completly unrolled loop.
-         This implementation achieves 56.92\% of the theoretical peak memory bandwidth performance.},%
+         This implementation utilizes 36.77\% of the memory bandwidth limit.},%
 numbers=left,%
 float=p,
 label={lst:reduce5}]
@@ -314,8 +314,8 @@ void reduce5(global float* g_idata, global float* g_odata,
   unsigned int i = get_group_id(0) * (get_local_size(0)*2)
                                    + get_local_id(0);
   l_data[tid] = (i < n) ? g_idata[i] : 0;
-  if (i + get_local_size(0) < n) 
-      l_data[tid] += g_idata[i+get_local_size(0)];  
+  if (i + get_local_size(0) < n)
+      l_data[tid] += g_idata[i+get_local_size(0)];
   barrier(CLK_LOCAL_MEM_FENCE);
 
   // unroll for loop entirely
@@ -328,7 +328,7 @@ void reduce5(global float* g_idata, global float* g_odata,
   $\strut$@if (WG_SIZE >= 128) {@$\label{lst:reduce5:if:3}$
   $\strut$@    if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }@
   $\strut$@    barrier(CLK_LOCAL_MEM_FENCE); }@
-  
+
   if (tid < 32) {
     if (WG_SIZE >= 64) { l_data[tid] += l_data[tid+32]; }
     if (WG_SIZE >= 32) { l_data[tid] += l_data[tid+16]; }
@@ -336,14 +336,14 @@ void reduce5(global float* g_idata, global float* g_odata,
     if (WG_SIZE >=  8) { l_data[tid] += l_data[tid+ 4]; }
     if (WG_SIZE >=  4) { l_data[tid] += l_data[tid+ 2]; }
     if (WG_SIZE >=  2) { l_data[tid] += l_data[tid+ 1]; } }
-  
+
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
 \end{lstlisting}
 
 
-\paragraph{Fully optimized implementation}
+\paragraph{Fully optimized implementation\hfill\strut}
 
-\autoref{lst:reduce6} shows the final and fully optimized implementation.
+\autoref{lst:reduce6} on page~\pageref{lst:reduce6} shows the final and fully optimized implementation.
 The differences from the previous implementation are highlighted in the code.
 
 One of the optimizations applied earlier was to increase the computational intensity for each single work-item by performing two loads and an addition instead of a single load.
@@ -354,17 +354,15 @@ and, second, performing the summation sequentially by a single work-item does no
 The fully optimized implementation is shown in \autoref{lst:reduce6} with the changes highlighted.
 A while loop has been introduced (see line~\ref{lst:reduce6:while}) which, in every iteration, loads two elements from the global memory and adds them to the local memory.
 No synchronization is required here as each work-item operates independently on different memory locations.
-The way the memory is accessed ensures that memory accesses will be coalesced when reading from global memory.
-\todo{sg: sagen wo coalesces eingeführt wird}
+The way the memory is accessed ensures that memory accesses will be coalesced (see \autoref{chapter:background}) when reading from global memory.
 
-\todo{new numbers}
 The performance improves by a factor of 1.42 as compared to the previous implementation and 30.04 to the initial implementation.
-With this version, 72.53\% of the theoretically available memory bandwidth are used.
+With this version, 65.44\% of the theoretically available memory bandwidth are used.
 
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={[Fully optimized \OpenCL implementation of the parallel reduction.]
          Fully optimized \OpenCL implementation of the parallel reduction.
-         This implementation achieves 72.53\% of the theoretical peak memory bandwidth performance.},%
+         This implementation utilizes 65.44\% of the memory bandwidth limit.},%
 numbers=left,%
 float=p,
 label={lst:reduce6}]
@@ -393,7 +391,7 @@ void reduce6(global float* g_idata, global float* g_odata,
   if (WG_SIZE >= 128) {
       if (tid <  64) { l_data[tid] += l_data[tid+ 64]; }
       barrier(CLK_LOCAL_MEM_FENCE); }
-  
+
   if (tid < 32) {
     if (WG_SIZE >= 64) { l_data[tid] += l_data[tid+32]; }
     if (WG_SIZE >= 32) { l_data[tid] += l_data[tid+16]; }
@@ -401,16 +399,16 @@ void reduce6(global float* g_idata, global float* g_odata,
     if (WG_SIZE >=  8) { l_data[tid] += l_data[tid+ 4]; }
     if (WG_SIZE >=  4) { l_data[tid] += l_data[tid+ 2]; }
     if (WG_SIZE >=  2) { l_data[tid] += l_data[tid+ 1]; } }
-  
+
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }
 \end{lstlisting}
 
 
-\paragraph{Conclusions}
+\paragraph{Conclusions\hfill\strut}
 We can draw several valuable conclusions from studying these \OpenCL source codes.
 
 The first main conclusion is, that implementing these optimizations is not intuitive and straightforward.
-It requires experience as well as knowledge and reasoning about the target hardware architecture, in this case Nvidia's Fermi \GPU architecture:
+It requires experience as well as knowledge and reasoning about the target hardware architecture, in this case Fermi \GPU architectures:
 \autoref{lst:reduce1} requires the understanding of the problem of \emph{branch divergence}, \autoref{lst:reduce2} requires knowledge about the organization of local memory and \emph{bank conflicts}, \autoref{lst:reduce3} and \autoref{lst:reduce6} require reasoning about the \emph{computational intensity} of work-items, \autoref{lst:reduce4} requires understanding of \emph{warps} and their execution by the hardware, \autoref{lst:reduce5} requires experience with \emph{loop unrolling} techniques, and, finally, \autoref{lst:reduce6} required knowledge about the organization of global memory and \emph{memory coalescing}.
 The author wants to empathize that these are \emph{additional} burdens for the application developer on top of implementing a functionally correct version facing widely recognized correctness problems of parallel programming like dealing with race conditions and deadlocks.
 
@@ -418,15 +416,15 @@ Furthermore, the source code changes necessary for individual optimization steps
 While the performance increases gradually, the source code changes are more radical.
 The source code of the first implementation in \autoref{lst:reduce0} is very different as compared to the final implementation shown in \autoref{lst:reduce6}.
 For example, the code size has more then doubled (from 16 to 35 lines of code) and many statements have been added or replaced others.
-It is not obvious, neither to a human being nor to an optimizing compiler, that these two pieces of code have the same semantics.
-\todo{sg: Sie haben auch nicht dieselbe: man verlangt doch die Kommutativität zusätzlich, oder?}
+It is not obvious, neither to a human being nor to an optimizing compiler, that these two pieces of code have the same semantics (assuming an associative and commutative binary reduction operator, \eg, $+$).
 
 The second main conclusion we can draw is, that performing these optimizations on modern parallel architectures is highly beneficial.
-The first unoptimized version did only utilize about 2.5\% of the available memory bandwidth, while the fully optimized version utilizes a more reasonable 72.53\%.
-Applying all optimizations improved the performance by a factor of $30$ while utilizing the exactly same hardware.
+The first unoptimized version did only utilize about 6.64\% of the available memory bandwidth, while the fully optimized version utilizes a more reasonable 65.44\% on our GeForce GTX 480.
+Applying all optimizations improved the performance by a factor of $\approx${}$10$ while utilizing the exactly same hardware.
+For an input array of size of 256 MB the runtime reduces from 95.7 ms to 9.1 ms when using the optimized kernel over the unoptimized one.
+Harris~\cite{Harris2007} reports an even higher improvement factor of $\approx${}$30$ for the GeForce 8800 GTX used in his experiments.
 Modern parallel processors are often chosen as target architecture because of their high theoretical performance.
 Turning the theoretical performance into practical performance by applying such optimizations is, therefore, \emph{essential} for most users.
-\todo{sg: Wie hat sich das auf Runtime ausgewirkt?}
 
 
 
@@ -438,7 +436,6 @@ To do so, we run the code shown in \autoref{lst:reduce0}--\ref{lst:reduce6} on t
 Nvidia's Fermi \GPU architecture~\cite{CUDAFermi2009} which we have used in our analysis in the previous section, AMD's Graphics Core Next \GPU architecture~\cite{AMDGCN2012}, and Intel's Nehalem \CPU architecture~\cite{IntelNehalem2008}.
 \autoref{fig:reduce:overview} shows the performance numbers for each architecture.
 We use, as before, the memory bandwidth as our performance metric and show the hardware memory bandwidth limit of each respective hardware architecture.
-\todo{sg: Ist \emph{bandwidth limit} was früher als \emph{theoretical peak} bezeichnet wurde?}
 As a practical comparison we also show performance numbers for the parallel reduction using highly tuned, architecture specific implementations of the BLAS library.
 We use the cuBLAS library~\cite{cuBLAS} for the Nvidia \GPU, the clBLAS library~\cite{clBLAS} for the AMD \GPU, and the MKL library~\cite{MKL} for the Intel \CPU.
 Each of these libraries is implemented and provided by the corresponding hardware vendor.
@@ -466,7 +463,7 @@ Each of these libraries is implemented and provided by the corresponding hardwar
 
 
 \paragraph{Portability of Optimizations}
-The results show that the optimizations discussed in the previous section are not portable. 
+The results show that the optimizations discussed in the previous section are not portable.
 On each architecture a different version of the optimized implementations performs best:
 Implementation~7 (shown in \autoref{lst:reduce6}) on the Nvidia \GPU, Implementation~6 (shown in \autoref{lst:reduce5}) on the AMD \GPU, and Implementation~4 (shown in \autoref{lst:reduce3}) on the Intel \CPU.
 Some implementations actually produce incorrect results on the Intel \CPU due to the warp-specific optimization introduced in Implementation~5 (shown in \autoref{lst:reduce4}).
@@ -479,18 +476,17 @@ Practical issues like work load and utilization or the cache miss rate are ignor
 Possible metrics for measuring the theoretical performance are number of floating point operation in GFLOP/s or the memory bandwidth in GB/s.
 
 The best practical performance is measured by comparison with the best possible implementation available for a particular hardware platform.
-It is, obviously, not always possible to determine which implementation is the best.
+It is not always possible to determine which implementation is the best.
 Here we consider the BLAS library implementations tuned by the respective hardware vendors as the best available.
 
-\todo{sg: Fig 5.2??}
-By looking at the relative performance we can compare how well optimizations apply across different hardware architectures.
-The \emph{relative performance} achieved differs widely across architectures.
+By investigating the relative performance we can compare how well optimizations apply across different hardware architectures.
+The \emph{relative performance} achieved differs widely across architectures, as we can see in \autoref{fig:reduce:overview}.
 
-On the Nvidia \GPU, the best optimized implementation achieves 83.3\% of the performance of the vendor-provided cuBLAS implementation and utilizes 65.4\% of the theoretical peak memory bandwidth.
+On the Nvidia \GPU, the best optimized implementation achieves 83.3\% of the performance of the vendor-provided cuBLAS implementation and utilizes 65.4\% of the theoretical memory bandwidth limit.
 
 On the AMD \GPU, the gap between the manual and library implementation is much larger:
 the manually optimized implementation achieves only 41.3\% of the clBLAS library implementation.
-Only 32.4\% of the theoretical peak memory bandwidth is achieved.
+Only 32.4\% of the theoretical memory bandwidth limit is achieved.
 
 On the Intel \CPU, implementation~4 achieves only 16.6\% of the MKL performance.
 That means, that MKL is over 5 times faster than the best of the discussed implementations.
@@ -516,7 +512,7 @@ We aim at developing an approach which can systematically apply optimizations an
 % In the following we aim for developing an approach where we can systematically describe and apply optimizations to eventually automatically generate highly efficient, hardware specific code.
 % This will ultimately lead to performance portable code.
 
-\todo{This approach should be able to apply all optimizations we just discussed ...}
+%\todo{This approach should be able to apply all optimizations we just discussed ...}
 
 \subsection{The Need for a Pattern-Based Code Generator}
 
@@ -524,7 +520,7 @@ Our goal in this chapter is to develop a systematic approach to achieve \emph{pe
 As we saw in the previous section, traditional approaches, like \OpenCL, are not performance portable.
 Currently, programmers often tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
 This reduces portability, maintainability, and clarity of the code:
-multiple versions have to be \todo{sg: ????} maintained, and non-obvious optimizations make the code hard to understand and to reason about.
+multiple versions have to be laboriously maintained, and non-obvious optimizations make the code hard to understand and to reason about.
 
 We argue that \emph{parallel patterns} can help overcome the tension between achieving the highest possible performance and code portability and maintainability.
 Parallel patterns declaratively specify the desired algorithmic behavior, rather than encode a particular implementation which might offer suboptimal performance on some hardware architectures.
@@ -538,14 +534,14 @@ This limitation has three main reasons:
 First, providing optimized implementations of pattern on every new hardware platform is a challenging task.
 Nowadays, dozens of parallel architectures and hundreds of variations of them exist and new architectures are released every year.
 Therefore, it is often not feasible to provide optimized implementations for all available hardware architectures and existing library approaches have focused on particular hardware architectures.
-For example, Nvidia \GPUs have been the main target for the \SkelCL library.
-\todo{sg: sagen was daraus folgt, warum schlecht.}
+For example, Nvidia \GPUs have been the main target for the \SkelCL library and, therefore, the skeleton implementations have been optimized appropriately.
+The \stencil skeleton implementation, for example, makes heavy use of the local memory feature of \OpenCL which is usually not beneficial to be used on a \CPU, as \CPUs do not feature the corresponding memory area in hardware.
 An approach using code generation could overcome this drawback, because instead of fixed implementations rather possible optimizations are systematically described and then automatically applied by the code generator.
 
 Second, most existing approaches are library-based, which makes the optimization of composition and nesting of patterns extremely complex.
 In \SkelCL, for example, each pattern is implemented as a separate \OpenCL kernel.
 When composing patterns, multiple \OpenCL kernels are executed, but often a better solution would be to fuse multiple \OpenCL kernels into a single \OpenCL kernel, thus avoiding costly operations to write and read the intermediate result into/from the global memory.
-As fusion of \OpenCL kernels in general is complicated, \SkelCL currently cannot execute a fused, and, thus, fully optimized, implementation of composed patterns.
+As fusion of \OpenCL kernels in general is complicated and requires code analysis, \SkelCL currently cannot execute a fused, and, thus, fully optimized, implementation of composed patterns.
 Our envisaged approach using code generation should overcome this issue, as the code generator processes the entire pattern-based expression instead of focusing on individual patterns.
 
 Finally, the optimal implementation of a parallel pattern usually depends very much on the application and context the pattern is used in.
@@ -559,9 +555,9 @@ An approach using code generation could overcome this issue, as optimized code c
 % what is our approach
 We argue that the root of the problem lies in the gap in the system stack between the high-level algorithmic patterns on the one hand and low-level hardware optimizations on the other hand.
 We propose to bridge this gap using a novel pattern-based code generation technique.
-A set of rewrite rules systematically translates high-level algorithmic patterns into low-level hardware patterns describing optimizations.
-\todo{sg: describing => expressing? Ende des Satzes klingt komisch}
-The rewrite rules are used to systematically derive semantically equivalent, low-level expressions from high-level algorithm expressions written by the application developer.
+A set of rewrite rules systematically translates high-level algorithmic patterns into low-level hardware patterns.
+The rewrite rules express different algorithmic and optimization choices.
+By systematically applying the rewrite rules semantically equivalent, low-level expressions are derived from high-level algorithm expressions written by the application developer.
 Once derived, high-performance code based on these expressions can be automatically generated.
 The next section introduces on overview of our approach.
- 
+
