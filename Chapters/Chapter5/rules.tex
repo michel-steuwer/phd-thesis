@@ -3,7 +3,7 @@
 
 This section introduces our set of rewrite rules that transform high-level expressions written using our algorithmic patterns into semantically equivalent expressions.
 One goal of our approach is to keep each rule as simple as possible and only express one fundamental concept at a time.
-For instance the vectorization rule, as we will see, is the only \todoU{place where we express}{sg: rule expressing?} the vectorization concept.
+For instance the vectorization rule, as we will see, is the only rule expressing the vectorization concept.
 This is different from most previous \todoU{approaches}{sg: zu was?} that would produce a special vectorized version of different algorithmic patterns such as map or reduce.
 The advantage of our approach lies in the power of composition:
 many rules can be applied successively to produce expressions that compose hardware concepts or optimizations and that are provably correct by construction.
