@@ -4,17 +4,17 @@
 This section introduces our set of rewrite rules that transform high-level expressions written using our algorithmic patterns into semantically equivalent expressions.
 One goal of our approach is to keep each rule as simple as possible and only express one fundamental concept at a time.
 For instance the vectorization rule, as we will see, is the only rule expressing the vectorization concept.
-This is different from most previous \todoU{approaches}{sg: zu was?} that would produce a special vectorized version of different algorithmic patterns such as map or reduce.
+This is different from most previous library or compiler approaches that would provide or produce a special vectorized version of different algorithmic patterns such as map or reduce.
 The advantage of our approach lies in the power of composition:
 many rules can be applied successively to produce expressions that compose hardware concepts or optimizations and that are provably correct by construction.
 
-Similarly to our patterns, we distinguish between algorithmic and lowering rules.
+Similarly to our patterns, we distinguish between algorithmic and \OpenCL-specific rules.
 Algorithmic rules produce derivations that represent different algorithmic choices.
-Our lowering rules map expressions to \OpenCL patterns.
+Our \OpenCL-specific rules map expressions to \OpenCL patterns.
 Once the expression is lowered and consist only of \OpenCL patterns, it is possible to produce \OpenCL code for each single pattern straightforwardly with our code generator as described in the following section.
-\todo{lowering = \OpenCL-specific: Uniform!}
 
-\todo{Explain syntax used}
+We write $a \rightarrow b$ for a rewrite rule which allows to replace the occurrence of $a$ in an expression with $b$.
+Sometimes multiple rewrites are valid then we write $a \rightarrow b | c$ to indicate the choice to replace $a$ wither with $b$ or $c$.
 
 %\paragraph{Syntax and Rule Derivation}
 %Some rules can only be activated if certain conditions are true.
@@ -46,7 +46,7 @@ As the algorithmic rules are separated from the  \OpenCL rules, these rules can 
 
 \paragraph{Identity}
 The identity rule in \autoref{eq:algo:identity} specifies that it is always valid to compose any function $f$ with the identity function \emph{id}.
-As we always operate on arrays, we technically compose with $(\map\ id)$.
+As we always operate on arrays, we technically compose $f$ with $\map\ id$.
 %
 \begin{rerule}{lclcl}
   f & \rightarrow & f \circ \map\ \textit{id} & | & \map\ \textit{id} \circ f
@@ -55,7 +55,7 @@ As we always operate on arrays, we technically compose with $(\map\ id)$.
 %
 The \textit{id} function can act as a copy operation; this is, \eg, useful for expressing copies of an array to local memory when composed with the \toLocal \OpenCL pattern: $\toLocal\ (\map\ \textit{id})$.
 
- 
+
 \paragraph{Iterate decomposition}
 The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can be decomposed into several iterations.
 %
@@ -69,13 +69,13 @@ The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can b
 \end{rerule}
 
 \paragraph{Reorder commutativity}
-The following \autoref{eq:algo:reorder} shows that \todoU{if the data can be reordered arbitrarily}{sg: Bedingung unklar. Was bedeutet, wie prueft man sie??} then, it does not matter if we apply a function $f$ to each element before or after the reordering.
+The following \autoref{eq:algo:reorder} shows that if the data can be reordered arbitrarily, as indicated by the \reorder pattern, then, it does not matter if we apply a function $f$ to each element before or after the reordering.
 %
 \begin{rerule}{lcl}
   \map\ f \circ \reorder
     & \rightarrow & \reorder \circ \map\ f\\
   \reorder \circ \map\ f
-    & \rightarrow & \map\ f \circ \reorder  
+    & \rightarrow & \map\ f \circ \reorder
   \label{eq:algo:reorder}
 \end{rerule}
 
@@ -89,15 +89,36 @@ The split-join rule expressed by \autoref{eq:algo:splitjoin} partitions a map in
   \label{eq:algo:splitjoin}
 \end{rerule}
 %
-This allows us to nest map patterns in each other and, thus, maps the computation to the \todoU{thread hierarchy of the \OpenCL programming model, such as $\mapWorkgroup\ (\mapLocal\ f)$}{sg: unklar, man sieht es nicht aus (5.4)} as seen in our motivation example (\autoref{fig:codeex}).
+This allows us to nest map patterns in each other and, thus, maps the computation to the thread hierarchy of the \OpenCL programming model:
+using the \OpenCL-specific rules (discussed in \autoref{section:rules:opencl}) we can rewrite $\map\ (\map\ f)$ for example to $\mapWorkgroup\ (\mapLocal\ f)$.
+This is an expression we have seen in our motivation example (\autoref{fig:codeex}) for mapping a computation to \OpenCL work-group and work-item.
 
 
 \paragraph{Reduction}
 We seek to express the reduction function as a composition of other primitive functions, which is a fundamental aspect of our work.
-From the algorithmic point of view, we first define a partial reduction \todoU{pattern \partRed}{sg: formal einfuehren?}.
-This partial reduction reduces an array of $n$ elements to an array of $m$ elements where $1 \leq m < n$.
-The reduction can be expressed as a partial reduction combined with a full reduction as defined in \autoref{eq:algo:red}.
-\todoU{This definition}{sg: ist das definition oder eine rule, die beweisbar ist?} ensures that we end up with one unique element.
+From the algorithmic point of view, we first define a partial reduction pattern \partRed:
+\begin{definition}
+  \label{definition:pattern:parReduce}
+  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\oplus$ be an associative and commutative binary customizing operator with the identity element $\id_\oplus$.
+  Let $m$ and $l$ be integer values where $n$ is evenly divisible by $l$ and $m = \frac{n}{l}$.
+  The \partRed pattern is then defined as follows:
+  \begin{align*}
+    &\partRed\ (\oplus)\ \id_\oplus\ [x_1, x_2, \dots, x_n] \eqdef\\
+    &\qquad [x_1 \oplus \dots \oplus x_l,\ x_{l+1} \oplus \dots \oplus x_{2l},\ \dots ,\ x_{n-l+1} \oplus \dots \oplus x_n]
+  \end{align*}
+  The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \partRed are as follows:
+  \begin{align*}
+    (\oplus) &: ((\alpha, \alpha) \rightarrow \alpha),\\
+    \id_\oplus &: \alpha,\\
+    \vec{x} &: [\alpha]_n,\\
+    \partRed\ \oplus\ \id_\oplus\ \vec{x} &: [\alpha]_m
+  \end{align*}
+\end{definition}
+\noindent
+This partial reduction reduces an array of $n$ elements to an array of $m$ elements.
+The reduction can be expressed as a partial reduction combined with a full reduction as shown in \autoref{eq:algo:red}.
+This rule ensures that we end up with one unique element.
 % Another possible derivation consists in iterating a partial reduction until a full reduction is achieved (this is what $\infty$ represents).
 %Note that our definition of \textit{reduce} remains correct since the result of a partial reduction is always composed with the reduction to ensure we end up with one unique element.
 %
@@ -117,7 +138,7 @@ The reduction can be expressed as a partial reduction combined with a full reduc
     & \rightarrow &
       \reduce\ f\ z\\
     & | &
-      \partRed\ f\ z \circ \reorder\\    
+      \partRed\ f\ z \circ \reorder\\
     & | &
       \join \circ \map\ (\partRed\ f\ z) \circ \splitN\ n\\
     & | &
@@ -126,7 +147,7 @@ The reduction can be expressed as a partial reduction combined with a full reduc
 \end{rerule}
 %
 \todo{sg: intuitiv ist es klar, die Frage ist, ob das alles semi-formal oder doch formal ist?}
-The first possible derivation for partial reduction leads to the full reduction, \ie, \todoU{$m=1$}{sg: man sieht kein $m$ in der Regel.}.
+The first possible derivation for partial reduction leads to the full reduction.
 The next possible derivation expresses the fact that it is possible to reorder the elements to be reduced, expressing the commutativity property we demand in our definition of reduction (see \autoref{definition:pattern:reduce}).
 The third derivation is actually the only place where parallelism is expressed in the definition of our reduction pattern.
 This rule expressed the fact that it is valid to partition the input elements first and then reduce them independently.
@@ -175,7 +196,7 @@ However, as we currently focus on a restricted set of patterns, our simpler fusi
 \autoref{fig:algoRules} gives an overview of all algorithmic rules defined in this subsection.
 Each single \todoU{rule states a single statement of the relationship of multiple algorithmic patterns}{sg: klingt komisch}.
 The rules allow us to formalize different algorithmic \todoU{implementation strategies}{sg: welche stretegien gibt es, z.B.?}.
-The rewrite rules regarding the \reduce pattern (\autoref{fig:algo:red}), for example, specify that an iterative implementation of the reduction as well as a divide-and-conquer style implementation are possible. 
+The rewrite rules regarding the \reduce pattern (\autoref{fig:algo:red}), for example, specify that an iterative implementation of the reduction as well as a divide-and-conquer style implementation are possible.
 
 The split-join rule (\autoref{fig:algo:splitjoin}) allows a divide-and-conquer style implementation of the \map pattern.
 This eventually enables different parallel implementations which we can express with \OpenCL, as we will see in the next subsection.
@@ -223,7 +244,7 @@ In the next subsection we will discuss \OpenCL specific rewrite rules which allo
       \map\ f \circ \reorder
         & \rightarrow & \reorder \circ \map\ f\\
       \reorder \circ \map\ f
-        & \rightarrow & \map\ f \circ \reorder\\  
+        & \rightarrow & \map\ f \circ \reorder\\
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -258,7 +279,7 @@ In the next subsection we will discuss \OpenCL specific rewrite rules which allo
         & \rightarrow &
           \reduce\ f\ z\\
         & | &
-          \partRed\ f\ z \circ \reorder\\    
+          \partRed\ f\ z \circ \reorder\\
         & | &
           \join
             \circ \map\ (\partRed\ f\ z)
@@ -480,9 +501,9 @@ Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation}, that t
     \begin{rerule*}{lcl}
       \mapLocal\ f
         & \rightarrow &
-          \toGlobal\ (\mapLocal\ f)\\  
+          \toGlobal\ (\mapLocal\ f)\\
       \mapLocal\ f
-        & \rightarrow & \toLocal\ (\mapLocal\ f)\\  
+        & \rightarrow & \toLocal\ (\mapLocal\ f)\\
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -726,7 +747,7 @@ The \iterateN pattern has been changed from performing seven iterations down to 
 This reflects the \OpenCL implementation, where the processing of the last 64 elements is performed by a single warp.
 We express this using the \mapWarp pattern, where inside the \mapLane pattern is used together with the \splitN and \join patterns to express that each work-item inside the warp performs a reduction of two elements at a time.
 Instead of using the \iterateN pattern, the single iteration steps has been unrolled, as it was the case in \autoref{lst:reduce4}.
-The strides of the \reorderStride pattern are computed based on the size of the array in each iteration step. 
+The strides of the \reorderStride pattern are computed based on the size of the array in each iteration step.
 
 
 

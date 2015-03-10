@@ -119,7 +119,7 @@ We repeat it here for completeness and we add the type information:
   The \reduce pattern is then defined as follows:
   \begin{equation*}
     \reduce\ (\oplus)\ \id_\oplus\ [x_1, x_2, \dots, x_n]
-      \eqdef x_1 \oplus x_2 \oplus \dots \oplus x_n
+      \eqdef [x_1 \oplus x_2 \oplus \dots \oplus x_n]
   \end{equation*}
   The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \reduce are as follows:
   \begin{align*}
@@ -177,7 +177,7 @@ We start with the definition of the \splitN pattern.
   The types of $n$, $\vec{x}$, and \splitN are as follows:
   \begin{align*}
     n &: int,\\
-    \vec{x} &: [\alpha]_n,\\
+    \vec{x} &: [\alpha]_m,\\
     \splitN\ n\ \vec{x} &: \big[[\alpha]_n\big]_{\frac{m}{n}}
   \end{align*}
 \end{definition}
@@ -200,11 +200,10 @@ it reassembles an array of arrays by merging dimensions.
     &\join\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] \eqdef\\
     &\qquad[x_1, x_2, \dots, x_m]
   \end{align*}
-  The types of $n$, $m$, $\vec{x}$, and \join are as follows:
+  The types of $\vec{x}$ and \join are as follows:
   \begin{align*}
-    n &: int, m : int,\\
     \vec{x} &: \big[[\alpha]_n\big]_{\frac{m}{n}},\\
-    \join\ \vec{x} &: [\alpha]_n
+    \join\ \vec{x} &: [\alpha]_m
   \end{align*}
 \end{definition}
 
@@ -371,7 +370,7 @@ As the \reduceSeq pattern performs a sequential reduction, we can relax these re
   The \reduceSeq pattern is then defined as follows:
   \begin{equation*}
     \reduceSeq\ (\oplus)\ \id_\oplus\ [x_1, x_2, \dots, x_n]
-      \eqdef (\dots((id_\oplus \oplus x_1) \oplus x_2) \ldots \oplus x_n)
+      \eqdef [(\dots((id_\oplus \oplus x_1) \oplus x_2) \ldots \oplus x_n)]
   \end{equation*}
   The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \reduce are as follows:
   \begin{align*}
@@ -395,8 +394,9 @@ This corresponds to the \emph{coalesce memory accesses}, which are beneficial on
   The \reorderStride pattern is then defined as follows:
   \begin{align*}
     \reorderStride\ s\ [x_1, x_2, \dots, x_m] &\eqdef [y_1, y_2, \dots, y_m], \text{ where}\\
-    y_i &\eqdef x_{i / n + s \times (i \bmod{n})}
+    y_i &\eqdef x_{i\ \text{\normalfont div } n + s \times (i \bmod{n})}
   \end{align*}
+  Where $x\ \text{\normalfont div}\ y$ is integer division and $x \bmod{y}$ is the modulo operation.
   The types of $s$, $\vec{x}$, and \reorderStride are as follows:
   \begin{align*}
     s &: int,\\
@@ -522,9 +522,8 @@ The corresponding \asScalar pattern is defined as follows.
     &\qquad [x_1, x_2, \dots, x_m],
   \end{align*}
   where $\{x_1,\ldots,x_n\}$ denotes a vector of width $n$.\\
-  The types of $n$, $\vec{x}$, and \asVector are as follows:
+  The types of $\vec{x}$, and \asVector are as follows:
   \begin{align*}
-    n &: int\\
     \vec{x} &: [\alpha_n]_{\frac{m}{n}},\\
     \asVector\ n\ \vec{x} &: [\alpha]_m
   \end{align*}
