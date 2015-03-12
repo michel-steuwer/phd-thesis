@@ -14,10 +14,10 @@ Our \OpenCL-specific rules map expressions to \OpenCL patterns.
 Once the expression is lowered and consist only of \OpenCL patterns, it is possible to produce \OpenCL code for each single pattern straightforwardly with our code generator as described in the following section.
 
 We write $a \rightarrow b$ for a rewrite rule which allows to replace the occurrence of $a$ in an expression with $b$.
-Sometimes multiple rewrites are valid then we write $a \rightarrow b | c$ to indicate the choice to replace $a$ wither with $b$ or $c$.
+Sometimes multiple rewrites are valid then we write $a \rightarrow b\ |\ c$ to indicate the choice to replace $a$ either with $b$ or $c$.
 
-We will first define each rule and give an informal description which should give some intuition of that the rules ``make sense'', \ie, that applying the rule does not change the programs semantics.
-In \autoref{section:rules:proofs} we provide proof for the correctness of each rules, before we discuss how the rules can be applied to rewrite expressions in the following section.
+We discuss some proofs of the rules here to give an idea how the correctness of the rules can be formally proven.
+The proofs for all rules can be found in the appendix in \autoref{}.
 
 %\paragraph{Syntax and Rule Derivation}
 %Some rules can only be activated if certain conditions are true.
@@ -46,7 +46,7 @@ In \autoref{section:rules:proofs} we provide proof for the correctness of each r
 \subsection{Algorithmic Rules}
 \label{section:rules:algo}
 
-Each algorithmic rule formulates a true statement of the relationship of multiple algorithmic patterns.
+Each algorithmic rule formulates a provably correct statement of the relationship of multiple algorithmic patterns.
 Applying the rule allows to rewrite an expression and, by doing so, explore different implementations.
 As the algorithmic rules are separated from the  \OpenCL rules, these rules can explore valid implementations regardless of their concrete implementation in a concrete low-level programming model like \OpenCL.
 
@@ -61,8 +61,7 @@ As we always operate on arrays, we technically compose $f$ with $\map\ id$.
 %
 The \textit{id} function can act as a copy operation; this is, \eg, useful for expressing copies of an array to local memory when composed with the \toLocal \OpenCL pattern: $\toLocal\ (\map\ \textit{id})$.
 
-\begin{proof}%[Proof]
-  We first show the first option of the rule:
+\begin{proof}[Proof of \autoref{eq:algo:identity}; option 1]
   \begin{align*}
     (f \circ \map\ \textit{id})\ xs
       &= f\ (\map\ \textit{id}\ xs)\\
@@ -71,7 +70,8 @@ The \textit{id} function can act as a copy operation; this is, \eg, useful for e
       & \comment{definition of \textit{id}}\\
       &= f\ xs
   \end{align*}
-  Now we show the second option of the rule:
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:identity}; option 2]
   \begin{align*}
     (\map\ \textit{id} \circ\ f)\ xs
       &= \map\ \textit{id}\ (f\ xs)\\
@@ -87,16 +87,15 @@ The \textit{id} function can act as a copy operation; this is, \eg, useful for e
 The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can be decomposed into several iterations.
 %
 \begin{rerule}{lcl}
+  \iterateN\ 1\ f & \rightarrow & f\\
   \iterateN\ (m+n)\ f
     & \rightarrow &
       \iterateN\ m\ f
-        \circ \iterateN\ n\ f\\
-  \iterateN\ 1\ f & \rightarrow & f
+        \circ \iterateN\ n\ f
   \label{eq:algo:iterate}
 \end{rerule}
 
-\begin{proof}
-  We first show the second option first:
+\begin{proof}[Proof of \autoref{eq:algo:iterate}; option 1]
   \begin{align*}
       & \comment{definition of \iterateN}\\
     \iterateN\ 1\ f\ xs
@@ -104,26 +103,30 @@ The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can b
       & \comment{definition of \iterateN}\\
       &= f\ xs
   \end{align*}
-  Now we proof the first option of the rule by induction over the natural number $n$.
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:iterate}; option 2]
+  Proof by induction over the natural number $n$.
   We start with the base case $n=0$:
   \begin{align*}
-    (\iterateN\ m\ f \circ \iterateN\ 0\ f)\ xs
+      & \comment{definition of \iterateN}\\
+    \iterateN\ (m+0)\ f\ xs
       &= \iterateN\ m\ f\ (\iterateN\ 0\ f\ xs)\\
       & \comment{definition of \iterateN}\\
-      &= \iterateN\ m\ f\ xs
+      &= (\iterateN\ m\ f \circ \iterateN\ 0\ f)\ xs
   \end{align*}
   We finish with the induction step $n-1 \rightarrow n$:
   \begin{align*}
-    (\iterateN\ m\ f \circ \iterateN\ n\ f)\ xs
-      &= \iterateN\ m\ f\ (\iterateN\ n\ f\ xs)\\
       & \comment{definition of \iterateN}\\
-      &= \iterateN\ m\ f\ (\iterateN\ (n-1)\ f\ (f\ xs))\\
-      & \comment{definition of $\circ$}\\
-      &= (\iterateN\ m\ f\ \circ \iterateN\ (n-1)\ f) (f\ xs)\\
-      & \comment{induction hypothesis}\\
+    \iterateN\ (m+n)\ f\ xs
       &= \iterateN\ (m+n-1)\ f\ (f\ xs)\\
+      & \comment{induction hypothesis}\\
+      &= (\iterateN\ m\ f\ \circ \iterateN\ (n-1)\ f) (f\ xs)\\
+      & \comment{definition of $\circ$}\\
+      &= \iterateN\ m\ f\ (\iterateN\ (n-1)\ f\ (f\ xs))\\
       & \comment{definition of \iterateN}\\
-      &= \iterateN\ (m+n)\ f\ xs
+      &= \iterateN\ m\ f\ (\iterateN\ n\ f\ xs)\\
+      & \comment{definition of $\circ$}\\
+      &= (\iterateN\ m\ f \circ \iterateN\ n\ f)\ xs
   \end{align*}
 \end{proof}
 
@@ -139,7 +142,7 @@ The following \autoref{eq:algo:reorder} shows that if the data can be reordered 
   \label{eq:algo:reorder}
 \end{rerule}
 
-\begin{proof}
+\begin{proof}[Proof of \autoref{eq:algo:reorder}]
   We start by looking at the expression $\map\ f \circ \reorder$:
   \begin{align*}
     (\map\ f \circ \reorder)\ xs
@@ -161,7 +164,7 @@ The following \autoref{eq:algo:reorder} shows that if the data can be reordered 
       & \comment{definition of $y_i$}\\
       &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
   \end{align*}
-  As both expression we started with can be simplified to the same expression they are equal and, therefore, both rules are correct.
+  As both expression we started with can be simplified to the same expression they are equal and, therefore, both options of the rule are correct.
 \end{proof}
 
 \paragraph{Split-join}
@@ -178,8 +181,8 @@ This allows us to nest map patterns in each other and, thus, maps the computatio
 using the \OpenCL-specific rules (discussed in \autoref{section:rules:opencl}) we can rewrite $\map\ (\map\ f)$ for example to $\mapWorkgroup\ (\mapLocal\ f)$.
 This is an expression we have seen in our motivation example (\autoref{fig:codeex}) for mapping a computation to \OpenCL work-group and work-item.
 
-\begin{proof}
-  We start from the right-hand side:
+\begin{proof}[Proof of \autoref{eq:algo:splitjoin}]
+  We start from the right-hand side and show the equality of both sides:
   \begin{align*}
     &(\join \circ \map\ (\map\ f) \circ \splitN\ n)\ xs\\
     &\qquad = \join\ (\map\ (\map\ f)\ (\splitN\ n\ xs))\\
@@ -203,7 +206,7 @@ From the algorithmic point of view, we first define a partial reduction pattern 
   \label{definition:pattern:parReduce}
   Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let $\oplus$ be an associative and commutative binary customizing operator with the identity element $\id_\oplus$.
-  Let $n$ be an integer values where $m$ is evenly divisible by $n$.
+  Let $n$ be an integer value where $m$ is evenly divisible by $n$.
   Let $\sigma$ be an arbitrary permutation of $[1,\ldots, m]$.
   The \partRed pattern is then defined as follows:
   \begin{align*}
@@ -442,7 +445,7 @@ However, as we currently focus on a restricted set of patterns, our simpler fusi
   The proof for the second rule:
   \begin{align*}
     &\reduceSeq\ (\lambda\ (a,b)\ .\ a \oplus (f\ b))\ \id_\oplus\ xs\\
-    &\qquad = 
+    &\qquad =
     \begin{aligned}[t]
     (\dots ((\id_\oplus\ &\text{\`{}}(\lambda\ (a,b)\ .\ a \oplus (f\ b))\text{\`{}}\ x_1)\\
                   &\text{\`{}}(\lambda\ (a,b)\ .\ a \oplus (f\ b))\text{\`{}}\ x_2)\\
