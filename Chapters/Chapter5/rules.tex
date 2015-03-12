@@ -201,35 +201,28 @@ We seek to express the reduction function as a composition of other primitive fu
 From the algorithmic point of view, we first define a partial reduction pattern \partRed:
 \begin{definition}
   \label{definition:pattern:parReduce}
-  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let $\oplus$ be an associative and commutative binary customizing operator with the identity element $\id_\oplus$.
-  Let $m$ and $l$ be integer values where $n$ is evenly divisible by $l$ and $m = \frac{n}{l}$.
+  Let $n$ be an integer values where $m$ is evenly divisible by $n$.
+  Let $\sigma$ be an arbitrary permutation of $[1,\ldots, m]$.
   The \partRed pattern is then defined as follows:
   \begin{align*}
-    \partRed\ (\oplus)\ \id_\oplus\ l\ [x_1, x_2, \dots, x_n] \eqdef \vec{y}
+    &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, x_2, \dots, x_m] \eqdef\\
+    &\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)},\ \dots ,\ x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]
   \end{align*}
-  where
-  \begin{align*}
-    \reduce\ (\oplus)\ \id_\oplus\ \vec{y} = \reduce\ (\oplus)\ \id_\oplus\ \vec{x}
-  \end{align*}
-  %\begin{align*}
-  %  &\partRed\ (\oplus)\ \id_\oplus\ l\ [x_1, x_2, \dots, x_n] \eqdef\\
-  %  &\qquad [x_1 \oplus \dots \oplus x_l,\ x_{l+1} \oplus \dots \oplus x_{2l},\ \dots ,\ x_{n-l+1} \oplus \dots \oplus x_n]
-  %\end{align*}
-  The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \partRed are as follows:
+  The types of $(\oplus)$, $\id_\oplus$, $n$, $\vec{x}$, and \partRed are as follows:
   \begin{align*}
     (\oplus) &: ((\alpha, \alpha) \rightarrow \alpha),\\
     \id_\oplus &: \alpha,\\
-    l &: \text{int},\\
-    \vec{x} &: [\alpha]_n,\\
-    \partRed\ (\oplus)\ \id_\oplus\ \vec{x} &: [\alpha]_m
+    n &: \text{int},\\
+    \vec{x} &: [\alpha]_m,\\
+    \partRed\ (\oplus)\ \id_\oplus\ \vec{x} &: [\alpha]_{m/n}
   \end{align*}
 \end{definition}
 \noindent
-This partial reduction reduces an array of $n$ elements to an array of $m$ elements.
+This partial reduction reduces an array of $n$ elements to an array of $m$ elements, without respecting the order of the elements of the input array.
 The reduction can be expressed as a partial reduction combined with a full reduction as shown in \autoref{eq:algo:red}.
 This rule ensures that we end up with one unique element.
-And somewhat reflects our definition of \partRed.
 % Another possible derivation consists in iterating a partial reduction until a full reduction is achieved (this is what $\infty$ represents).
 %Note that our definition of \textit{reduce} remains correct since the result of a partial reduction is always composed with the reduction to ensure we end up with one unique element.
 %
@@ -243,12 +236,16 @@ And somewhat reflects our definition of \partRed.
 \begin{proof}
   We start from the right-hand side:
   \begin{align*}
-    &(\reduce\ (\oplus)\ \id_\oplus \circ \partRed\ (\oplus)\ id_\oplus\ l)\ xs\\
-    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ (\partRed\ (\oplus)\ id_\oplus\ l\ xs)\\
+    &(\reduce\ (\oplus)\ \id_\oplus \circ \partRed\ (\oplus)\ id_\oplus\ n)\ xs\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ (\partRed\ (\oplus)\ id_\oplus\ n\ xs)\\
     &\qquad \comment{definition of \partRed}\\
-    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ ys\\
-    &\qquad\quad \text{where}\\
-    &\qquad \reduce\ (\oplus)\ \id_\oplus\ ys = \reduce\ (\oplus)\ \id_\oplus\ xs
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)},\ \dots ,\ x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
+    &\qquad \comment{definition of \reduce}\\
+    &\qquad = [(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)})]\\
+    &\qquad \comment{accociativity of $\oplus$}\\
+    &\qquad = [x_1 \oplus \dots \oplus x_m]\\
+    &\qquad \comment{definition of \reduce}\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
   \end{align*}
 \end{proof}
 
@@ -277,45 +274,101 @@ Finally, the last possible derivation expresses the notion that it is possible t
 This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\ref{lst:reduce6}.
 
 \begin{proof}
-  We start with the first rule $\partRed\ (\oplus)\ \id_\oplus\ l \rightarrow \reduce\ (\oplus)\ \id_\oplus$:
+  We start with the first rule $\partRed\ (\oplus)\ \id_\oplus\ n \rightarrow \reduce\ (\oplus)\ \id_\oplus$:
   \begin{align*}
-    &(\partRed\ (\oplus)\ \id_\oplus\ l)\ [x_1, \ldots, x_n]\\
-    &\qquad \comment{choose $l=n$}\\
-    &\qquad \Rightarrow (\partRed\ (\oplus)\ \id_\oplus\ n)\ [x_1, \ldots, x_n]\\
+    &(\partRed\ (\oplus)\ \id_\oplus\ n)\ [x_1, \ldots, x_m]\\
+    &\qquad \comment{choose $n=m$}\\
+    &\qquad \Rightarrow (\partRed\ (\oplus)\ \id_\oplus\ m)\ [x_1, \ldots, x_m]\\
     &\qquad \comment{definition of \partRed}\\
-    &\qquad = [y]\\
-    &\qquad\quad \text{where}\\
-    &\qquad \reduce\ (\oplus)\ \id_\oplus\ [y] = \reduce\ (\oplus)\ \id_\oplus\ [x_1, \ldots, x_n]
+    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(m)}]\\
+    &\qquad \comment{accociativity of $\oplus$}\\
+    &\qquad = [x_1 \oplus \dots \oplus x_m]\\
+    &\qquad \comment{definition of \reduce}\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
   \end{align*}
 \end{proof}
 \begin{proof}
-  Second rule $\partRed\ (\oplus)\ \id_\oplus\ l \rightarrow \partRed\ (\oplus)\ \id_\oplus\ l \circ \reorder$.
+  Second rule $\partRed\ (\oplus)\ \id_\oplus\ n \rightarrow \partRed\ (\oplus)\ \id_\oplus\ n \circ \reorder$.
   We start with the right side:
   \begin{align*}
-    &(\partRed\ (\oplus)\ \id_\oplus\ l \circ \reorder)\ xs\\
-    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ l\ (\reorder\ xs)\\
+    &(\partRed\ (\oplus)\ \id_\oplus\ n \circ \reorder)\ xs\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n\ (\reorder\ xs)\\
     &\qquad \comment{definition of \reorder}\\
-    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ l\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n\ [x_{\sigma(1)}, \ldots, x_{\sigma(m)}]\\
     &\qquad \comment{definition of \partRed}\\
-    &\qquad = ys_\sigma\\
-    &\qquad\quad \text{where}\\
-    &\qquad \reduce\ (\oplus)\ \id_\oplus\ ys_\sigma = \reduce\ (\oplus)\ \id_\oplus\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]
+    &\qquad =[x_{\sigma'(\sigma(1))} \oplus \dots \oplus x_{\sigma'(\sigma(n))}, \ldots, x_{\sigma'(\sigma(m-n+1))} \oplus \dots \oplus x_{\sigma'(\sigma(m))}]\\
+    &\qquad \comment{properties of permutations}\\
+    &\qquad =[x_{\sigma''(1)} \oplus \dots \oplus x_{\sigma''(n)}, \ldots, x_{\sigma''(m-n+1)} \oplus \dots \oplus x_{\sigma''(m)}]\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ l\ xs\\
   \end{align*}
-  We continue with the left side:
+\end{proof}
+\begin{proof}
+  Third rule $\partRed\ (\oplus)\ \id_\oplus\ n \rightarrow \join \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m$.
+  We start with the right side:
   \begin{align*}
-    &(\partRed\ (\oplus)\ \id_\oplus\ l)\ xs\\
-    &\qquad = ys\\
-    &\qquad\quad \text{where}\\
-    &\qquad \reduce\ (\oplus)\ \id_\oplus\ ys = \reduce\ (\oplus)\ \id_\oplus\ xs
+    &(\join \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m)\ xs\\
+    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\splitN\ m\ xs)\big)\\
+    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
+    &\qquad\qquad \big[[x_1, \ldots, x_m], \ldots, [x_{l-m+1+}, \ldots, x_l]\big]\big)\\
+    &\qquad = \join\
+      \begin{aligned}[t]
+        \big[&\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, \ldots, x_m],\\
+             &\ldots,\\
+             &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_{l-m+1+}, \ldots, x_l]\big]
+      \end{aligned}\\
+    &\qquad = \join\
+      \begin{aligned}[t]
+        \big[&[x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(m)}],\\
+             &\ldots,\\
+             &[x_{\sigma_{l/m}(l-m+1)} \oplus \dots \oplus x_{\sigma_{l/m}(l)}]\big]
+      \end{aligned}\\
+    &\qquad \comment{definition of \join}\\
+    &\qquad = [x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(m)}, \ldots, x_{\sigma_{l/m}(l-m+1)} \oplus \dots \oplus x_{\sigma_{l/m}(l)}]\\
+    &\qquad \comment{all $\sigma_i$ form a valid permutation; together with the definition of \partRed}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n\ xs
   \end{align*}
-  It remains to be shown, that\\ $ \reduce\ (\oplus)\ \id_\oplus\ xs = \reduce\ (\oplus)\ \id_\oplus\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]$:
+\end{proof}
+\begin{proof}
+  Fourth rule $\partRed\ (\oplus)\ \id_\oplus\ m \rightarrow \iterateN\ \log_n(m)\ (\partRed\ (\oplus)\ \id_\oplus\ n)$.
+  We will instead proof the obvious equivalent reformulation:
+  $\partRed\ (\oplus)\ \id_\oplus\ n^m \rightarrow \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)$.
+  Proof by induction over $m$.
+  We start with the base case $m= 0$:
   \begin{align*}
-      & \comment{definition of \reduce}\\
-    (\reduce\ (\oplus)\ \id_\oplus\ xs) &= [x_1 \oplus \dots \oplus x_n]\\
-      & \comment{accociativity of $\oplus$}\\
-      & = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}]\\
-      & \comment{definition of \reduce}\\
-      & = (\reduce\ (\oplus)\ \id_\oplus\ [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}])
+      &\comment{definition of \iterateN}\\
+    \iterateN\ 0\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs &= xs\\
+      & \comment{definition of \partRed}
+      &= \partRed\ (\oplus)\ \id_\oplus\ 1\ xs
+  \end{align*}
+  The induction step $m-1 \rightarrow m$:
+  \begin{align*}
+    &\iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs\\
+    &\qquad \comment{definition of \iterateN}\\
+    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\partRed\ (\oplus)\ \id_\oplus\ n\ xs)\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
+    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{l}]\\
+    &\qquad \comment{induction hypothesis}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{l}]\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [y_1, \ldots, y_{l/n}]\\
+    &\qquad\qquad \text{where}\ y_i = x_{(i-1)\times n + 1} \oplus \dots \oplus x_{i\times n}\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = [y_1 \oplus \dots \oplus y_{(n^{m-1})}, \ldots, y_{(l/n - (n^{m-1}))} \oplus \dots \oplus y_{(l/n)}]\\
+    &\qquad \comment{definition of $y_i$}\\
+    &\qquad = \begin{aligned}[t]
+       [&\\
+        &(x_1 \oplus \dots \oplus x_n) \oplus \dots \oplus (x_{(n^{m-1}-1)\times n +1} \oplus \dots \oplus x_{(n^{m-1})\times n}),\\
+        &\ldots,\\
+        &
+          \begin{aligned}
+            &(x_{((l/n-(n^{m-1})+1)-1)\times n + 1} \oplus \dots \oplus x_{(l/n-(n^{m-1})+1)\times n})\\
+            &\quad \oplus \dots \oplus (x_{(l/n-1)\times n + 1} \oplus \dots \oplus x_{l/n\times n})
+          \end{aligned}\\
+        ]\\
+      \end{aligned}\\
+    &\qquad \comment{simplicfication and accociativity of $\oplus$}\\
+    &\qquad = [x_1 \oplus \dots \oplus x_{n^m}, \ldots, x_{l-n^m+1} \oplus \dots \oplus x_l]
   \end{align*}
 \end{proof}
 
@@ -324,14 +377,30 @@ This concept is very important when considering how the reduction function is ty
 \autoref{eq:algo:simpl} shows our simplification rules.
 They express the fact that consecutive \splitN-\join pairs and \asVector-\asScalar pairs can be eliminated.
 %
-\todo{sg: wo ist $\epsilon$ definiert?}
 \begin{rerule}{lcl}
   \join \circ \splitN\ n        & \rightarrow & \id\\
-  %\splitN\ n \circ \join \circ\ f\ \circ \splitN\ n        & \rightarrow & \textit{id}\\
   \asScalar \circ \asVector\ n & \rightarrow & \id
   \label{eq:algo:simpl}
 \end{rerule}
-\todo{redefined join and asScalar with $n$ to support: split n o join and asVector n o asScalar as well?!}
+
+\begin{proof}
+  We start with the first rule:
+  \begin{align*}
+    (\join \circ \splitN\ n)\ xs &= \join\ (\splitN\ n\ xs)\\
+      &\comment{definition of \splitN}\\
+      &= \join\ \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]\\
+      &\comment{definition of \join}\\
+      &= xs
+  \end{align*}
+  And for the second rule:
+  \begin{align*}
+    (\asScalar \circ \asVector\ n)\ xs &= \asScalar\ (\asVector\ n\ xs)\\
+    &\comment{definition of \asVector}\\
+    &= \asScalar\ [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]\\
+    &\comment{definition of \asScalar}\\
+    &= xs
+  \end{align*}
+\end{proof}
 
 \paragraph{Fusion Rules}
 Finally, our fusion rules are shown in \autoref{eq:algo:fusion}.
@@ -339,7 +408,7 @@ Finally, our fusion rules are shown in \autoref{eq:algo:fusion}.
 \begin{rerule}{lcl}
   \map\ f \circ \map\ g
     & \rightarrow & \map\ (f \circ g)\\
-  \reduceSeq\ f\ z \circ \mapSeq\ g
+  \reduceSeq\ f\ z \circ \map\ g
     & \rightarrow & \\
   {\hspace{3em}}
   \reduceSeq\
@@ -355,6 +424,36 @@ This rule only applies to the sequential \reduce pattern since this is the only 
 % When generating code, these rules in effect allow us to fuse the implementation of the different functions and avoid having to store temporary results.
 The functional programming community has studied more generic rules for fusion~\cite{CouttsLeSt2007,JonesToHo2001}.
 However, as we currently focus on a restricted set of patterns, our simpler fusion rules have, so far, proven to be sufficient.
+
+\begin{proof}
+  We start with the first rule:
+  \begin{align*}
+    (\map\ f\circ \map\ g)\ xs
+      &= \map\ f\ (\map\ g\ xs)\\
+      &\comment{definition of \map}\\
+      &= \map\ f\ [g\ x_1, \ldots, g\ x_n]\\
+      &\comment{definition of \map}\\
+      &= [f\ (g\ x_1), \ldots, f\ (g\ x_n)]\\
+      &\comment{definition of $\circ$}\\
+      &= [(f\circ g)\ x_1, \ldots, (f\circ g)\ x_n]\\
+      &\comment{definition of \map}\\
+      &= \map (f\circ g)\ xs
+  \end{align*}
+  The proof for the second rule:
+  \begin{align*}
+    &\reduceSeq\ (\lambda\ (a,b)\ .\ a \oplus (f\ b))\ \id_\oplus\ xs\\
+    &\qquad = 
+    \begin{aligned}[t]
+    (\dots ((\id_\oplus\ &\text{\`{}}(\lambda\ (a,b)\ .\ a \oplus (f\ b))\text{\`{}}\ x_1)\\
+                  &\text{\`{}}(\lambda\ (a,b)\ .\ a \oplus (f\ b))\text{\`{}}\ x_2)\\
+                  \ldots\ &\text{\`{}}(\lambda\ (a,b)\ .\ a \oplus (f\ b))\text{\`{}}\ x_n)
+    \end{aligned}\\
+    &\qquad = (\dots((\id_\oplus \oplus (f\ x_1)) \oplus (f\ x_2)) \dots \oplus (f\ x_n))\\
+    &\qquad = \reduceSeq\ (\oplus)\ \id_\oplus\ [f\ x_1, \ldots, f\ x_n]\\
+    &\qquad = \reduceSeq\ (\oplus)\ \id_\oplus\ (\map\ f\ xs)\\
+    &\qquad = (\reduceSeq\ (\oplus)\ \id_\oplus \circ \map\ f)\ xs
+  \end{align*}
+\end{proof}
 
 \paragraph{Summary}
 \autoref{fig:algoRules} gives an overview of all algorithmic rules defined in this subsection.
@@ -510,7 +609,6 @@ The code generation process is described separately in the next section.
 
 \paragraph{Maps}
 The rule in \autoref{eq:low:map} is used to produce the \OpenCL-specific map patterns that match the thread hierarchy of \OpenCL.
-\todo{sg: bitte in der ganzen Diss genau/vorsichtig schauen was/wo ``implementation'' bedeutet, so dass sie nicht in 5 verschiedenen Bedeutungen benutzt wird!}
 %
 \begin{rerule}{lclcl}
   \map\ f
@@ -527,6 +625,10 @@ Our \todoU{implementation}{sg: von was?} \todoU{maintains}{sg: wo?} \todoU{conte
 \todo{sg: man sieht (??)}
 For instance, it is only legal to nest a \mapLocal inside a \mapWorkgroup and it is not valid to nest a \mapGlobal or another \mapWorkgroup inside a \mapWorkgroup.
 
+\begin{proof}
+  All of these rules are correct by definition, as all map patterns share the same semantics.
+\end{proof}
+
 \paragraph{Reduction}
 There is only one rule for lowering to \OpenCL (\autoref{eq:low:red}), which expresses the fact that the only implementation known to the code generator is a sequential reduction.
 Parallel implementations are defined at a higher level by composition of other algorithmic patterns.
@@ -537,6 +639,18 @@ With our approach it is possible to explore different implementations for the re
   \reduce\ f\ z & \rightarrow & \reduceSeq\ f\ z
   \label{eq:low:red}
 \end{rerule}
+
+\begin{proof}
+  \begin{align*}
+      &\comment{definition of \reduce}\\
+    \reduce\ (\oplus)\ \id_\oplus\ xs
+      &= x_1 \oplus \dots \oplus x_n\\
+      &\comment{associativity of $\oplus$ \& identity of $\id_\oplus$}\\
+      &= (\dots ((\id_\oplus \oplus x_1) \oplus x_2)\dots \oplus x_n)\\
+      &\comment{definition of \reduceSeq}\\
+      &= \reduceSeq\ (\oplus)\ \id_\oplus\ xs
+  \end{align*}
+\end{proof}
 
 
 \paragraph{Reorder}
@@ -553,6 +667,64 @@ As described earlier, the major use case for the stride reorder is to enable coa
 %
 \todoU{Other types}{sg: unklar} of reordering functions could be implemented easily within this \todoU{framework}{sg: wo ist Framework, woraus besteht es?} such \todoU{as user-defined}{sg: unklar} reorder function.
 
+\begin{proof}
+  We first show the second option of the rule:
+  \begin{align*}
+    \reorder\ xs &= [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
+                 &\comment{choose $\sigma$ as the identity permutation} \Rightarrow\\
+                 & [x_{\sigma(1)}, \ldots, x_{\sigma(n)}] = [x_1, \ldots, x_n] = \id\ xs
+  \end{align*}
+  First option:
+  \begin{align*}
+    &\reorderStride\ s\ [x_1, \ldots, x_m] = [y_1, \ldots, y_m]\\
+    &\qquad \text{where}\ y_i = x_{i\ \text{\normalfont div } n + s\times (i \bmod{n})}
+  \end{align*}
+  We can express this as a function $\sigma$ with: $x_\sigma(i) = y_i$, \ie, $\sigma(i) = (i\ \text{div}\ n + s\times (i \bmod{n})$.
+  It remains to be shown, that $\sigma$ is a permutation of $[1, \ldots, m]$.
+  We show this by proofing that $\sigma$ is a bijective function between indices $i$ in the range $1\leq i \leq m$.
+  First we show the injectivity, by showing that $\forall i, j \in [1, m]$ with $i\neq j$ $\Rightarrow \sigma(i)\neq \sigma(j)$.
+  Let us assume that $i< j$.
+
+  We first proof the case where $i = 0$.
+  We have:
+  \begin{align*}
+    (0\ \text{div}\ n) + s\times (0 \bmod{n}) = 0 + s\times 0 = 0
+  \end{align*}
+  For $j$ we start with:
+  \begin{align*}
+    (j\ \text{div}\ n) + s\times (j \bmod{n})
+  \end{align*}
+
+  Let us assume that $(j \bmod{n}) = 0$ $\Rightarrow$
+  $j$ is evenly divisible by $n$ and $n>0$ $\Rightarrow$ $j\ \text{div}\ n > 0$
+  $\Rightarrow$ $(j\ \text{div}\ n) + s\times (j\bmod{n}) > 0$
+
+  If we assume the opposite, \ie, $(j \bmod{n}) \neq 0$ $\Rightarrow$
+  $j \bmod{n} > 0$ and $s > 0$ $\Rightarrow$ $(j\ \text{div}\ n) + s\times (j\bmod{n}) > 0$
+
+
+  We now proof the other case where $i\neq 0$.
+  As $0\neq i < j$ every subexpression in our expression is $>0$.
+  Let us write $j$ as $j=i+k$ where $0<k<m-1$.
+
+
+  If we assume $i\ \text{div}\ n = (i+k)\ \text{div}\ n$
+  $\Rightarrow$ $i\bmod{n} \neq (i+k)\bmod{n}$
+
+  If we assume the opposite $i\bmod{n} = (i+k)\bmod{n}$
+  $\Rightarrow$ $i\ \text{div}\ n \neq (i+k)\ \text{div}\ n$
+
+  This shows the injectivity of $\sigma$.
+
+  Now we show the surjectivity, by showing that $\forall i \in [1, m]$ $\sigma(i)\in [1, m]$.
+
+  We know that $m= s\times n$ $\Rightarrow$ $i\ \text{div}\ n \leq s\ \forall i\in [1,m]$.
+  We also know $i\bmod{n} \leq (n-1)\ \forall i\in [1,m]$. $\Rightarrow$ $(i\ \text{div}\ n) + s\times (i\bmod{n}) \leq s + s\times (n-1) = s\times n = m$
+
+  $\sigma$ is injective and surjective, thus, bijective and, therefore, a well defined permutation.
+
+\end{proof}
+
 \paragraph{Local and Global Memory}
 \autoref{eq:low:mem} contains two rules that enable \GPU local memory usage.
 %
@@ -566,6 +738,9 @@ They express the fact that the result of a \mapLocal can always be stored in loc
 This holds since \todoU{a \mapLocal always exists within a \mapWorkgroup}{sg: wie wird das garantiert?} for which the local memory is defined in \OpenCL.
 These rules allow us to describe how the data is mapped to the \GPU memory hierarchy.
 
+\begin{proof}
+  These rules follow directly from the definition of \toGlobal and \toLocal, as these behave like the \id function.
+\end{proof}
 
 
 \paragraph{Vectorization}
@@ -586,6 +761,19 @@ This constrain can easily be checked by looking at the function's $f$ type, \ie,
 % Another set of rules, not shown here for space reason, is used to propagate the \vect function recursively within $f$.
 The \vect pattern is used to produce a vectorized version of the customizing function $f$.
 Note that the vector width $n$ has to match for the vectorization of the function and the modification of the array.
+
+\begin{proof}
+  We start from the right:
+  \begin{align*}
+    &(\asScalar \circ \map\ (\vect\ n\ f) \circ \asVector\ n)\ xs\\
+    &\qquad = \asScalar\ (\map\ (\vect\ n\ f)\ (\asVector\ n\ xs))\\
+    &\qquad = \asScalar\ (\map\ (\vect\ n\ f)\ [\{x_1, \ldots, x_n\}, \ldots ,\{x_{m-n+1}, \ldots, x_m\}]\\
+    &\qquad = \asScalar\ [f'_n\ \{x_1, \ldots, x_n\}, \ldots ,f'_n\ \{x_{m-n+1}, \ldots, x_m\}]\\
+    &\qquad = \asScalar\ [\{f\ x_1, \ldots, f\ x_n\}, \ldots ,\{f\ x_{m-n+1}, \ldots, f\ x_m\}]\\
+    &\qquad = [f\ x_1, \ldots, f\ x_m]\\
+    &\qquad = \map\ f\ xs
+  \end{align*}
+\end{proof}
 
 \paragraph{Summary}
 \autoref{fig:lowRules} shows an overview of the \OpenCL-specific rewrite rules.
