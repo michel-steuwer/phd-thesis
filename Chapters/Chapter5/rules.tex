@@ -16,6 +16,9 @@ Once the expression is lowered and consist only of \OpenCL patterns, it is possi
 We write $a \rightarrow b$ for a rewrite rule which allows to replace the occurrence of $a$ in an expression with $b$.
 Sometimes multiple rewrites are valid then we write $a \rightarrow b | c$ to indicate the choice to replace $a$ wither with $b$ or $c$.
 
+We will first define each rule and give an informal description which should give some intuition of that the rules ``make sense'', \ie, that applying the rule does not change the programs semantics.
+In \autoref{section:rules:proofs} we provide proof for the correctness of each rules, before we discuss how the rules can be applied to rewrite expressions in the following section.
+
 %\paragraph{Syntax and Rule Derivation}
 %Some rules can only be activated if certain conditions are true.
 %We use the syntax $[pre:post]$ to represent the pre and post conditions of a rule.
@@ -36,6 +39,9 @@ Sometimes multiple rewrites are valid then we write $a \rightarrow b | c$ to ind
 \ignorespacesafterend}
 
 
+\newcommand{\comment}[1] {%
+\{\text{\small #1}\}%
+}
 
 \subsection{Algorithmic Rules}
 \label{section:rules:algo}
@@ -55,6 +61,27 @@ As we always operate on arrays, we technically compose $f$ with $\map\ id$.
 %
 The \textit{id} function can act as a copy operation; this is, \eg, useful for expressing copies of an array to local memory when composed with the \toLocal \OpenCL pattern: $\toLocal\ (\map\ \textit{id})$.
 
+\begin{proof}%[Proof]
+  We first show the first option of the rule:
+  \begin{align*}
+    (f \circ \map\ \textit{id})\ xs
+      &= f\ (\map\ \textit{id}\ xs)\\
+      & \comment{definition of \map}\\
+      &= f\ ([\textit{id}\ x_1, \textit{id}\ x_2, \ldots, \textit{id}\ x_n])\\
+      & \comment{definition of \textit{id}}\\
+      &= f\ xs
+  \end{align*}
+  Now we show the second option of the rule:
+  \begin{align*}
+    (\map\ \textit{id} \circ\ f)\ xs
+      &= \map\ \textit{id}\ (f\ xs)\\
+      & \comment{definition of \map}\\
+      &= [\textit{id}\ (f\ xs)_1, \textit{id}\ (f\ xs)_2, \ldots, \textit{id}\ (f\ xs)_n]\\
+      & \comment{definition of \textit{id}}\\
+      &= f\ xs
+  \end{align*}
+\end{proof}
+
 
 \paragraph{Iterate decomposition}
 The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can be decomposed into several iterations.
@@ -68,6 +95,39 @@ The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can b
   \label{eq:algo:iterate}
 \end{rerule}
 
+\begin{proof}
+  We first show the second option first:
+  \begin{align*}
+      & \comment{definition of \iterateN}\\
+    \iterateN\ 1\ f\ xs
+      &= \iterateN\ (1-1)\ f\ (f\ xs)\\
+      & \comment{definition of \iterateN}\\
+      &= f\ xs
+  \end{align*}
+  Now we proof the first option of the rule by induction over the natural number $n$.
+  We start with the base case $n=0$:
+  \begin{align*}
+    (\iterateN\ m\ f \circ \iterateN\ 0\ f)\ xs
+      &= \iterateN\ m\ f\ (\iterateN\ 0\ f\ xs)\\
+      & \comment{definition of \iterateN}\\
+      &= \iterateN\ m\ f\ xs
+  \end{align*}
+  We finish with the induction step $n-1 \rightarrow n$:
+  \begin{align*}
+    (\iterateN\ m\ f \circ \iterateN\ n\ f)\ xs
+      &= \iterateN\ m\ f\ (\iterateN\ n\ f\ xs)\\
+      & \comment{definition of \iterateN}\\
+      &= \iterateN\ m\ f\ (\iterateN\ (n-1)\ f\ (f\ xs))\\
+      & \comment{definition of $\circ$}\\
+      &= (\iterateN\ m\ f\ \circ \iterateN\ (n-1)\ f) (f\ xs)\\
+      & \comment{induction hypothesis}\\
+      &= \iterateN\ (m+n-1)\ f\ (f\ xs)\\
+      & \comment{definition of \iterateN}\\
+      &= \iterateN\ (m+n)\ f\ xs
+  \end{align*}
+\end{proof}
+
+
 \paragraph{Reorder commutativity}
 The following \autoref{eq:algo:reorder} shows that if the data can be reordered arbitrarily, as indicated by the \reorder pattern, then, it does not matter if we apply a function $f$ to each element before or after the reordering.
 %
@@ -78,6 +138,31 @@ The following \autoref{eq:algo:reorder} shows that if the data can be reordered 
     & \rightarrow & \map\ f \circ \reorder
   \label{eq:algo:reorder}
 \end{rerule}
+
+\begin{proof}
+  We start by looking at the expression $\map\ f \circ \reorder$:
+  \begin{align*}
+    (\map\ f \circ \reorder)\ xs
+      &= \map\ f\ (\reorder\ xs)\\
+      & \comment{definition of \reorder}\\
+      &= \map\ f\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
+      & \comment{definition of \map}\\
+      &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
+  \end{align*}
+  Now we investigate the expression $\reorder \circ \map\ f$:
+  \begin{align*}
+    (\reorder \circ \map\ f)\ xs
+      &= \reorder\ (\map\ f\ xs)\\
+      & \comment{definition of \map}\\
+      &= \reorder\ [f\ x_1, \ldots, f\ x_n]\\
+      &= \reorder\ [y_1, \ldots, y_n]\qquad \text{with } y_i = f\ x_i\\
+      & \comment{definition of \reorder}\\
+      &= [y_{\sigma(1)}, \dots, y_{\sigma(n)}]\\
+      & \comment{definition of $y_i$}\\
+      &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
+  \end{align*}
+  As both expression we started with can be simplified to the same expression they are equal and, therefore, both rules are correct.
+\end{proof}
 
 \paragraph{Split-join}
 The split-join rule expressed by \autoref{eq:algo:splitjoin} partitions a map into two maps.
@@ -93,6 +178,23 @@ This allows us to nest map patterns in each other and, thus, maps the computatio
 using the \OpenCL-specific rules (discussed in \autoref{section:rules:opencl}) we can rewrite $\map\ (\map\ f)$ for example to $\mapWorkgroup\ (\mapLocal\ f)$.
 This is an expression we have seen in our motivation example (\autoref{fig:codeex}) for mapping a computation to \OpenCL work-group and work-item.
 
+\begin{proof}
+  We start from the right-hand side:
+  \begin{align*}
+    &(\join \circ \map\ (\map\ f) \circ \splitN\ n)\ xs\\
+    &\qquad = \join\ (\map\ (\map\ f)\ (\splitN\ n\ xs))\\
+    &\qquad \comment{definition of \splitN}\\
+    &\qquad = \join\ (\map\ (\map\ f)\ [[x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]])\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \join\ [\map\ f\ [x_1, \ldots, x_n], \ldots, \map\ f\ [x_{m-n+1}, \ldots, x_m]]\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \join\ [[f\ x_1, \ldots, f\ x_n], \ldots, [f\ x_{m-n+1}, \ldots, f\ x_m]]\\
+    &\qquad \comment{definition of \join}\\
+    &\qquad = [f\ x_1, \ldots, \ldots, f\ x_m]\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \map\ f\ xs
+  \end{align*}
+\end{proof}
 
 \paragraph{Reduction}
 We seek to express the reduction function as a composition of other primitive functions, which is a fundamental aspect of our work.
@@ -104,21 +206,30 @@ From the algorithmic point of view, we first define a partial reduction pattern 
   Let $m$ and $l$ be integer values where $n$ is evenly divisible by $l$ and $m = \frac{n}{l}$.
   The \partRed pattern is then defined as follows:
   \begin{align*}
-    &\partRed\ (\oplus)\ \id_\oplus\ [x_1, x_2, \dots, x_n] \eqdef\\
-    &\qquad [x_1 \oplus \dots \oplus x_l,\ x_{l+1} \oplus \dots \oplus x_{2l},\ \dots ,\ x_{n-l+1} \oplus \dots \oplus x_n]
+    \partRed\ (\oplus)\ \id_\oplus\ l\ [x_1, x_2, \dots, x_n] \eqdef \vec{y}
   \end{align*}
+  where
+  \begin{align*}
+    \reduce\ (\oplus)\ \id_\oplus\ \vec{y} = \reduce\ (\oplus)\ \id_\oplus\ \vec{x}
+  \end{align*}
+  %\begin{align*}
+  %  &\partRed\ (\oplus)\ \id_\oplus\ l\ [x_1, x_2, \dots, x_n] \eqdef\\
+  %  &\qquad [x_1 \oplus \dots \oplus x_l,\ x_{l+1} \oplus \dots \oplus x_{2l},\ \dots ,\ x_{n-l+1} \oplus \dots \oplus x_n]
+  %\end{align*}
   The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \partRed are as follows:
   \begin{align*}
     (\oplus) &: ((\alpha, \alpha) \rightarrow \alpha),\\
     \id_\oplus &: \alpha,\\
+    l &: \text{int},\\
     \vec{x} &: [\alpha]_n,\\
-    \partRed\ \oplus\ \id_\oplus\ \vec{x} &: [\alpha]_m
+    \partRed\ (\oplus)\ \id_\oplus\ \vec{x} &: [\alpha]_m
   \end{align*}
 \end{definition}
 \noindent
 This partial reduction reduces an array of $n$ elements to an array of $m$ elements.
 The reduction can be expressed as a partial reduction combined with a full reduction as shown in \autoref{eq:algo:red}.
 This rule ensures that we end up with one unique element.
+And somewhat reflects our definition of \partRed.
 % Another possible derivation consists in iterating a partial reduction until a full reduction is achieved (this is what $\infty$ represents).
 %Note that our definition of \textit{reduce} remains correct since the result of a partial reduction is always composed with the reduction to ensure we end up with one unique element.
 %
@@ -129,10 +240,21 @@ This rule ensures that we end up with one unique element.
   \label{eq:algo:red}
 \end{rerule}
 
+\begin{proof}
+  We start from the right-hand side:
+  \begin{align*}
+    &(\reduce\ (\oplus)\ \id_\oplus \circ \partRed\ (\oplus)\ id_\oplus\ l)\ xs\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ (\partRed\ (\oplus)\ id_\oplus\ l\ xs)\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ ys\\
+    &\qquad\quad \text{where}\\
+    &\qquad \reduce\ (\oplus)\ \id_\oplus\ ys = \reduce\ (\oplus)\ \id_\oplus\ xs
+  \end{align*}
+\end{proof}
+
 \paragraph{Partial Reduction}
 \autoref{eq:algo:part-red} shows the rewrite rules for the partial reduction.
 %
-\todo{sg: kann man sie formal beweisen? Ein paar Beweise waeren schoen.}
 \begin{rerule}{lcl}
   \partRed\ f\ z
     & \rightarrow &
@@ -146,7 +268,6 @@ This rule ensures that we end up with one unique element.
   \label{eq:algo:part-red}
 \end{rerule}
 %
-\todo{sg: intuitiv ist es klar, die Frage ist, ob das alles semi-formal oder doch formal ist?}
 The first possible derivation for partial reduction leads to the full reduction.
 The next possible derivation expresses the fact that it is possible to reorder the elements to be reduced, expressing the commutativity property we demand in our definition of reduction (see \autoref{definition:pattern:reduce}).
 The third derivation is actually the only place where parallelism is expressed in the definition of our reduction pattern.
@@ -155,6 +276,49 @@ Finally, the last possible derivation expresses the notion that it is possible t
 \todo{sg: konkreter sagen was die Sache ist.}
 This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\ref{lst:reduce6}.
 
+\begin{proof}
+  We start with the first rule $\partRed\ (\oplus)\ \id_\oplus\ l \rightarrow \reduce\ (\oplus)\ \id_\oplus$:
+  \begin{align*}
+    &(\partRed\ (\oplus)\ \id_\oplus\ l)\ [x_1, \ldots, x_n]\\
+    &\qquad \comment{choose $l=n$}\\
+    &\qquad \Rightarrow (\partRed\ (\oplus)\ \id_\oplus\ n)\ [x_1, \ldots, x_n]\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = [y]\\
+    &\qquad\quad \text{where}\\
+    &\qquad \reduce\ (\oplus)\ \id_\oplus\ [y] = \reduce\ (\oplus)\ \id_\oplus\ [x_1, \ldots, x_n]
+  \end{align*}
+\end{proof}
+\begin{proof}
+  Second rule $\partRed\ (\oplus)\ \id_\oplus\ l \rightarrow \partRed\ (\oplus)\ \id_\oplus\ l \circ \reorder$.
+  We start with the right side:
+  \begin{align*}
+    &(\partRed\ (\oplus)\ \id_\oplus\ l \circ \reorder)\ xs\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ l\ (\reorder\ xs)\\
+    &\qquad \comment{definition of \reorder}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ l\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = ys_\sigma\\
+    &\qquad\quad \text{where}\\
+    &\qquad \reduce\ (\oplus)\ \id_\oplus\ ys_\sigma = \reduce\ (\oplus)\ \id_\oplus\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]
+  \end{align*}
+  We continue with the left side:
+  \begin{align*}
+    &(\partRed\ (\oplus)\ \id_\oplus\ l)\ xs\\
+    &\qquad = ys\\
+    &\qquad\quad \text{where}\\
+    &\qquad \reduce\ (\oplus)\ \id_\oplus\ ys = \reduce\ (\oplus)\ \id_\oplus\ xs
+  \end{align*}
+  It remains to be shown, that\\ $ \reduce\ (\oplus)\ \id_\oplus\ xs = \reduce\ (\oplus)\ \id_\oplus\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]$:
+  \begin{align*}
+      & \comment{definition of \reduce}\\
+    (\reduce\ (\oplus)\ \id_\oplus\ xs) &= [x_1 \oplus \dots \oplus x_n]\\
+      & \comment{accociativity of $\oplus$}\\
+      & = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}]\\
+      & \comment{definition of \reduce}\\
+      & = (\reduce\ (\oplus)\ \id_\oplus\ [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}])
+  \end{align*}
+\end{proof}
+
 
 \paragraph{Simplification Rules}
 \autoref{eq:algo:simpl} shows our simplification rules.
@@ -162,9 +326,9 @@ They express the fact that consecutive \splitN-\join pairs and \asVector-\asScal
 %
 \todo{sg: wo ist $\epsilon$ definiert?}
 \begin{rerule}{lcl}
-  \join \circ \splitN\ n        & \rightarrow & \epsilon\\
+  \join \circ \splitN\ n        & \rightarrow & \id\\
   %\splitN\ n \circ \join \circ\ f\ \circ \splitN\ n        & \rightarrow & \textit{id}\\
-  \asScalar \circ \asVector\ n & \rightarrow & \epsilon
+  \asScalar \circ \asVector\ n & \rightarrow & \id
   \label{eq:algo:simpl}
 \end{rerule}
 \todo{redefined join and asScalar with $n$ to support: split n o join and asVector n o asScalar as well?!}
@@ -194,9 +358,8 @@ However, as we currently focus on a restricted set of patterns, our simpler fusi
 
 \paragraph{Summary}
 \autoref{fig:algoRules} gives an overview of all algorithmic rules defined in this subsection.
-Each single \todoU{rule states a single statement of the relationship of multiple algorithmic patterns}{sg: klingt komisch}.
-The rules allow us to formalize different algorithmic \todoU{implementation strategies}{sg: welche stretegien gibt es, z.B.?}.
-The rewrite rules regarding the \reduce pattern (\autoref{fig:algo:red}), for example, specify that an iterative implementation of the reduction as well as a divide-and-conquer style implementation are possible.
+The rules allow us to formalize different algorithmic implementation strategies:
+the rewrite rules regarding the \reduce pattern (\autoref{fig:algo:red}), for example, specify that an iterative implementation of the reduction as well as a divide-and-conquer style implementation are possible.
 
 The split-join rule (\autoref{fig:algo:splitjoin}) allows a divide-and-conquer style implementation of the \map pattern.
 This eventually enables different parallel implementations which we can express with \OpenCL, as we will see in the next subsection.
@@ -299,9 +462,9 @@ In the next subsection we will discuss \OpenCL specific rewrite rules which allo
   \begin{mdframed}
     \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
-      \splitN\ n \circ \join
+      \join \circ \splitN\ n
             & \rightarrow & \textit{id}\\
-      \asVector\ n \circ \asScalar
+      \asScalar \circ \asVector\ n
             & \rightarrow & \textit{id}\\
     \end{rerule*}
   \end{mdframed}
@@ -534,6 +697,16 @@ Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation}, that t
 
 \FloatBarrier
 
+
+
+\subsection{Proving the Correctness of the Rewrite Rules}
+\label{section:rules:proofs}
+
+
+
+\begin{proof}[Proof of Rule \ref{fig:algo:identity}]
+  We show that $f \circ \map$
+\end{proof}
 
 %\subsection{Automatic Rewriting Strategy}
 %\label{sec:search}
