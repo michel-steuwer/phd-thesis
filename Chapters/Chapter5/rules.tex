@@ -1005,7 +1005,8 @@ The numbers above the equal signs refer to \autoref{fig:algoRules} and \autoref{
   \end{aligned}
   \label{eq:vectorScal:rules}
 \end{align}
-\todoU{When selecting $n_1=1024$ and $n_2=4$}{sg: wie waehlen wir diese Zahlen?} we obtain the expression shown in \autoref{fig:codeex:impl} from which \OpenCL code can be generated.
+To obtain the expression shown in \autoref{fig:codeex:impl} we select $n_1=1024$ and $n_2=4$.
+This expression can then be used to generate \OpenCL code.
 We will discuss the process of \OpenCL code generation in the next section.
 But first we will discuss possible derivations for the parallel reduction.
 
@@ -1039,7 +1040,7 @@ The formal derivations for all expressions are shown in \autoref{chapter:Appendi
 
 \paragraph{First Pattern-Based Expression}
 \autoref{eq:reduce11} shows our first expression implementing parallel reduction.
-\todo{erst Bild, wo die Formal mit einer OpenCL Platform zusammen gezeigt wird? (?)}
+\todo{erst Bild, wo die Formel mit einer OpenCL Platform zusammen gezeigt wird? (?)}
 \begin{figure}
   \begin{align*}
     \lineNum{1}&
@@ -1061,13 +1062,14 @@ This expression closely resembles the structure of the first two implementations
 First the input array is split into chunks of size 128 (line~\lineNum{5}) and each work-group processes such a chunk of data.
 128 corresponds to the work-group size we assumed for our implementations in \autoref{section:reduce:case-study}.
 Inside of a work-group in line~\lineNum{4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function to perform a copy nested inside the $\toLocal$ pattern.
-Afterwards, in line~\lineNum{3} the entire work-group performs an iterative reduction where in \todoU{7 steps (this equals $log_2(128)$)}{sg: welche Regel berechnet das?} the data is further divided into \todoU{pairs of two}{sg: warum genau so?} elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
+Afterwards, in line~\lineNum{3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into pairs of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
+This iterative process resembles the for-loops from \autoref{lst:reduce0} and \autoref{lst:reduce1} where in every iteration two elements are reduced.
 Finally, in line~\lineNum{2} the computed result is copied back to the global memory.
 
 The first two implementations discussed in \autoref{section:reduce:case-study} are very similar and the only difference is which work-item remains active in the parallel reduction tree.
 Currently, we do not model this subtle difference in our patterns, therefore, we cannot create an expression which distinguishes between these two implementations.
-This is not a major drawback, because none of the three architectures favoured the first over the second implementation, as we saw in \autoref{section:reduce:case-study}.
-Therefore, on these three architectures it is always beneficial to choose the second over the first implementation, which is exactly what our \todoU{\OpenCL code generator does as we will see}{sg: aus welchem Grund macht er so? Was macht er fuer andere Beispiele?} in the next section.
+This is not a major drawback, because none of the three investigated architectures favoured the first over the second implementation, as we saw in \autoref{section:reduce:case-study}.
+Therefore, our code generator always generates code matching the second implementation, as we will discuss in more detail in the next section.
 
 
 \paragraph{Avoiding Interleaved Addressing}
@@ -1090,7 +1092,7 @@ Therefore, on these three architectures it is always beneficial to choose the se
 \end{figure}
 %
 \todo{also line number?}
-\autoref{eq:reduce12} shows our second expression implementing parallel reduction, which closely \todoU{resembles}{sg: wirklich 1:1 oder doch etwas anders?} the third implementation of parallel reduction shown in \autoref{lst:reduce2}.
+\autoref{eq:reduce12} shows our second expression implementing parallel reduction, which mimic the third implementation of parallel reduction shown in \autoref{lst:reduce2}.
 The $\reorderStride$ pattern is used which makes local memory bank conflicts highly unlikely.
 Please note that the pattern is used inside the $\iterateN$ pattern.
 Therefore, the stride changes in every iteration, which is expressed by referring to the size of the array in the current iteration.
@@ -1119,12 +1121,12 @@ We use a lambda expression to name the input array ($xs$), use a $size$ function
 \end{figure}
 %
 \todo{also line number?}
-This expression closely resembles the fourth implementation shown in \autoref{lst:reduce3}.
+This expression resembles the fourth implementation shown in \autoref{lst:reduce3}.
 By replacing the copy operation into the local memory with a reduction of two elements we increase the computational intensity per work-item.
 The first $\reorderStride$ pattern is used to ensure the coalesced memory access when accessing the global memory.
 As now each work-group processes twice the amount of elements, we split the input data in twice the size of a work-group: $2\times 128$.
-\todo{sg: ist diese Idee in einer der Rules ausgedrueckt? in welcher?}
-
+By choosing the numerical parameters we can shift the granularity and amount of work between a single and multiple work items.
+Here we choose a larger parameter for \splitN to increase the amount of work a work-group processes.
 
 \paragraph{Avoid Synchronization Inside a Warp}
 \autoref{eq:reduce14} shows our fourth expression implementing parallel reduction.
@@ -1215,14 +1217,14 @@ The strides of the \reorderStride pattern are computed based on the size of the 
 This expression closely resembles the sixth implementation of the parallel reduction shown in \autoref{lst:reduce5}.
 The change to the previous expression in \autoref{eq:reduce14} is small:
 we replace the \iterateN pattern with the individual iteration steps.
-As we assume a fixed work-group size of 128 work-items, \todoU{we statically know for}{sg: komisch ausgedrueckt} \autoref{eq:reduce14} that only a single iteration step is required.
+As we assume a fixed work-group size of 128 work-items, it is known at compile time that only a single iteration step is required.
 If a larger work-group size would be chosen, then the expression shown in \autoref{eq:reduce15} would reflect this by including additional iteration steps.
 
 
 
 
 \paragraph{Fully Optimized Implementation}
-\autoref{eq:reduce15} shows our sixth and last expression implementing parallel reduction.
+\autoref{eq:reduce16} shows our sixth and last expression implementing parallel reduction.
 \begin{figure}
   \begin{align*}
     &\hspace{-1.5em}vecSum\\
@@ -1262,8 +1264,9 @@ The first \reorderStride expression ensures that memory accesses to the global m
 
 
 \paragraph{Conclusions}
-In this subsection, \todoU{we resembled the \OpenCL implementations}{sg: gutes Englisch?} presented in \autoref{section:reduce:case-study} by expressing them as compositions of our patterns.
-Furthermore, the presented expressions are all derivable from a simple high-level expression describing the parallel summation.
+In this subsection, we presented implementations of the parallel reduction purely composed of our patterns.
+These implementations resemble the \OpenCL implementations presented in \autoref{section:reduce:case-study}.
+The presented expressions are all derivable from a simple high-level expression describing the parallel summation.
 The derivations are a bit lengthy and thus not shown here, but instead in \autoref{chapter:AppendixA} in \autoref{section:derivation}.
 
 By expressing highly specialized and optimized implementations we show how flexible and versatile our patterns and rules on them are.
@@ -1369,7 +1372,6 @@ By using our pattern-based approach presented in this chapter together with the 
 \end{figure*}
 
 
-\todo{sg: Wird der Compiler das genauso machen koennen, d.h., die richtigen Regeln in der richtigen Reihenfolgen anwenden?}
 We start by applying the reduction rule~\ref{fig:algo:red} twice:
 first to replace \reduce with $\reduce\ \circ\ \partRed$ and then a second time to expand \partRed.
 We expand \map, which can be simplified by removing the two corresponding \join and \splitN patterns.
@@ -1377,6 +1379,8 @@ Then two \map patterns are fused and in the next step the nested \map is lowered
 We then first transform \partRed back into \reduce (using rule~\ref{fig:algo:red}) and then apply the \OpenCL rule~\ref{fig:low:red}.
 Finally, we apply rule~\ref{fig:algo:fusion} to fuse the \mapSeq and \reduceSeq into a single \reduceSeq.
 This sequence of transformations results in an expression which allows for better \OpenCL implementation since no temporary storage is required for the intermediate result.
+
+\todo{sg: Wird der Compiler das genauso machen koennen, d.h., die richtigen Regeln in der richtigen Reihenfolgen anwenden?}
 
 One interesting observation is that in the final expression the two customizing functions $+$ and $|\, .\,|$ are merged and a lambda expression has been created which uses these two functions: $\lambda\ a, b\ .\ a+|\, b\, |$.
 The generated lambda expression is not associative, as $a+|\, b\, | \neq b+|\, a\, |$.
@@ -1389,14 +1393,14 @@ Nevertheless, the final expression implements a parallel reduction, as the \map 
 
 
 \subsection{Summary}
-In this section, we have introduced a set of rewrite rules which allow to \todoU{safely}{sg: ??} and systematically rewrite expressions written using the patterns introduced earlier in \autoref{section:patterns}.
+In this section, we have introduced a set of rewrite rules which allow to systematically rewrite expressions written using the patterns introduced earlier in \autoref{section:patterns}.
 The power of our approach lies in the composition of the rules that produce complex low-level expressions from simple high-level expressions.
 
 We have seen how the rules can be used to transform simple expressions written by an application developer into highly specialized and optimized low-level \OpenCL expressions.
 These low-level expressions match hardware-specific concepts of \OpenCL, such as mapping computation and data to the thread and memory hierarchy, exploiting memory coalescing, and vectorization.
 Each single rule encodes a simple, easy to understand, provable fact.
 By composition of the rules we systematically derive low-level expressions which are semantically equivalent to the high-level expressions by construction.
-\todoU{This results in a powerful mechanism to safely explore the space of possible implementations.}{sg: ??warum? es wurde doch nix von ``explore'' vorher gesagt?}
+% \todoU{This results in a powerful mechanism to safely explore the space of possible implementations.}{sg: ??warum? es wurde doch nix von ``explore'' vorher gesagt?}
 
 In the next section we will investigate how \OpenCL code is generated from the low-level expressions.
 
