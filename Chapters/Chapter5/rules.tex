@@ -1026,7 +1026,7 @@ The application developer uses the algorithmic pattern \map together with the cu
 The numbers above the equal signs refer to \autoref{fig:algoRules} and \autoref{fig:lowRules} indicating which rule was used in the step.
 \begin{align}
   &vectorScal = \map\ mul3\nonumber\\
-  &\qquad\begin{aligned}
+  &\quad\begin{aligned}
     &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
       \join \circ \map\ (\map\ mul3) \circ \splitN\ n_1\\
     &\overset{\ref{fig:low:vect}}{=\hspace{.2em}}
@@ -1106,25 +1106,38 @@ Therefore, our code generator always generates code matching the second implemen
 
 
 \paragraph{Avoiding Interleaved Addressing}
-\begin{figure}
-  \begin{align*}
-    &\hspace{-1.5em}vecSum\\
-    &\hspace{-2em}\quad\begin{aligned}
-      &=\hspace{.2em}
-        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-        &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-        &\qquad\quad \iterateN\ 7\ \big(\ \lambda\ xs\ .\\
-        &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-        &\qquad\qquad\quad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ\\
-        &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-        &\qquad\big) \circ \splitN\ 128
-    \end{aligned}
-  \end{align*}
-  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce2}.}
-  \label{eq:reduce12}
-\end{figure}
+%\begin{figure}
+%  \begin{align*}
+%    &\hspace{-1.5em}vecSum\\
+%    &\hspace{-2em}\quad\begin{aligned}
+%      &=\hspace{.2em}
+%        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+%        &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+%        &\qquad\quad \iterateN\ 7\ \big(\ \lambda\ xs\ .\\
+%        &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%        &\qquad\qquad\quad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ\\
+%        &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
+%        &\qquad\big) \circ \splitN\ 128
+%    \end{aligned}
+%  \end{align*}
+%  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce2}.}
+%  \label{eq:reduce12}
+%\end{figure}
+\begin{lstlisting}[
+  float,
+  basicstyle=\normalsize\rmfamily,%\onehalfspacing,
+  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce2}.},
+  label={eq:reduce12}
+  ]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce12:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\label{eq:reduce12:2}$
+    $\iterateN\ 7\ \big(\ \lambda\ xs\ .\label{eq:reduce12:3}$
+      $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\label{eq:reduce12:4}$
+        $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ\label{eq:reduce12:5}$
+    $\join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\label{eq:reduce12:6}$
+  $\big) \circ \splitN\ 128\label{eq:reduce12:7}$
+\end{lstlisting}
 %
-\todo{also line number?}
 \autoref{eq:reduce12} shows our second expression implementing parallel reduction, which mimic the third implementation of parallel reduction shown in \autoref{lst:reduce2}.
 The $\reorderStride$ pattern is used which makes local memory bank conflicts highly unlikely.
 Please note that the pattern is used inside the $\iterateN$ pattern.
@@ -1134,26 +1147,40 @@ We use a lambda expression to name the input array ($xs$), use a $size$ function
 
 \paragraph{Increase Computational Intensity per Work-item\hspace{3em}\strut}
 \autoref{eq:reduce13} shows our third expression implementing parallel reduction.
-\begin{figure}
-  \begin{align*}
-    &\hspace{-1.5em}vecSum\\
-    &\hspace{-2em}\quad\begin{aligned}
-      &=\hspace{.2em}
-        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\quad\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-      &\qquad\quad\iterateN\ 7\ \big(\ \lambda\ xs\ .\\
-      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ\\
-      &\qquad\quad\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\reorderStride\ 128\\
-      &\qquad\big) \circ \splitN\ (2\times 128)
-    \end{aligned}
-  \end{align*}
-  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce3}.}
-  \label{eq:reduce13}
-\end{figure}
+%\begin{figure}
+%  \begin{align*}
+%    &\hspace{-1.5em}vecSum\\
+%    &\hspace{-2em}\quad\begin{aligned}
+%      &=\hspace{.2em}
+%        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+%      &\qquad\quad\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+%      &\qquad\quad\iterateN\ 7\ \big(\ \lambda\ xs\ .\\
+%      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ\\
+%      &\qquad\quad\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\reorderStride\ 128\\
+%      &\qquad\big) \circ \splitN\ (2\times 128)
+%    \end{aligned}
+%  \end{align*}
+%  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce3}.}
+%  \label{eq:reduce13}
+%\end{figure}
+\begin{lstlisting}[
+  float,
+  basicstyle=\normalsize\rmfamily,%\onehalfspacing,
+  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce3}.},
+  label={eq:reduce13}
+  ]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce13:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
+    $\iterateN\ 7\ \big(\ \lambda\ xs\ .$
+      $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ$
+    $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ$
+    $\reorderStride\ 128$
+  $\big) \circ \splitN\ (2\times 128)$
+\end{lstlisting}
 %
-\todo{also line number?}
 This expression resembles the fourth implementation shown in \autoref{lst:reduce3}.
 By replacing the copy operation into the local memory with a reduction of two elements we increase the computational intensity per work-item.
 The first $\reorderStride$ pattern is used to ensure the coalesced memory access when accessing the global memory.
@@ -1163,38 +1190,67 @@ Here we choose a larger parameter for \splitN to increase the amount of work a w
 
 \paragraph{Avoid Synchronization Inside a Warp}
 \autoref{eq:reduce14} shows our fourth expression implementing parallel reduction.
-\begin{figure}
-  \begin{align*}
-    &\hspace{-1.5em}vecSum\\
-    &\hspace{-2em}\quad\begin{aligned}
-      &=\hspace{.2em}
-        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-      &\qquad\quad \join \circ \mapWarp\ \big(\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 32\\
-      &\qquad\quad\big) \circ \splitN\ 64\ \circ\\
-      &\qquad\quad \iterateN\ 1\ \big(\ \lambda\ xs\ .\\
-      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ\\
-      &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad \reorderStride\ 128\\
-      &\qquad\big) \circ \splitN\ 256
-    \end{aligned}
-  \end{align*}
-  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce4}.}
-  \label{eq:reduce14}
-\end{figure}
+%\begin{figure}
+%  \begin{align*}
+%    &\hspace{-1.5em}vecSum\\
+%    &\hspace{-2em}\quad\begin{aligned}
+%      &=\hspace{.2em}
+%        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+%      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+%      &\qquad\quad \join \circ \mapWarp\ \big(\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 32\\
+%      &\qquad\quad\big) \circ \splitN\ 64\ \circ\\
+%      &\qquad\quad \iterateN\ 1\ \big(\ \lambda\ xs\ .\\
+%      &\qquad\qquad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ\\
+%      &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad \reorderStride\ 128\\
+%      &\qquad\big) \circ \splitN\ 256
+%    \end{aligned}
+%  \end{align*}
+%  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce4}.}
+%  \label{eq:reduce14}
+%\end{figure}
+\begin{lstlisting}[
+  float,
+  basicstyle=\normalsize\rmfamily,%\onehalfspacing,
+  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce4}.},
+  label={eq:reduce14}
+  ]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce14:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
+    $\join \circ \mapWarp\ \big($
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ 1\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ 2\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ 4\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ 8\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ 16\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ 32$
+    $\big) \circ \splitN\ 64\ \circ$
+    $\iterateN\ 1\ \big(\ \lambda\ xs\ .$
+      $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+        $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ$
+    $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ$
+      $\reorderStride\ 128$
+  $\big) \circ \splitN\ 256$
+\end{lstlisting}
 %
 This expression closely resembles the fifth implementation of the parallel reduction shown in \autoref{lst:reduce4}.
 The \iterateN pattern has been changed from performing seven iterations down to a single one.
