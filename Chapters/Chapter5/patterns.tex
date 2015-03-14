@@ -44,7 +44,7 @@ Tuple types are written as $\langle\alpha, \beta\rangle$.
 Finally, arrays have their length denoted as part of their type:
 for an array with elements of type $\alpha$ and length $n$, we write $[\alpha]_n$.
 
-A more formal description of a core subset of the patterns described in this section can be found in~\cite{SteuwerFeLiDu2015}, where formal syntax, typing rules, and formal semantics are given.
+%A more formal description of a core subset of the patterns described in this section can be found in~\cite{SteuwerFeLiDu2015}, where formal syntax, typing rules, and formal semantics are given.
 
 \begin{table}[t]
 \centering
@@ -250,7 +250,7 @@ The type of the \iterateN pattern is interesting as its result type depends on t
 The index function $F$ describes the effect the function $f$ has on the length of its input array.
 This index function is used to compute the effect the \iterateN function has when applying $f$ $n$ times on its input array.
 Please note, that the length of the input array of $f$, \ie, $k$, possibly changes every time $f$ is applied by \iterateN.
-A more formal treatment of the topic can be found in~\cite{SteuwerFeLiDu2015}.
+%A more formal treatment of the topic can be found in~\cite{SteuwerFeLiDu2015}.
 
 %\begin{align}
 %  n : int,\ F : (int \rightarrow int),\ f : (\forall k\ .\ [\alpha]_k \rightarrow [\alpha]_{F(k)}),\ xs : [\alpha]_m\ %

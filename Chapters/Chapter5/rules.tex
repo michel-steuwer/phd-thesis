@@ -108,7 +108,7 @@ The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can b
 \end{proof}
 \begin{proof}[Proof of \autoref{eq:algo:iterate}; option 2]
   Proof by induction over the natural number $n$.
-  We start with the base case $n=0$:
+  We start with the base case, let $n=0$:
   \begin{align*}
       & \comment{definition of \iterateN}\\
     \iterateN\ (m+0)\ f\ xs
@@ -145,7 +145,8 @@ The following \autoref{eq:algo:reorder} shows that if the data can be reordered 
 \end{rerule}
 
 \begin{proof}[Proof of \autoref{eq:algo:reorder}]
-  We start by looking at the expression $\map\ f \circ \reorder$:
+  We start with the expression $\map\ f \circ \reorder$.
+  Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (\map\ f \circ \reorder)\ xs
       &= \map\ f\ (\reorder\ xs)\\
@@ -184,10 +185,10 @@ using the \OpenCL-specific rules (discussed in \autoref{section:rules:opencl}) w
 This is an expression we have seen in our motivation example (\autoref{fig:codeex}) for mapping a computation to \OpenCL work-group and work-item.
 
 \begin{proof}[Proof of \autoref{eq:algo:splitjoin}]
-  We start from the right-hand side and show the equality of both sides:
+  We start from the right-hand side and show the equality of both sides.
+  Let $xs = [x_1, \ldots, x_m]$.
   \begin{align*}
-    &(\join \circ \map\ (\map\ f) \circ \splitN\ n)\ xs\\
-    &\qquad = \join\ (\map\ (\map\ f)\ (\splitN\ n\ xs))\\
+    &(\join \circ \map\ (\map\ f) \circ \splitN\ n)\ xs = \join\ (\map\ (\map\ f)\ (\splitN\ n\ xs))\\
     &\qquad \comment{definition of \splitN}\\
     &\qquad = \join\ (\map\ (\map\ f)\ [[x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]])\\
     &\qquad \comment{definition of \map}\\
@@ -206,26 +207,27 @@ We seek to express the reduction function as a composition of other primitive fu
 From the algorithmic point of view, we first define a partial reduction pattern \partRed:
 \begin{definition}
   \label{definition:pattern:parReduce}
-  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let $xs$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let $\oplus$ be an associative and commutative binary customizing operator with the identity element $\id_\oplus$.
   Let $n$ be an integer value where $m$ is evenly divisible by $n$.
-  Let $\sigma$ be an arbitrary permutation of $[1,\ldots, m]$.
+  Let $\sigma$ be an permutation of $[1,\ldots, m]$.
   The \partRed pattern is then defined as follows:
   \begin{align*}
     &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, x_2, \dots, x_m] \eqdef\\
     &\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)},\ \dots ,\ x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]
   \end{align*}
-  The types of $(\oplus)$, $\id_\oplus$, $n$, $\vec{x}$, and \partRed are as follows:
+  The types of $(\oplus)$, $\id_\oplus$, $n$, $xs$, and \partRed are as follows:
   \begin{align*}
     (\oplus) &: ((\alpha, \alpha) \rightarrow \alpha),\\
     \id_\oplus &: \alpha,\\
-    n &: \text{int},\\
-    \vec{x} &: [\alpha]_m,\\
-    \partRed\ (\oplus)\ \id_\oplus\ \vec{x} &: [\alpha]_{m/n}
+    n &: int,\\
+    xs &: [\alpha]_m,\\
+    \partRed\ (\oplus)\ \id_\oplus\ xs &: [\alpha]_{\frac{m}{n}}
   \end{align*}
 \end{definition}
 \noindent
-This partial reduction reduces an array of $n$ elements to an array of $m$ elements, without respecting the order of the elements of the input array.
+This partial reduction reduces an array of $m$ elements to an array of $m/n$ elements, without respecting the order of the elements of the input array.
+
 The reduction can be expressed as a partial reduction combined with a full reduction as shown in \autoref{eq:algo:red}.
 This rule ensures that we end up with one unique element.
 % Another possible derivation consists in iterating a partial reduction until a full reduction is achieved (this is what $\infty$ represents).
@@ -248,7 +250,7 @@ This rule ensures that we end up with one unique element.
     &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)},\ \dots ,\ x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
     &\qquad \comment{definition of \reduce}\\
     &\qquad = [(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)})]\\
-    &\qquad \comment{accociativity of $\oplus$}\\
+    &\qquad \comment{commutativity \& accociativity of $\oplus$}\\
     &\qquad = [x_1 \oplus \dots \oplus x_m]\\
     &\qquad \comment{definition of \reduce}\\
     &\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
@@ -279,15 +281,18 @@ This exploits the associativity property we require from the reduction operator.
 Finally, the last option expresses the notion that it is possible to reduce the input array in multiple steps, by performing an iterative process where in each step a partial reduction is performed.
 This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\ref{lst:reduce6}.
 
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 1] Choose $n=m$ $\Rightarrow$
+\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 1]
+  Let $xs = [x_1, \ldots, x_m]$.\\
+  Choose $n=m$ $\Rightarrow$
   \begin{align*}
     &\qquad\qquad\qquad\qquad\qquad\qquad\qquad \comment{definition of \partRed}\\
     &(\partRed\ (\oplus)\ \id_\oplus\ m)\ [x_1, \ldots, x_m] = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(m)}]\\
-    &\qquad \comment{accociativity of $\oplus$} \qquad \comment{definition of \reduce}\\
+    &\qquad \comment{commutativity of $\oplus$} \qquad \comment{definition of \reduce}\\
     &\qquad = [x_1 \oplus \dots \oplus x_m]\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
   \end{align*}
 \end{proof}
 \begin{proof}[Proof of \autoref{eq:algo:part-red}; option 2]
+  Let $xs = [x_1, \ldots, x_m]$
   \begin{align*}
     &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
     &\qquad \comment{definition of \partRed}\\
@@ -306,6 +311,7 @@ This concept is very important when considering how the reduction function is ty
   \end{align*}
 \end{proof}
 \begin{proof}[Proof of \autoref{eq:algo:part-red}; option 3]
+  Let $xs = [x_1, \ldots, x_l]$.
   \begin{align*}
     &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
     &\qquad \comment{definition of \partRed}\\
@@ -339,7 +345,7 @@ This concept is very important when considering how the reduction function is ty
   \begin{align*}
     \partRed\ (\oplus)\ \id_\oplus\ n^m \rightarrow \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)
   \end{align*}
-  Proof by induction over $m$. We start with the base case $m= 0$:
+  Proof by induction over $m$. We start with the base case, let $m= 0$.
   \begin{align*}
     \partRed\ (\oplus)\ \id_\oplus\ n^0\ xs &= \partRed\ (\oplus)\ \id_\oplus\ 1\ xs\\
       & \comment{definition of \partRed}\\
@@ -347,19 +353,20 @@ This concept is very important when considering how the reduction function is ty
       &\comment{definition of \iterateN}\\
       &= \iterateN\ 0\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs\\
   \end{align*}
-  The induction step $(m-1) \rightarrow m$:
+  The induction step $(m-1) \rightarrow m$.
+  Let $xs = [x_1, \ldots, x_l]$.
   \begin{align*}
     &\partRed\ (\oplus)\ \id_\oplus\ n^m\ xs\\
     &\qquad \comment{definition of \partRed}\\
-    &\qquad = [x_1 \oplus \dots \oplus x_{n^m}, \ldots, x_{l-n^m+1} \oplus \dots \oplus x_l]\\
+    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n^m)}, \ldots, x_{\sigma(l-n^m+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
     &\qquad \comment{accociativity of $\oplus$}\\
     &\qquad = \begin{aligned}[t]
-       [\ &(x_1 \oplus \dots \oplus x_n) \oplus \dots \oplus (x_{(n^{m-1}-1)\times n +1} \oplus \dots \oplus x_{(n^{m-1})\times n}),\\
+       [\ &(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma((n^{m-1}-1)\times n +1)} \oplus \dots \oplus x_{\sigma((n^{m-1})\times n)}),\\
         &\ldots,\\
         &
           \begin{aligned}[b]
-            &(x_{((l/n-(n^{m-1})+1)-1)\times n + 1} \oplus \dots \oplus x_{(l/n-(n^{m-1})+1)\times n})\\
-            &\quad \oplus \dots \oplus (x_{(l/n-1)\times n + 1} \oplus \dots \oplus x_{l/n\times n})
+            &(x_{\sigma(((l/n-(n^{m-1})+1)-1)\times n + 1)} \oplus \dots \oplus x_{\sigma((l/n-(n^{m-1})+1)\times n)})\\
+            &\quad \oplus \dots \oplus (x_{\sigma((l/n-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(l/n\times n)})
           \end{aligned}\ ]\\
       \end{aligned}\\
     &\qquad = [y_1 \oplus \dots \oplus y_{(n^{m-1})}, \ldots, y_{(l/n - (n^{m-1}))} \oplus \dots \oplus y_{(l/n)}]\\
@@ -413,26 +420,50 @@ This concept is very important when considering how the reduction function is ty
 They express the fact that consecutive \splitN-\join pairs and \asVector-\asScalar pairs can be eliminated.
 %
 \begin{rerule}{lcl}
-  \join \circ \splitN\ n       & \rightarrow & \id\\
-  \asScalar \circ \asVector\ n & \rightarrow & \id
+  \join_n \circ \splitN\ n       & \rightarrow & \id\\
+  \splitN\ n \circ \join_n       & \rightarrow & \id\\
+  \asScalar_n \circ \asVector\ n & \rightarrow & \id\\
+  \asVector\ n \circ \asScalar_n & \rightarrow & \id
   \label{eq:algo:simpl}
 \end{rerule}
 
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 1]
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 1]\strut\\
+  Let $xs = [x_1, \ldots, x_m]$.
   \begin{align*}
-    (\join \circ \splitN\ n)\ xs &= \join\ (\splitN\ n\ xs)\\
+    (\join_n \circ \splitN\ n)\ xs &= \join_n\ (\splitN\ n\ xs)\\
       &\comment{definition of \splitN}\\
-      &= \join\ \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]\\
+      &= \join_n\ \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]\\
       &\comment{definition of \join}\\
       &= xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 2]
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 2]\strut\\
+  Let $xs = \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]$.
   \begin{align*}
-    &(\asScalar \circ \asVector\ n)\ xs = \asScalar\ (\asVector\ n\ xs)\\
+    (\splitN\ n \circ \join_n)\ xs &= \splitN\ n\ (\join_n\ xs)\\
+      &\comment{definition of \join}\\
+      &= \splitN\ n\ [x_1, \ldots, x_m]\\
+      &\comment{definition of \splitN}\\
+      &= xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 3]\strut\\
+  Let $xs = [x_1, \ldots, x_m]$.
+  \begin{align*}
+    &(\asScalar_n \circ \asVector\ n)\ xs = \asScalar_n\ (\asVector\ n\ xs)\\
     &\qquad\comment{definition of \asVector}\\
-    &\qquad = \asScalar\ [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]\\
+    &\qquad = \asScalar_n\ [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]\\
     &\qquad\comment{definition of \asScalar}\\
+    &\qquad = xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 4]\strut\\
+  Let $xs = [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]$.
+  \begin{align*}
+    &(\asVector\ n \circ \asScalar_n)\ xs = \asVector\ n\ (\asScalar_n\ xs)\\
+    &\qquad\comment{definition of \asScalar}\\
+    &\qquad = \asVector\ n\ [x_1, \ldots, x_m]\\
+    &\qquad\comment{definition of \asVector}\\
     &\qquad = xs
   \end{align*}
 \end{proof}
@@ -461,6 +492,7 @@ The functional programming community has studied more generic rules for fusion~\
 However, as we currently focus on a restricted set of patterns, our simpler fusion rules have, so far, proven to be sufficient.
 
 \begin{proof}[Proof of \autoref{eq:algo:fusion}; option 1]
+  Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (\map\ f\circ \map\ g)\ xs
       &= \map\ f\ (\map\ g\ xs)\\
@@ -475,6 +507,7 @@ However, as we currently focus on a restricted set of patterns, our simpler fusi
   \end{align*}
 \end{proof}
 \begin{proof}[Proof of \autoref{eq:algo:fusion}; option 2]
+  Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     &(\reduceSeq\ (\oplus)\ \id_\oplus \circ \map\ f)\ xs\\
     &\qquad = \reduceSeq\ (\oplus)\ \id_\oplus\ (\map\ f\ xs)\\
@@ -595,9 +628,9 @@ In the next subsection we will discuss \OpenCL specific rewrite rules which allo
   \begin{mdframed}
     \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
-      \join \circ \splitN\ n
+      \join_n \circ \splitN\ n\quad | \quad \splitN\ n \circ \join_n
             & \rightarrow & \textit{id}\\
-      \asScalar \circ \asVector\ n
+      \asScalar_n \circ \asVector\ n\quad | \quad \asVector\ n \circ \asScalar_n
             & \rightarrow & \textit{id}\\
     \end{rerule*}
   \end{mdframed}
@@ -654,25 +687,26 @@ The rule in \autoref{eq:low:map} is used to produce the \OpenCL-specific map pat
 %
 When generating code the code generator has to ensure that the \OpenCL thread hierarchy is respected.
 For instance, it is only legal to nest a \mapLocal inside a \mapWorkgroup and it is not valid to nest a \mapGlobal or another \mapWorkgroup inside a \mapWorkgroup.
-In the current implementation of the code generator a context information is maintained which records in which patterns the currently visited pattern is nested.
+In the current implementation of the code generator a context information is maintained which records the nesting of patterns.
 Therefore, it is easy to detect wrongly nested \map patterns and reject the malformed code.
 
 \begin{proof}[Proof of \autoref{eq:low:map}]
-  All of these rules are correct by definition, as all map patterns share the same execution semantics.
+  All of the options in this rule are correct by definition, as all map patterns share the same execution semantics.
 \end{proof}
 
 \paragraph{Reduction}
 There is only one rule for lowering the \reduce pattern to \OpenCL (\autoref{eq:low:red}), which expresses the fact that the only implementation known to the code generator is a sequential reduction.
-Parallel implementations are defined at a higher level by composition of other algorithmic patterns.
-Most existing compilers and libraries which parallelize the reduction treat it directly as a primitive operation which is not expressed in terms of other more basic operations.
-With our approach it is possible to explore different implementations for the reduction by simply applying different rules.
 %
 \begin{rerule}{lcl}
   \reduce\ (\oplus)\ \id_\oplus & \rightarrow & \reduceSeq\ (\oplus)\ \id_\oplus
   \label{eq:low:red}
 \end{rerule}
+Parallel implementations of the reduction are defined at a higher level by composition of other algorithmic patterns.
+Most existing compilers and libraries which parallelize the reduction treat it directly as a primitive operation which is not expressed in terms of other more basic operations.
+With our approach it is possible to explore different implementations for the reduction by applying different rules.
 
 \begin{proof}[Proof of \autoref{eq:low:red}]
+  Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
       &\comment{definition of \reduce}\\
     \reduce\ (\oplus)\ \id_\oplus\ xs
@@ -699,6 +733,7 @@ As described earlier, the major use case for the stride reorder is to enable coa
 The implementation of the code generator could be easily extended to support other kinds of reordering functions, \eg, for reversing an array, or transposing a matrix.
 
 \begin{proof}[Proof of \autoref{eq:low:stride}; option 1]
+  Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     \reorder\ xs &= [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
                  &\comment{choose $\sigma$ as the identity permutation} \Rightarrow\\
@@ -717,7 +752,7 @@ The implementation of the code generator could be easily extended to support oth
 
   First we show the injectivity, by showing:
   \begin{align*}
-    \forall i, j \in [1, m] \text{ with } i\neq j \Rightarrow \sigma(i)\neq \sigma(j)
+    \forall i, j \in [1, m] \text{ with } i\neq j \quad \Rightarrow \quad \sigma(i)\neq \sigma(j)
   \end{align*}
   Let us assume without loss of generality that $i< j$.
 
@@ -749,6 +784,7 @@ The implementation of the code generator could be easily extended to support oth
   Let us write $j$ as $j=i+k$ where $0<k<m-1$.
 
   If we assume $i\ \text{div}\ n = (i+k)\ \text{div}\ n$:
+\todo{investigate!}
   \begin{align*}
     &\Rightarrow i\bmod{n} \neq (i+k)\bmod{n}\\
     &\comment{why?}\\
@@ -775,7 +811,7 @@ The implementation of the code generator could be easily extended to support oth
   \begin{align*}
     &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \leq s + s\times (n-1) = s\times n = m
   \end{align*}
-  As already discussed is $\sigma(i)>0\ \forall i\in [1,m]$, because of the definitions of $\bmod{}$ and div.
+  As already discussed is $\sigma(i)>0\ \forall i\in [1,m]$, because of the definitions of $\bmod{}$, div, and $\sigma$.
 
   Therefore, $\sigma$ is injective and surjective, thus, bijective which makes it a well defined permutation of $[1,m]$.
 
@@ -796,8 +832,8 @@ These rules allow us to describe how the data is mapped to the \GPU memory hiera
 
 As discussed earlier, the implementation of the code generator ensures that the \OpenCL hierarchy is respected by only allowing well-defined nestings of \map patterns, as shown in \autoref{figure}.
 
-\begin{proof}
-  These rules follow directly from the definition of \toGlobal and \toLocal, as these have no effect on the computed result, \ie, they behave like the \id function.
+\begin{proof}[Proof of \autoref{eq:low:mem}]
+  These rules follow directly from the definition of \toGlobal and \toLocal, as these have no effect on the computed value, \ie, they behave like the \id function.
 \end{proof}
 
 
@@ -807,7 +843,7 @@ As discussed earlier, the implementation of the code generator ensures that the 
 \begin{rerule}{lcl}
   \map\ f
     & \rightarrow &
-      \asScalar
+      \asScalar_n
         \circ \map\ (\vect\ n\ f)
         \circ \asVector\ n
   \label{eq:algo:vect}
@@ -821,13 +857,14 @@ The \vect pattern is used to produce a vectorized version of the customizing fun
 Note that the vector width $n$ has to match for the vectorization of the function and the modification of the array.
 
 \begin{proof}[Proof of \autoref{eq:algo:vect}]
+  Let $xs = [x_1, \ldots, x_m]$.
   \begin{align*}
     &\map\ f\ xs = [f\ x_1, \ldots, f\ x_m]\\
     &\qquad \comment{definition of \asScalar}\\
     &\qquad = \asScalar\ [\{f\ x_1, \ldots, f\ x_n\}, \ldots ,\{f\ x_{m-n+1}, \ldots, f\ x_m\}]\\
-    &\qquad \text{where } f'_n = \lambda\ \{x_1, \ldots, x_n\}\ .\ \{f\ x_1, \ldots, f\ x_n\}\\
-    &\qquad = \asScalar\ [f'_n\ \{x_1, \ldots, x_n\}, \ldots ,f'_n\ \{x_{m-n+1}, \ldots, x_m\}]\\
-    &\qquad \comment{definition of $f'_n$ and \vect}\\
+    &\qquad = \asScalar\ [f_n\ \{x_1, \ldots, x_n\}, \ldots ,f_n\ \{x_{m-n+1}, \ldots, x_m\}]\\
+    &\qquad \text{where } f_n\ \{x_1, \ldots, x_n\} = \{f\ x_1, \ldots, f\ x_n\}\\
+    &\qquad \comment{definition of $f_n$ and \vect}\\
     &\qquad = \asScalar\
       \begin{aligned}[t]
         [&(\vect\ n\ f)\ \{x_1, \ldots, x_n\},\ \ldots ,\\
@@ -849,7 +886,7 @@ Each rule formalizes a different implementation or optimization strategy in \Ope
 \begin{itemize}
   \item The map rules (\autoref{fig:low:map}) describe the usage of the \OpenCL thread hierarchy with work-items and work-groups.
 
-  \item The reduce rule (\autoref{fig:low:red}) specifies the simple sequential implementation of reduction in \OpenCL, the parallel reduction is implemented in terms of other patterns as we saw in \autoref{section:rules:algo}.
+  \item The reduce rule (\autoref{fig:low:red}) specifies the simple sequential implementation of reduction in \OpenCL, the parallel reduction is expressed in terms of other patterns as we saw in \autoref{section:rules:algo}.
 
   \item The stride access rule (\autoref{fig:low:stride}) enables coalesced memory access, which is crucial for performance as we saw in \autoref{section:reduce:case-study}.
 
@@ -868,13 +905,13 @@ Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation}, that t
   \begin{mdframed}
     \vspace{-\bigskipamount}
     \begin{rerule*}{lclcl}
-      \map\ f
+      \map
         & \rightarrow &
-          \mapWorkgroup\ f & | & \mapLocal\ f\\
+          \mapWorkgroup & | & \mapLocal\\
         & | &
-          \mapWarp\ f      & | & \mapLane\ f\\
+          \mapWarp      & | & \mapLane\\
         & | &
-          \mapGlobal\ f    & | & \mapSeq\ f\\
+          \mapGlobal    & | & \mapSeq\\
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -887,9 +924,9 @@ Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation}, that t
   \begin{mdframed}
     \vspace{-\bigskipamount}
     \begin{rerule*}{lcl}
-      \reduce\ f\ z
+      \reduce\ (\oplus)\ \id_\oplus
         & \rightarrow &
-          \reduceSeq\ f\ z
+          \reduceSeq\ (\oplus)\ \id_\oplus
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -904,7 +941,7 @@ Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation}, that t
     \begin{rerule*}{lclcl}
       \reorder
         & \rightarrow &
-          \reorderStride\ s & | & \textit{id}
+          \textit{id} & | & \reorderStride\ s
     \end{rerule*}
   \end{mdframed}
   \vspace{-1em}
@@ -1041,30 +1078,26 @@ The formal derivations for all expressions are shown in \autoref{chapter:Appendi
 \paragraph{First Pattern-Based Expression}
 \autoref{eq:reduce11} shows our first expression implementing parallel reduction.
 \todo{erst Bild, wo die Formel mit einer OpenCL Platform zusammen gezeigt wird? (?)}
-\begin{figure}
-  \begin{align*}
-    \lineNum{1}&
-      \quad vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-    \lineNum{2}&
-      \qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-    \lineNum{3}&
-      \qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
-    \lineNum{4}&
-      \qquad\quad \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
-    \lineNum{5}&
-      \qquad\big) \circ \splitN\ 128
-  \end{align*}
-  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.}
-  \label{eq:reduce11}
-\end{figure}
+\begin{lstlisting}[
+  float,
+  basicstyle=\normalsize\rmfamily,%\onehalfspacing,
+  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.},
+  label={eq:reduce11}
+  ]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce11:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\label{eq:reduce11:2}$
+    $\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2)\ \circ\label{eq:reduce11:3}$
+    $\join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\label{eq:reduce11:4}$
+  $\big) \circ \splitN\ 128\label{eq:reduce11:5}$
+\end{lstlisting}
 %
 This expression closely resembles the structure of the first two implementations presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.
-First the input array is split into chunks of size 128 (line~\lineNum{5}) and each work-group processes such a chunk of data.
+First the input array is split into chunks of size 128 (line~\ref{eq:reduce11:5}) and each work-group processes such a chunk of data.
 128 corresponds to the work-group size we assumed for our implementations in \autoref{section:reduce:case-study}.
-Inside of a work-group in line~\lineNum{4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function to perform a copy nested inside the $\toLocal$ pattern.
-Afterwards, in line~\lineNum{3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into pairs of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
+Inside of a work-group in line~\ref{eq:reduce11:4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function to perform a copy nested inside the $\toLocal$ pattern.
+Afterwards, in line~\ref{eq:reduce11:3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into pairs of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
 This iterative process resembles the for-loops from \autoref{lst:reduce0} and \autoref{lst:reduce1} where in every iteration two elements are reduced.
-Finally, in line~\lineNum{2} the computed result is copied back to the global memory.
+Finally, in line~\ref{eq:reduce11:2} the computed result is copied back to the global memory.
 
 The first two implementations discussed in \autoref{section:reduce:case-study} are very similar and the only difference is which work-item remains active in the parallel reduction tree.
 Currently, we do not model this subtle difference in our patterns, therefore, we cannot create an expression which distinguishes between these two implementations.
