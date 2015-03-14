@@ -1173,9 +1173,8 @@ We use a lambda expression to name the input array ($xs$), use a $size$ function
   ]
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce13:1}$
     $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
-    $\iterateN\ 7\ \big(\ \lambda\ xs\ .$
-      $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ$
+    $\iterateN\ 7\ \big(\ \lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+                $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ$
     $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ$
     $\reorderStride\ 128$
   $\big) \circ \splitN\ (2\times 128)$
@@ -1231,24 +1230,17 @@ Here we choose a larger parameter for \splitN to increase the amount of work a w
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce14:1}$
     $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
     $\join \circ \mapWarp\ \big($
-      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ 1\ \circ$
-      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ 2\ \circ$
-      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ 4\ \circ$
-      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ 8\ \circ$
-      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ 16\ \circ$
-      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ 32$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 1\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 2\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 4\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 8\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 16\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 32$
     $\big) \circ \splitN\ 64\ \circ$
-    $\iterateN\ 1\ \big(\ \lambda\ xs\ .$
-      $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
-        $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ$
+    $\iterateN\ 1\ \big(\ \lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+                $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ$
     $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ$
-      $\reorderStride\ 128$
+    $\reorderStride\ 128$
   $\big) \circ \splitN\ 256$
 \end{lstlisting}
 %
@@ -1271,37 +1263,58 @@ The strides of the \reorderStride pattern are computed based on the size of the 
 
 \paragraph{Complete Loop Unrolling}
 \autoref{eq:reduce15} shows our fifth expression implementing parallel reduction.
-\begin{figure}
-  \begin{align*}
-    &\hspace{-1.5em}vecSum\\
-    &\hspace{-2em}\quad\begin{aligned}
-      &=\hspace{.2em}
-        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-      &\qquad\quad \join \circ \mapWarp\ \big(\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 32\\
-      &\qquad\quad\big) \circ \splitN\ 64\ \circ\\
-      &\qquad\quad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad \reorderStride\ 64\ \circ\\
-      &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad \reorderStride\ 128\\
-      &\qquad\big) \circ \splitN\ 256
-    \end{aligned}
-  \end{align*}
-  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce5}.}
-  \label{eq:reduce15}
-\end{figure}
+%\begin{figure}
+%  \begin{align*}
+%    &\hspace{-1.5em}vecSum\\
+%    &\hspace{-2em}\quad\begin{aligned}
+%      &=\hspace{.2em}
+%        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+%      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+%      &\qquad\quad \join \circ \mapWarp\ \big(\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 32\\
+%      &\qquad\quad\big) \circ \splitN\ 64\ \circ\\
+%      &\qquad\quad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad \reorderStride\ 64\ \circ\\
+%      &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad \reorderStride\ 128\\
+%      &\qquad\big) \circ \splitN\ 256
+%    \end{aligned}
+%  \end{align*}
+%  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce5}.}
+%  \label{eq:reduce15}
+%\end{figure}
+\begin{lstlisting}[
+  float,
+  basicstyle=\normalsize\rmfamily,%\onehalfspacing,
+  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce5}.},
+  label={eq:reduce15}
+  ]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce15:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
+    $\join \circ \mapWarp\ \big($
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 1\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 2\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 4\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 8\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 16\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 32$
+    $\big) \circ \splitN\ 64\ \circ$
+    $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 64\ \circ$
+    $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ$
+    $\reorderStride\ 128$
+  $\big) \circ \splitN\ 256$
+\end{lstlisting}
 %
 This expression closely resembles the sixth implementation of the parallel reduction shown in \autoref{lst:reduce5}.
 The change to the previous expression in \autoref{eq:reduce14} is small:
@@ -1314,37 +1327,58 @@ If a larger work-group size would be chosen, then the expression shown in \autor
 
 \paragraph{Fully Optimized Implementation}
 \autoref{eq:reduce16} shows our sixth and last expression implementing parallel reduction.
-\begin{figure}
-  \begin{align*}
-    &\hspace{-1.5em}vecSum\\
-    &\hspace{-2em}\quad\begin{aligned}
-      &=\hspace{.2em}
-        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
-      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-      &\qquad\quad \join \circ \mapWarp\ \big(\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
-      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad\quad \reorderStride\ 32\\
-      &\qquad\quad\big) \circ \splitN\ 64\ \circ\\
-      &\qquad\quad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-      &\qquad\qquad \reorderStride\ 64\ \circ\\
-      &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0))\ \circ\\
-      &\qquad\qquad\splitN\ (blockSize/128)\ \circ \reorderStride\ 128\\
-      &\qquad\big) \circ \splitN\ blockSize
-    \end{aligned}
-  \end{align*}
-  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce6}.}
-  \label{eq:reduce16}
-\end{figure}
+%\begin{figure}
+%  \begin{align*}
+%    &\hspace{-1.5em}vecSum\\
+%    &\hspace{-2em}\quad\begin{aligned}
+%      &=\hspace{.2em}
+%        \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+%      &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+%      &\qquad\quad \join \circ \mapWarp\ \big(\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
+%      &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad\quad \reorderStride\ 32\\
+%      &\qquad\quad\big) \circ \splitN\ 64\ \circ\\
+%      &\qquad\quad \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+%      &\qquad\qquad \reorderStride\ 64\ \circ\\
+%      &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0))\ \circ\\
+%      &\qquad\qquad\splitN\ (blockSize/128)\ \circ \reorderStride\ 128\\
+%      &\qquad\big) \circ \splitN\ blockSize
+%    \end{aligned}
+%  \end{align*}
+%  \caption{Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce6}.}
+%  \label{eq:reduce16}
+%\end{figure}
+\begin{lstlisting}[
+  float,
+  basicstyle=\normalsize\rmfamily,%\onehalfspacing,
+  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce6}.},
+  label={eq:reduce16}
+  ]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce16:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
+    $\join \circ \mapWarp\ \big($
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 1\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 2\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 4\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 8\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 16\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 32$
+    $\big) \circ \splitN\ 64\ \circ$
+    $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 64\ \circ$
+    $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0))\ \circ$
+    $\splitN\ (blockSize/128)\ \circ \reorderStride\ 128$
+  $\big) \circ \splitN\ blockSize$
+\end{lstlisting}
 %
 This expression closely resembles the seventh and finally optimized implementation of the parallel reduction shown in \autoref{lst:reduce6}.
 As in the original \OpenCL implementation, we increase the computational intensity by increasing the number of elements processed by a single work-group.
@@ -1469,8 +1503,6 @@ We then first transform \partRed back into \reduce (using rule~\ref{fig:algo:red
 Finally, we apply rule~\ref{fig:algo:fusion} to fuse the \mapSeq and \reduceSeq into a single \reduceSeq.
 This sequence of transformations results in an expression which allows for better \OpenCL implementation since no temporary storage is required for the intermediate result.
 
-\todo{sg: Wird der Compiler das genauso machen koennen, d.h., die richtigen Regeln in der richtigen Reihenfolgen anwenden?}
-
 One interesting observation is that in the final expression the two customizing functions $+$ and $|\, .\,|$ are merged and a lambda expression has been created which uses these two functions: $\lambda\ a, b\ .\ a+|\, b\, |$.
 The generated lambda expression is not associative, as $a+|\, b\, | \neq b+|\, a\, |$.
 Therefore, this lambda is used in a sequential implementation of reduction and can not be used as the customizing function for the entire parallel reduction.
@@ -1478,6 +1510,21 @@ Nevertheless, the final expression implements a parallel reduction, as the \map 
 
 
 \FloatBarrier
+
+\subsection{Towards automatically applying our rewrite rules}
+The rewrite rules presented in this section define a design space of possible implementations for a given program represented as an algorithmic expression.
+The rules can safely be applied automatically by a compiler as they -- provably -- do not change the semantics of the input program.
+
+Using the parallel reduction example, we have seen that multiple implementations can be derived for the same high-level algorithmic expression when applying different rules.
+This leads to the obvious, but non-trivial, and central question:
+which rules should be applied in which order to obtain the best possible implementation for a particular target hardware device.
+We will not attempt to answer this question in this thesis.
+The system presented in this section constitutes the foundational work necessary to be able to raise this question and, therefore, is just a first step towards a fully automated compiler generating the most optimized parallel implementation possible for a given hardware device from a single high-level program.
+
+Ongoing research on design space exploration~\cite{} develops efficient methods for searching large design spaces, like the one defined by our rewrite rules.
+Research on formal performance models~\cite{} could also be useful for modeling the performance behavior of our low-level expressions on given hardware devices.
+
+We will discuss this topic in more detail in \autoref{section:future-work}.
 
 
 
