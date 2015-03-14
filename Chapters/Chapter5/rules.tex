@@ -4,7 +4,7 @@
 This section introduces our set of rewrite rules that transform high-level expressions written using our algorithmic patterns into semantically equivalent expressions.
 One goal of our approach is to keep each rule as simple as possible and only express one fundamental concept at a time.
 For instance the vectorization rule, as we will see, is the only rule expressing the vectorization concept.
-This is different from most previous library or compiler approaches that would provide or produce a special vectorized version of different algorithmic patterns such as map or reduce.
+This is different from most previous library or compiler approaches which provide or produce a special vectorized version of different algorithmic patterns such as map or reduce.
 The advantage of our approach lies in the power of composition:
 many rules can be applied successively to produce expressions that compose hardware concepts or optimizations and that are provably correct by construction.
 
@@ -13,8 +13,8 @@ Algorithmic rules produce derivations that represent different algorithmic choic
 Our \OpenCL-specific rules map expressions to \OpenCL patterns.
 Once the expression is lowered and consist only of \OpenCL patterns, it is possible to produce \OpenCL code for each single pattern straightforwardly with our code generator as described in the following section.
 
-We write $a \rightarrow b$ for a rewrite rule which allows to replace the occurrence of $a$ in an expression with $b$.
-Sometimes multiple rewrites are valid then we write $a \rightarrow b\ |\ c$ to indicate the choice to replace $a$ either with $b$ or $c$.
+We write $a \rightarrow b$ for a rewrite rule which allows to replace the occurrence of term $a$ in an expression with term $b$.
+Sometimes multiple rewrites are valid then we write $a \rightarrow b\ |\ c$ to indicate the choice to replace term $a$ either with term $b$ or term $c$.
 
 For each rule we provide a proof of its correctness, \ie, that applying the rewrite rule does not change the semantic of the expression the rule is applied to.
 
@@ -49,7 +49,7 @@ For each rule we provide a proof of its correctness, \ie, that applying the rewr
 \label{section:rules:algo}
 
 Each algorithmic rule formulates a provably correct statement of the relationship of multiple algorithmic patterns.
-Applying the rule allows to rewrite an expression and, by doing so, explore different implementations.
+Applying the rules allows to rewrite an expression and, by doing so, explore different implementations.
 As the algorithmic rules are separated from the  \OpenCL rules, these rules can explore valid implementations regardless of their concrete implementation in a concrete low-level programming model like \OpenCL.
 
 \paragraph{Identity}
@@ -64,16 +64,18 @@ As we always operate on arrays, we technically compose $f$ with $\map\ id$.
 The \textit{id} function can act as a copy operation; this is, \eg, useful for expressing copies of an array to local memory when composed with the \toLocal \OpenCL pattern: $\toLocal\ (\map\ \textit{id})$.
 
 \begin{proof}[Proof of \autoref{eq:algo:identity}; option 1]
+  Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (f \circ \map\ \textit{id})\ xs
       &= f\ (\map\ \textit{id}\ xs)\\
-      & \comment{definition of \map}\\
-      &= f\ ([\textit{id}\ x_1, \textit{id}\ x_2, \ldots, \textit{id}\ x_n])\\
-      & \comment{definition of \textit{id}}\\
-      &= f\ xs
+      &\begin{aligned}[t]
+        & \comment{definition of \map}                                         && \comment{definition of \textit{id}}\\
+        &= f\ ([\textit{id}\ x_1, \textit{id}\ x_2, \ldots, \textit{id}\ x_n]) &&= f\ xs
+      \end{aligned}
   \end{align*}
 \end{proof}
 \begin{proof}[Proof of \autoref{eq:algo:identity}; option 2]
+  Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (\map\ \textit{id} \circ\ f)\ xs
       &= \map\ \textit{id}\ (f\ xs)\\
@@ -99,11 +101,9 @@ The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can b
 
 \begin{proof}[Proof of \autoref{eq:algo:iterate}; option 1]
   \begin{align*}
-      & \comment{definition of \iterateN}\\
+      & \comment{definition of \iterateN} && \comment{definition of \iterateN}\\
     \iterateN\ 1\ f\ xs
-      &= \iterateN\ (1-1)\ f\ (f\ xs)\\
-      & \comment{definition of \iterateN}\\
-      &= f\ xs
+      &= \iterateN\ (1-1)\ f\ (f\ xs) \hspace{-5em}&& = f\ xs
   \end{align*}
 \end{proof}
 \begin{proof}[Proof of \autoref{eq:algo:iterate}; option 2]

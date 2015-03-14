@@ -23,19 +23,19 @@ The only exceptions are the user-defined functions, such as the \code{mul3} func
 \autoref{tab:hlskel} presents our high-level patterns used to define programs at the algorithmic level.
 Most of the patterns are well known in functional programming, like \map and \reduce.
 The \zip, \splitN and \join patterns transform the shape of the data.
-For arrays the number of dimensions and the size of each dimension is part of their types, as we will see.
 The \iterateN pattern iteratively applies a function multiple times.
 Finally, the \reorder pattern lets our system know that it is safe to reorder the elements of an array arbitrarily, which enables additional optimizations -- as we will see later in \autoref{chapter:codeGeneration-evaluation}.
 
 In the following, we discuss each high-level algorithmic pattern in more detail including their formal definitions.
 As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism~\cite{Bird88} as inspiration for our notation of the patterns.
 For full details see~\autoref{par:notation} on page~\pageref{par:notation}.
-Here is a short reminder:
-we write function application using space and functions are often curried;
-binary operators (\eg, $\oplus$) are written using infix notation and can be written using prefix notation when being sectioned using parenthesis: $(\oplus)$.
+Here is a short reminder of our notation:
+we write function application using a space and functions are often curried;
+binary operators (\eg, $\oplus$) are written using infix notation and can be written using prefix notation when being sectioned by using parenthesis: $(\oplus)$.
+For an array $xs$ of length $n$ with elements $x_i$ we write $[x_1, \ldots, x_n]$.
 
 In this chapter we are especially interested in how patterns can be composed and nested.
-As \emph{types} formally specify which compositions and nesting of patterns are legal, we will precisely define the type of each pattern.
+As \emph{types} formally specify which compositions and nesting of patterns are legal, we will define the type of each pattern.
 % For expressing types we base our syntax on the syntax established by J. Roger Hindley, Robin Miler, and Luis Damas as part of the Hindley---Milner type system~\cite{}.
 We write $e : \sigma$ to denote that expression $e$ has type $\sigma$.
 % To make typing judgments we write $e_0 : \sigma_0,\ \ldots,\ e_n : \sigma_n\ \vdash e : \sigma$ to denote that under the assumptions that $e_0,\ \ldots,\ e_n$ have types $\sigma_0,\ \ldots,\ \sigma_n$ the expression $e$ has type $\sigma$.
@@ -80,17 +80,17 @@ The same definition holds here.
 We repeat it here for completeness and we add the type information:
 \begin{definition}
   \label{definition:pattern:map}
-  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $xs$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $f$ be a unary customizing function defined on elements.
   The \map pattern is then defined as follows:
   \begin{equation*}
     \map\ f\ [x_1, x_2, \dots, x_n] \eqdef [f\ x_1, f\ x_2, \dots, f\ x_n]
   \end{equation*}
-  The types of $f$, $\vec{x}$, and \map are as follows:
+  The types of $f$, $xs$, and \map are as follows:
   \begin{align*}
     f &: (\alpha \rightarrow \beta),\\
-    \vec{x} &: [\alpha]_n,\\
-    \map\ f\ \vec{x} &: [\beta]_n
+    xs &: [\alpha]_n,\\
+    \map\ f\ xs &: [\beta]_n
   \end{align*}
 \end{definition}
 
@@ -114,19 +114,19 @@ The same definition holds here.
 We repeat it here for completeness and we add the type information:
 \begin{definition}
   \label{definition:pattern:reduce}
-  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $xs$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\oplus$ be an associative and commutative binary customizing operator with the identity element $\id_\oplus$.
   The \reduce pattern is then defined as follows:
   \begin{equation*}
     \reduce\ (\oplus)\ \id_\oplus\ [x_1, x_2, \dots, x_n]
       \eqdef [x_1 \oplus x_2 \oplus \dots \oplus x_n]
   \end{equation*}
-  The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \reduce are as follows:
+  The types of $(\oplus)$, $\id_\oplus$, $xs$, and \reduce are as follows:
   \begin{align*}
     (\oplus) &: ((\alpha, \alpha) \rightarrow \alpha),\\
     \id_\oplus &: \alpha,\\
-    \vec{x} &: [\alpha]_n,\\
-    \reduce\ \oplus\ \id_\oplus\ \vec{x} &: [\alpha]_1
+    xs &: [\alpha]_n,\\
+    \reduce\ (\oplus)\ \id_\oplus\ xs &: [\alpha]_1
   \end{align*}
 \end{definition}
 
@@ -137,17 +137,17 @@ The \zip pattern fuses two arrays into a single array of pairs.
 
 \begin{definition}
   \label{definition:pattern:zip}
-  Let $\vec{x}$ and $\vec{y}$ be arrays of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
+  Let $xs$ and $ys$ be arrays of size $n$ with elements $x_i$ and $y_i$ where $0 < i \leq n$.
   The \zip pattern is then defined as follows:
   \begin{equation*}
     \zip\ [x_1, x_2, \dots, x_n]\ [y_1, y_2, \dots, y_n]\\
       \eqdef [\langle x_1, y_1\rangle, \langle x_2, y_2\rangle, \dots, \langle x_n, y_n\rangle]
   \end{equation*}
-  The types of $\vec{x}$, $\vec{y}$, and \zip are as follows:
+  The types of $xs$, $ys$, and \zip are as follows:
   \begin{align*}
-    \vec{x} &: [\alpha]_n,\\
-    \vec{y} &: [\beta]_n,\\
-    \zip\ \vec{x}\ \vec{y} &: [\langle\alpha, \beta\rangle]_n
+    xs &: [\alpha]_n,\\
+    ys &: [\beta]_n,\\
+    \zip\ xs\ ys &: [\langle\alpha, \beta\rangle]_n
   \end{align*}
 \end{definition}
 
@@ -156,7 +156,7 @@ This definition significantly differs from the definition of the \zip skeleton i
 While in \autoref{definition:zip}, \zip applies a given function to a pair of elements, there is no function to be applied in \autoref{definition:pattern:zip} of the \zip pattern.
 The behavior of the \zip skeleton can be achieved by composing the \zip pattern with the \map pattern:
 \begin{align*}
-  zipWith\ f\ \vec{x}\ \vec{y} &= \map\ f\ (\zip\ \vec{x}\ \vec{y})
+  zipWith\ f\ xs\ ys &= \map\ f\ (\zip\ xs\ ys)
 \end{align*}
 
 
@@ -167,18 +167,18 @@ We start with the definition of the \splitN pattern.
 \begin{definition}
   \label{definition:pattern:split}
   Let $n$ be an integer value.
-  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let $xs$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let us assume that $m$ is evenly divisible by $n$.
   The \splitN pattern is then defined as follows:
   \begin{align*}
     &\splitN\ n\ [x_1, x_2, \dots, x_m] \eqdef\\
     &\qquad\big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big]
   \end{align*}
-  The types of $n$, $\vec{x}$, and \splitN are as follows:
+  The types of $n$, $xs$, and \splitN are as follows:
   \begin{align*}
     n &: int,\\
-    \vec{x} &: [\alpha]_m,\\
-    \splitN\ n\ \vec{x} &: \big[[\alpha]_n\big]_{\frac{m}{n}}
+    xs &: [\alpha]_m,\\
+    \splitN\ n\ xs &: \big[[\alpha]_n\big]_{\frac{m}{n}}
   \end{align*}
 \end{definition}
 
@@ -193,22 +193,23 @@ The corresponding \join pattern does the opposite:
 it reassembles an array of arrays by merging dimensions.
 \begin{definition}
   \label{definition:pattern:join}
-  Let $\vec{x}$ be an array of size $\frac{m}{n}$ whose elements are arrays of size $n$.
+  Let $xs$ be an array of size $\frac{m}{n}$ whose elements are arrays of size $n$.
   We denote the elements of the $i$th inner array as $x_{((i-1)\times n) + j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
   The \join pattern is then defined as follows:
   \begin{align*}
-    &\join\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] \eqdef\\
+    &\join_n\ \big[[x_1, \ldots, x_n], [x_{n+1}, \ldots, x_{2n}], \ldots, [x_{m-n+1}, \ldots, x_m]\big] \eqdef\\
     &\qquad[x_1, x_2, \dots, x_m]
   \end{align*}
-  The types of $\vec{x}$ and \join are as follows:
+  The types of $xs$ and $\join_n$ are as follows:
   \begin{align*}
-    \vec{x} &: \big[[\alpha]_n\big]_{\frac{m}{n}},\\
-    \join\ \vec{x} &: [\alpha]_m
+    xs &: \big[[\alpha]_n\big]_{\frac{m}{n}},\\
+    \join_n\ xs &: [\alpha]_m
   \end{align*}
 \end{definition}
 
 \noindent
-From these definitions it follows, that the composition of $\splitN\ n$ and \join: $\join \circ \splitN\ n$ for any value $n$ yields the same type and also does not change any element in the array, \ie, it is equivalent to the identify function \emph{id}.
+We will almost always omit the subscript, as $n$ can be inferred from the input array.
+From these definitions it follows, that the compositions of $\splitN\ n$ and $\join_n$: $\join_n \circ \splitN\ n$ and $\splitN\ n \circ \join_n$ for any value $n$ yields the same type and also does not change any element in the array, \ie, it is equivalent to the identify function \emph{id}.
 
 These two patterns used together are similar to the split-join concept from data-flow languages such as StreamIt~\cite{ThiesKaAm2002}.
 
@@ -220,13 +221,13 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
   \label{definition:pattern:iterate}
   Let $n$ be an integer value with $n \geq 0$.
   Let $f$ be a unary function on arrays.
-  Let $\vec{x}$ be an array of arbitrary size.
+  Let $xs$ be an array of arbitrary size.
   We define the \iterateN pattern recursively:
   \begin{align*}
-    \iterateN\ n\ f\ \vec{x} &\eqdef \iterateN\ (n-1)\ f\ (f\ \vec{x}),\\
-    \iterateN\ 0\ f\ \vec{x} &\eqdef \vec{x}
+    \iterateN\ 0\ f\ xs &\eqdef xs,\\
+    \iterateN\ n\ f\ xs &\eqdef \iterateN\ (n-1)\ f\ (f\ xs)
   \end{align*}
-  The types of $n$, $f$, $\vec{x}$, and \iterateN are as follows:
+  The types of $n$, $f$, $xs$, and \iterateN are as follows:
   \begin{align*}
     n &: int,\\
     f &: ([\alpha]_k \rightarrow [\alpha]_{F(k)}),
@@ -235,8 +236,8 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
         &F : (int\rightarrow int) \text{ describes the change}\\
         &\text{of array length when applying } f,
       \end{aligned}\\
-    \vec{x} &: [\alpha]_m,\\
-    \iterateN\ n\ f\ \vec{x} &: [\alpha]_{F^n(m)}
+    xs &: [\alpha]_m,\\
+    \iterateN\ n\ f\ xs &: [\alpha]_{F^n(m)}
   \end{align*}
 \end{definition}
 
@@ -245,10 +246,10 @@ The \iterateN pattern corresponds to the mathematical definition of iteratively 
 % After each iteration, we swap the pointers, so that the output of the last iteration becomes the input for the next one.
 % We automatically allocated and calculate memory requirements based on the information from the input and output type.
 \noindent
-The type property of the \iterateN pattern is interesting as its result type depends on the effect $f$ has on the size of its argument.
-The index function $F$ describes the effect the function $f$ has on the size of its input array.
+The type of the \iterateN pattern is interesting as its result type depends on the effect $f$ has on the size of its argument.
+The index function $F$ describes the effect the function $f$ has on the length of its input array.
 This index function is used to compute the effect the \iterateN function has when applying $f$ $n$ times on its input array.
-Please note, that the size of the input array of $f$, \ie, $k$, possibly changes every time $f$ is applied by \iterateN.
+Please note, that the length of the input array of $f$, \ie, $k$, possibly changes every time $f$ is applied by \iterateN.
 A more formal treatment of the topic can be found in~\cite{SteuwerFeLiDu2015}.
 
 %\begin{align}
@@ -261,21 +262,21 @@ The \reorder pattern is used to specify that the ordering of the elements of an 
 
 \begin{definition}
   \label{definition:pattern:reorder}
-  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $xs$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\sigma$ be an arbitrary permutation of $[1,\ldots, n]$.
   The \reorder pattern is then defined as follows:
   \begin{align*}
     \reorder\ [x_1, \ldots, x_n] &\eqdef [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]
   \end{align*}
-  The types of $\vec{x}$ and \reorder are as follows:
+  The types of $xs$ and \reorder are as follows:
   \begin{align*}
-    \vec{x} &: [\alpha]_n,\\
-    \reorder\ \vec{x} &: [\alpha]_n
+    xs &: [\alpha]_n,\\
+    \reorder\ xs &: [\alpha]_n
   \end{align*}
 \end{definition}
 
 \noindent
-This definition allows the implementation to pick any permutation to reorder the elements of an array arbitrarily which may enable optimizations, as we will see later.
+This definition allows to pick any permutation to reorder the elements of an array arbitrarily which may enable optimizations, as we will see later.
 
 
 
@@ -332,7 +333,7 @@ The main idea behind our approach is to identify common optimization patterns an
 \paragraph{Parallel Maps}
 The different \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread-level parallelism in \OpenCL.
 The execution semantics and types of all these low-level \OpenCL \map patterns are the same as of the high-level \map pattern shown in \autoref{definition:pattern:map}.
-In fact, these patterns can be viewed as \emph{instantiations} of the \emph{interface} the high-level \map pattern define, as the low-level \OpenCL pattern provide different possibilities to implement the \map pattern.
+In fact, these patterns can be viewed as \emph{instantiations} of the \emph{interface} the high-level \map pattern defines, as the low-level \OpenCL pattern provide different possibilities to implement the \map pattern.
 
 \todo{describe map-warp and map-lane}
 \todo{sg: hier waere ein Bild gut, das diese maps zusammen mit der OpenCL Thread-Hierarchie zeigt}
@@ -365,7 +366,7 @@ For the high-level \reduce pattern, we require the customizing binary operator t
 As the \reduceSeq pattern performs a sequential reduction, we can relax these requirements, therefore, we define \reduceSeq separately.
 \begin{definition}
   \label{definition:pattern:reduceSeq}
-  Let $\vec{x}$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
+  Let $xs$ be an array of size $n$ with elements $x_i$ where $0 < i \leq n$.
   Let $\oplus$ be a binary customizing operator with the identity element $\id_\oplus$.
   The \reduceSeq pattern is then defined as follows:
   \begin{equation*}
@@ -374,10 +375,10 @@ As the \reduceSeq pattern performs a sequential reduction, we can relax these re
   \end{equation*}
   The types of $(\oplus)$, $\id_\oplus$, $\vec{x}$, and \reduce are as follows:
   \begin{align*}
-    \oplus &: ((\alpha, \beta) \rightarrow \alpha),\\
-    \id &: \alpha,\\
-    \vec{x} &: [\beta]_n,\\
-    \reduceSeq\ \oplus\ \id\ \vec{x} &: [\alpha]_1
+    (\oplus) &: ((\alpha, \beta) \rightarrow \alpha),\\
+    \id_\oplus &: \alpha,\\
+    xs &: [\beta]_n,\\
+    \reduceSeq\ (\oplus)\ \id_\oplus\ xs &: [\alpha]_1
   \end{align*}
 \end{definition}
 
@@ -389,7 +390,7 @@ This corresponds to the \emph{coalesce memory accesses}, which are beneficial on
 \begin{definition}
   \label{definition:pattern:reorderStride}
   Let $s$ be an integer value.
-  Let $\vec{x}$ be an array of size $m$ with elements $x_i$, where $0 < i \leq m$.
+  Let $xs$ be an array of size $m$ with elements $x_i$, where $0 < i \leq m$.
   Let us assume that $m$ is evenly divisible by $s$ and that $m = s\times n$ for some integer value $n$.
   The \reorderStride pattern is then defined as follows:
   \begin{align*}
@@ -397,15 +398,15 @@ This corresponds to the \emph{coalesce memory accesses}, which are beneficial on
     y_i &\eqdef x_{i\ \text{\normalfont div } n + s \times (i \bmod{n})}
   \end{align*}
   Where $x\ \text{\normalfont div}\ y$ is integer division and $x \bmod{y}$ is the modulo operation.
-  The types of $s$, $\vec{x}$, and \reorderStride are as follows:
+  The types of $s$, $xs$, and \reorderStride are as follows:
   \begin{align*}
     s &: int,\\
-    \vec{x} &: [\alpha]_m,\\
-    \reorderStride\ s\ \vec{x} &: [\alpha]_m
+    xs &: [\alpha]_m,\\
+    \reorderStride\ s\ xs &: [\alpha]_m
   \end{align*}
 \end{definition}
 
-In our implementation no code is produces, but rather the reordering determines how the data is read from the array.
+Our code generator produces no code directly, but rather the reordering determines how the data is read from the array in the following pattern.
 
 %\noindent
 \todo{Maybe a figure visualizing the reordering ...}
@@ -493,7 +494,7 @@ We start by defining the \asVector pattern.
 \begin{definition}
   \label{definition:pattern:asVector}
   Let $n$ be an integer value.
-  Let $\vec{x}$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
+  Let $xs$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let us assume, that $m$ is evenly divisible by $n$.
   The \asVector pattern is then defined as follows:
   \begin{align*}
@@ -501,11 +502,11 @@ We start by defining the \asVector pattern.
     &\qquad\big[\{x_1, \ldots, x_n\}, \{x_{n+1}, \ldots, x_{2n}\}, \ldots, \{x_{m-n+1}, \ldots, x_m\}\big],
   \end{align*}
   where $\{x_1,\ldots,x_n\}$ denotes a vector of width $n$.\\
-  The types of $n$, $\vec{x}$, and \asVector are as follows:
+  The types of $n$, $xs$, and \asVector are as follows:
   \begin{align*}
     n &: int\\
-    \vec{x} &: [\alpha]_m,\\
-    \asVector\ n\ \vec{x} &: [\alpha_n]_{\frac{m}{n}}
+    xs &: [\alpha]_m,\\
+    \asVector\ n\ xs &: [\alpha_n]_{\frac{m}{n}}
   \end{align*}
   Here $\alpha$ is required to be a basic scalar type, \eg, \code{int} or \code{float}, and $\alpha_n$ denotes the vectorized version of that type with a vector width of $n$.
 \end{definition}
@@ -514,21 +515,23 @@ We start by defining the \asVector pattern.
 The corresponding \asScalar pattern is defined as follows.
 \begin{definition}
   \label{definition:pattern:asScalar}
-  Let $\vec{x}$ be an array of size $\frac{m}{n}$ whose elements are vectors of width $n$.
-  We denote the individual vector elements of the $i$th element of $\vec{x}$ as $x_{((i-1)\times n)+j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
+  Let $xs$ be an array of size $\frac{m}{n}$ whose elements are vectors of width $n$.
+  We denote the individual vector elements of the $i$th element of $xs$ as $x_{((i-1)\times n)+j}$ where $0 < i \leq \frac{m}{n}$ and $0 < j \leq n$.
   The \asScalar pattern is then defined as follows:
   \begin{align*}
-    &\asScalar\ \big[\{x_1, \ldots, x_n\}, \{x_{n+1}, \ldots, x_{2n}\}, \ldots, \{x_{m-n+1}, \ldots, x_m\}\big] \eqdef\\
+    &\asScalar_n\ \big[\{x_1, \ldots, x_n\}, \{x_{n+1}, \ldots, x_{2n}\}, \ldots, \{x_{m-n+1}, \ldots, x_m\}\big] \eqdef\\
     &\qquad [x_1, x_2, \dots, x_m],
   \end{align*}
   where $\{x_1,\ldots,x_n\}$ denotes a vector of width $n$.\\
-  The types of $\vec{x}$, and \asVector are as follows:
+  The types of $xs$, and $\asScalar_n$ are as follows:
   \begin{align*}
-    \vec{x} &: [\alpha_n]_{\frac{m}{n}},\\
-    \asVector\ n\ \vec{x} &: [\alpha]_m
+    xs &: [\alpha_n]_{\frac{m}{n}},\\
+    \asScalar_n\ xs &: [\alpha]_m
   \end{align*}
   Here $\alpha$ is required to be a basic scalar type, \eg, \code{int} or \code{float}, and $\alpha_n$ denotes the vectorized version of that type with a vector width of $n$.
 \end{definition}
+
+We will almost always omit the subscript, as $n$ can be inferred from the input array.
 
 \noindent
 Finally, we define the \vect pattern.
@@ -538,11 +541,9 @@ Finally, we define the \vect pattern.
   Let $f$ be a function.
   The \vect pattern is then defined as follows:
   \begin{align*}
-    \vect\ n\ f &\eqdef f'_n, \begin{aligned}[t]
-      \text{ where $f'_n$ is a vectorized version of $f$}\\
-      \text{ for a vector width of $n$. }
-    \end{aligned}
+    \vect\ n\ f &\eqdef f_n, \text{ where } f_n\ \{x_1, \ldots, x_n\} = \{f\ x_1, \ldots, f\ x_n \}
   \end{align*}
+  and $\{x_1,\ldots,x_n\}$ denotes a vector of width $n$.\\
   The types of $n$, $f$, and \vect are as follows:
   \begin{align*}
     n &: int,\\
