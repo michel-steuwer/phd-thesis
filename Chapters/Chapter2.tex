@@ -8,7 +8,7 @@
 \from{HIPS begin}
 \section{GPU programming using OpenCL (HIPS)}
 
-The OpenCL standard~\cite{OpenCL-10} can be used for programming any OpenCL-capable device.
+The OpenCL standard~\cite{OpenCL} can be used for programming any OpenCL-capable device.
 These devices embrace most modern GPUs and other accelerators, e.\,g., the Cell BE, as well as standard multi-core CPUs.
 
 OpenCL distinguishes between a \emph{host} system, usually containing one or several CPUs, and \emph{devices} that are integrated into the host system.
@@ -30,7 +30,7 @@ For portability across a wide range of devices, kernel functions are compiled at
 The host program passes the kernel's source code as a plain string to the OpenCL driver to create executable binary code.
 This is different compared to CUDA which provides a special compiler \texttt{nvcc} to compile the device code and the host code.
 
-Creating applications for multi-GPU systems introduces new challenges, like partitioning the application appropriately and, explicitly implementing data transfer between devices~\cite{ScVG-08}.
+Creating applications for multi-GPU systems introduces new challenges, like partitioning the application appropriately and, explicitly implementing data transfer between devices~\cite{SchellmannVG08}.
 The host application must coordinate and perform synchronization and data exchange explicitly.
 The source code for performing such exchanges further increases the amount of boilerplate code.
 

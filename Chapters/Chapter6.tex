@@ -138,9 +138,9 @@ While this does not seem to affect performance much, a better search strategy co
 
 We now compare our automatically generated expression with the best state of the art and the different hand-written versions.
 Figure~\ref{fig:ref-compare} shows the performance of our fully automated approach labeled \emph{auto-expl} compared with the performance of high-performance libraries offering a pre-implemented reduction pattern.
-clBlas~\cite{clBlas} is the BLAS OpenCL implementations written by AMD that runs on both Nvidia and AMD hardware.
+clBlas~\cite{clBLAS} is the BLAS OpenCL implementations written by AMD that runs on both Nvidia and AMD hardware.
 cuBLAS~\cite{cuBLAS} represents the CUDA-specific implementation of BLAS that only runs Nvidia.
-We also evaluated Thrust~\cite{thrust}, a library developed by Nvidia.% based on CUDA.
+We also evaluated Thrust~\cite{BellHo2011}, a library developed by Nvidia.% based on CUDA.
 
 %The results for the Nvidia system in figure~\ref{fig:ref-compare-nv} show, that the BLAS implementations are the fastest followed closely by the version found automatically by our search, which outperforms all other hand written versions.
 The results for the Nvidia system in figure~\ref{fig:ref-compare-nv} show that the version found automatically by our search outperforms all hand written versions and is very close to the performance of the BLAS implementations.
@@ -544,7 +544,7 @@ md ps N t = map (
 %
 %We want to show how our approach performs across three platforms.
 %We use the BLAS OpenCL implementations written by AMD as our baseline for this evaluation since it is inherently portable across our different platforms.
-%Figure~\ref{fig:clblas} shows the performance of our approach relative to clBLAS~\cite{clBlas} for the BLAS routines. 
+%Figure~\ref{fig:clblas} shows the performance of our approach relative to clBLAS~\cite{clBLAS} for the BLAS routines. 
 %As can be seen, we achieve better performance than clBLAS on most platforms and benchmarks.
 %The speedups are the highest on the CPU, with up to 20$\times$ for the \bench{asum} benchmark with a small input size.
 %The reason is that clBLAS was written and tuned specifically for an AMD GPU which usually exhibit a larger number of parallel processing units.
@@ -584,7 +584,7 @@ md ps N t = map (
 %
 %We compare our approach with a highly-tuned implementation for each platform.
 %For Nvidia, we pick the highly tuned CUBLAS~\cite{cuBLAS} CUDA-specific implementation of BLAS written by Nvidia.
-%For the AMD GPU, we use the same clBLAS~\cite{clBlas} implementation as before given that it has been written and tuned specifically for AMD GPUs.
+%For the AMD GPU, we use the same clBLAS~\cite{clBLAS} implementation as before given that it has been written and tuned specifically for AMD GPUs.
 %Finally, for the CPU we use the ATLAS~\cite{whaley98atlas} implementation of BLAS.
 %ATLAS uses auto-tuning techniques to automatically generate high-performance code for the CPU based on template code.
 %

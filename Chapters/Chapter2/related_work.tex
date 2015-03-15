@@ -6,7 +6,7 @@
 
 There are a number of other projects aiming at high-level GPU programming.
 
-\emph{SkePU}~\cite{EnK-10} uses container classes and algorithmic skeletons to ease multi-GPU computing.
+\emph{SkePU}~\cite{EnmyrenKe10} uses container classes and algorithmic skeletons to ease multi-GPU computing.
 Although SkePU and SkelCL have been developed independently, both projects share some concepts:
 SkePU provides a vector class similar to SkelCL's \texttt{Vector} class, but unlike SkelCL it does not support different kinds of data distribution on multi-GPU systems.
 SkePU and SkelCL both provide a map and a reduce skeleton.
@@ -22,14 +22,14 @@ because these functions are either named differently in all three target program
 The same holds for functions and keywords related to performance tuning, e.\,g., the use of local memory.
 SkelCL does not suffer from these drawbacks because it relies on OpenCL and thus can be executed on a variety of devices.
 
-\emph{CUDPP}~\cite{SeHZO-07} is a C++ library based on CUDA.
+\emph{CUDPP}~\cite{SenguptaHZO07} is a C++ library based on CUDA.
 It provides data-parallel algorithm primitives similar to skeletons.
 These primitives can be configured using only a predefined set of operations, whereas
 skeletons in SkelCL are true higher-order functions, which accept any user-defined function.
 CUDPP does not simplify data management, because data still has to be exchanged between CPU and GPU explicitly.
 There is also no support for multi-GPU applications.
 
-\emph{Thrust}~\cite{HoB-09a} is an open-source library by NVIDIA.
+\emph{Thrust}~\cite{BellHo2011} is an open-source library by NVIDIA.
 It provides two vector types similar to the vector type of the C++ Standard Template Library.
 While these types refer to vectors stored in CPU or GPU memory, respectively, SkelCL's vector data type provides a unified abstraction for CPU and GPU memory.
 Thrust also contains data-parallel implementations of higher-order functions, similiar to SkelCL's skeletons.
@@ -49,14 +49,14 @@ It offers the user a consistent high-level API while still allowing the programm
 
 There are other library-based approaches for high-level GPU programming.
 
-\emph{SkePU}~\cite{EnK-10} is a skeleton-based framework for multi-core CPUs and multi-GPU systems.
+\emph{SkePU}~\cite{EnmyrenKe10} is a skeleton-based framework for multi-core CPUs and multi-GPU systems.
 An architecture-independent macro language is used which, however, makes architecture-specific optimizations impossible, like the use of local memory in OpenCL.
 SkelCL avoids this drawback by building on top of OpenCL.
 SkePU provides memory abstractions similar to SkelCL, but does not support different data distributions on multi-GPU systems as in SkelCL:
 vectors are always distributed to all available devices, with no possibility of data exchanges between devices.
 Therefore, our list-mode OSEM application which heavily relies on multiple data exchanges between devices cannot be implemented efficiently using SkePU.
 
-\emph{Thrust}~\cite{HoB-09a} provides an interface similar to the C++ Standard Template Library (STL).
+\emph{Thrust}~\cite{BellHo2011} provides an interface similar to the C++ Standard Template Library (STL).
 For data management, two distinct dynamic containers, a \texttt{host\_vector} and a \texttt{device\_vector}, can be used like STL vectors for managing host and device memory respectively.
 % Data is copied to a device by assigning a \texttt{host\_vector} to a \texttt{device\_vector}.
 In addition, Thrust offers common parallel algorithms, including searching, sorting, reductions, and transformations.
@@ -76,7 +76,7 @@ Gonz\'{a}lez-V\'{e}lez and Leyton~\cite{GoL-10} provide an overview of available
 A considerable amount of work exists in the filed of algorithmic skeletons;
 for an overview we refer to~\cite{gc11}.
 There are several related approaches to raise the level of program abstraction in GPU programming.
-While SkelCL can be used for programming multiple OpenCL capable GPUs, the CUDA-based \emph{Thrust}~\cite{HoB-09a} library simplifies programming only for a single NVIDIA GPU.
+While SkelCL can be used for programming multiple OpenCL capable GPUs, the CUDA-based \emph{Thrust}~\cite{BellHo2011} library simplifies programming only for a single NVIDIA GPU.
 As SkelCL, \emph{SkePU}~\cite{EnK-10} is a skeleton library targeting multi-GPU systems.
 In contrast to our work which is based entirely on the portable OpenCL, SkePU is implemented with multiple back-ends which restrict the application developer to the back-ends' smallest common set of functions and, thus, prevents the user from applying optimizations, like using the fast local GPU memory.
 \from{ICCS end}
@@ -88,23 +88,23 @@ Due to lack of space, we refer to~\cite{GoC-11} for an overview of skeletal prog
 Our contribution to skeletal programming is the introduction and efficient implementation of a new algorithmic skeleton for performing allpairs computations.
 As other skeletons, the allpairs skeleton can be used as a basic building block by application developers who do not have to be experts in GPU computing or parallel programming in general.
 
-In previous work, efficient parallel implementations of allpairs computations on modern parallel processors were studied (e.\,g., multi-core CPUs~\cite{ArSV-09}, the Cell processor~\cite{WiSK-09}, and GPUs~\cite{DaDQR-09}) in the context of specific applications.
-In contrast to~\cite{SaA-13}, which presents an efficient implementation scheme of allpairs computations for GPUs, we abstract the computation as an algorithmic skeleton and offer its efficient implementation to application developers as part of the SkelCL skeleton library.
+In previous work, efficient parallel implementations of allpairs computations on modern parallel processors were studied (e.\,g., multi-core CPUs~\cite{AroraShVu2009}, the Cell processor~\cite{WirawanSK09}, and GPUs~\cite{ChangDeQuRo2009}) in the context of specific applications.
+In contrast to~\cite{SarjeAl2013}, which presents an efficient implementation scheme of allpairs computations for GPUs, we abstract the computation as an algorithmic skeleton and offer its efficient implementation to application developers as part of the SkelCL skeleton library.
 
 The evaluation of the programming effort shows that the allpairs skeleton allows to express many applications considerably shorter and at a higher level of abstraction, as compared to using OpenCL or library implementations like BLAS.
 The performance comparison shows that by making information about the memory access pattern available to the implementation, we can considerably improve the performance by efficiently using the fast GPU local memory.
 
 Several current approaches address simplifying GPU programming.
-As SkelCL, also SkePU~\cite{EnK-10} and Muesli~\cite{ErK-12} are skeleton libraries targeting multi-GPU systems.
+As SkelCL, also SkePU~\cite{EnmyrenKe10} and Muesli~\cite{ErK-12} are skeleton libraries targeting multi-GPU systems.
 In contrast to our work, which is based entirely on the portable OpenCL, Muesli is implemented using NVIDIA's CUDA and SkePU is implemented with multiple back-ends which restrict the application developer to the back-ends' smallest common set of functions.
-While SkelCL can be used for programming multiple OpenCL-capable GPUs, the CUDA-based Thrust~\cite{HoB-09a} library simplifies programming only for a single NVIDIA GPU.
+While SkelCL can be used for programming multiple OpenCL-capable GPUs, the CUDA-based Thrust~\cite{BellHo2011} library simplifies programming only for a single NVIDIA GPU.
 \from{HLPP end}
 
 \from{PaCT begin}
 \subsection{PaCT}
 There are a number of other projects aiming at high-level GPU programming.
 
-\emph{SkePU}~\cite{EnK-10} provides a vector class similar to our \texttt{Vector} class, but unlike SkelCL it does not support different kinds of data distribution on multi-GPU systems.
+\emph{SkePU}~\cite{EnmyrenKe10} provides a vector class similar to our \texttt{Vector} class, but unlike SkelCL it does not support different kinds of data distribution on multi-GPU systems.
 SkelCL provides a more flexible memory management than SkePU, as data transfers can be expressed by changing data distribution settings.
 Both approaches differ significantly in the way how functions are passed to skeletons.
 While functions are defined as plain strings in SkelCL, SkePU uses a macro language, which brings some serious drawbacks.
@@ -113,13 +113,13 @@ because these functions are either named differently in all of their three targe
 The same holds for functions and keywords related to performance tuning, e.\,g., the use of local memory.
 SkelCL does not suffer from these drawbacks because it relies on OpenCL and thus can be executed on a variety of GPUs and other accelerators.
 
-\emph{CUDPP}~\cite{SeHZO-07} provides data-parallel algorithm primitives similar to skeletons.
+\emph{CUDPP}~\cite{SenguptaHZO07} provides data-parallel algorithm primitives similar to skeletons.
 These primitives can be configured using only a predefined set of operations, whereas
 skeletons in SkelCL are true higher-order functions which accept any user-defined function.
 CUDPP does not simplify data management, because data still has to be exchanged between CPU and GPU explicitly.
 There is also no support for multi-GPU applications.
 
-\emph{Thrust}~\cite{HoB-09a} provides two vector types similar to the vector type of the C++ Standard Template Library.
+\emph{Thrust}~\cite{BellHo2011} provides two vector types similar to the vector type of the C++ Standard Template Library.
 While these types refer to vectors stored in CPU or GPU memory, respectively, SkelCL's vector data type provides a unified abstraction for CPU and GPU memory.
 Thrust also contains data-parallel implementations of higher-order functions, similiar to SkelCL's skeletons.
 SkelCL adopts several of Thrust's ideas, but it is not limited to CUDA-capable GPUs and supports multiple GPUs.
@@ -134,9 +134,9 @@ We consider these approaches low-level, as they do not perform data transfer aut
 \from{HiStencils begin}
 \subsection{HiStencils}
 Several approaches aiming at simplifying GPU programming exist.
-\emph{SkePU}~\cite{EnK-10} provides a vector class similar to our \texttt{Vector} class, but unlike SkelCL it does not support different kinds of data distribution on multi-GPU systems.
+\emph{SkePU}~\cite{EnmyrenKe10} provides a vector class similar to our \texttt{Vector} class, but unlike SkelCL it does not support different kinds of data distribution on multi-GPU systems.
 SkelCL provides a more flexible memory management than SkePU, as data transfers can be expressed by changing data distribution settings.
-\emph{Thrust}~\cite{HoB-09a} provides two vector types similar to the vector type of the C++ Standard Template Library.
+\emph{Thrust}~\cite{BellHo2011} provides two vector types similar to the vector type of the C++ Standard Template Library.
 While these types refer to vectors stored in CPU or GPU memory, respectively, SkelCL's vector data type provides a unified abstraction for CPU and GPU memory.
 Thrust also contains data-parallel implementations of higher-order functions, similiar to SkelCL's skeletons.
 SkelCL adopts several of Thrust's ideas, but it is not limited to CUDA-capable GPUs and supports multiple GPUs.
