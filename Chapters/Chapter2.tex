@@ -28,19 +28,114 @@ We will discuss both architectures in the following two sections.
 
 \subsection{Multi-Core \CPUs}
 % multi-core CPUs
-\autoref{fig:multicore} shows an abstract representation of the structural design of a typical multi-core \CPU architecture, like Intel's latest \CPU architecture Haswell.
+\autoref{fig:multicore} shows an abstract representation of the structural design of a typical multi-core \CPU architecture, like Intel's latest \CPU architecture: Haswell.
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{CPU}
   \caption{Multi-core architecture.}
   \label{fig:multicore}
 \end{figure}
+% describe caches
+The \CPU is divided into multiple cores each of which feature two levels of caches.
+The smallest but fastest cache is called L1 cache and is typically divided into a distinct cache for instructions and a data cache each of 32 kilobyte for the Haswell architecture.
+Each core also features a second level cache (L2 cache) of 256 kilobyte for the Haswell architecture.
+The \CPU has a large cache (L3 cache) which is shared by all cores.
+This cache is often several megabytes large, for Intel's Haswell architecture the L3 cache is at least 2 and up to 45 megabytes in size.
+
+% describe core: branch prediction, out-of-order execution, SIMD units
+Each \CPU core performs computations completely independently of the other cores, but consist itself of multiple execution units which can perform computations in parallel.
+This happens transparent to the programmer even when executing a sequential program.
+The \CPU core exploits \emph{instruction level parallelism} (ILP) by performing out-of-order execution which reorders instructions prior to execution while still respecting their dependencies.
+If two or more instructions have no dependencies they can be executed in parallel.
+In the Intel Haswell architecture 4 arithmetic operations and 4 memory operations can be performed in parallel in one clock cycle on every core.
+Furthermore, most modern \CPU architectures support SIMD vector extensions like the \emph{Advanced Vector Extensions} (AVX) or the older \emph{Streaming SIMD Extensions} (SSE).
+These extensions add additional instructions to the instruction set architecture allowing the compiler to generate code which explicitly groups data into vectors of a small fixed size on which can be operated in parallel.
+The current AVX extension allows vectors of up to 256 bits, or the equivalent of grouping and processing 8 single precision floating point numbers in parallel.
+Most modern optimizing compilers perform some form of automatic vectorization, but often programmers vectorize programs manually when the compiler fails to generate sufficient optimized code.
+
+% make conclusions: latency oriented => caches important, good performance for single and multiple threads, comparably low core count and hyper threading -> limited thread-level parallelism
+The design of multi-core \CPUs is motivated by the overall goal to provide high-performance when executing multi threaded programs and yet still have a high single-core performance when executing sequential programs~\cite{GarlandK10}.
+This is why the individual cores are very sophisticated at executing a series of instructions as fast as possible, applying out-of-order execution and featuring other architectural features like a deep pipeline for decoding and executing instructions combined with advanced branch prediction.
+Unfortunately, the design of these complex cores make switching between multiple threads running on the same core expensive, as the execution pipeline has to be flushed and the register content for the first thread has to be saved before resuming the execution on the second thread.
+To address this issue some multi-core architectures feature \emph{simultaneous multi threading} (SMT), \aka, as \emph{hyper threading}, where a single \CPU core can execute multiple (usually 2 or 4) threads in parallel and switching between the threads is cheap.
+His technique is used to mitigate the effect memory latency can have on the execution:
+if a thread is waiting for a memory request another thread can continue executing.
+The other central component to prevent waiting times for memory requests is the cache hierarchy.
+As we will see, multi-core \CPUs feature considerably larger caches than \GPUs.
+The caches help to keep the threads running in parallel on the multi-core \CPU busy.
+
+% Possible optimizations
+Among the most important optimizations to achieve high performance on these modern multi-core \CPUs are:
+exploiting the SIMD extensions and optimizing the cache usage~\cite{IntelCPUOptimizingGuide}.
 
 \subsection{Graphics Processing Units}
   % GPUs
-\autoref{fig:gpu} shows an abstract representation of the structural design of the Nvidia Kepler architecture -- Nvidia latest \GPU architecture for the high-performance computing market.
+\autoref{fig:gpu} shows an abstract representation of the structural design of a typical \GPU architecture, like Nvidia's latest \GPU architecture for the high-performance computing market: Kepler.
+\begin{figure}
+  \centering
+  \includegraphics[width=.75\textwidth]{GPU}
+  \caption{GPU architecture}
+  \label{fig:gpu}
+\end{figure}
+% describe cores and execution
+While the overall design looks fairly similar to the design of the multi-core \CPU the architecture of the \GPU is actually very different in its details.
+The lightweight \GPU cores are grouped together into what Nvidia calls a \emph{Streaming Multiprocessor} (SM).
+In the Kepler architecture a SM features 192 single-precision cores, 64 double-precision units, 32 special function units, and 32 memory units.
+% \autoref{fig:gpuSM} shows the design of a SM in the Kepler architecture.
+The 192 single-precision cores are very lightweight compared to the complex \CPU cores we discussed in the previous subsection.
+A single \GPU core does not support SIMD vectorization, performs the straightforward in-order execution, and does not perform complex branch prediction.
+This design makes the implementation of such a core in hardware very cheap and enables the grouping of hundreds of cores in a single SM.
 
-\section{Programming of Multi-Core \CPUs and \GPUs}
+% describe caches and memory
+Modern \GPUs feature two levels of caches:
+the first level (L1) is private to each SM and the second level cache (L2) is shared among all SMs.
+Compared to the cache sizes of the \CPU the caches on the \GPU are fairly small.
+The Kepler architecture features a L1 cache of 48 kilobyte and a L2 cache of 1.5 megabyte.
+It is important to notice that these caches are shared by a vast amount of threads being executed on the \GPU:
+the 48 kilobyte L1 cache are shared among the up to 2048 threads being executed on the particular SM and the L2 cache is shared among $\approx{}$\!30,\,000 threads.
+
+Besides caches \GPUs also feature a scratchpad memory called \emph{shared memory} in Nvidia's \GPU architectures.
+This memory is small (16 or 48 kilobytes) but very fast, comparable to the L1 cache.
+Where the L1 cache is automatically managed by a cache controller, the shared memory is explicitly managed by the programmer.
+
+% make conclusions: throughput oriented => cores and threads important, different trade off: poor performance for single thread very good performance for data parallel applications => bad when: a lot of branching, less caches => memory accesses are expensive (coalescing ...)
+The design of \GPUs is motivated by the overall goal to deliver maximal throughput even if this requires to sacrifice the performance of single threads~\cite{GarlandK10}.
+This is why the \GPU cores are lightweight offering poor sequential performance but thousands of cores combined offering a very high computational throughput.
+Memory latencies are mitigated by a high oversubscription of threads:
+in the Kepler architecture a SM can manage up to 2048 threads which can be scheduled for execution on the 192 cores.
+If a thread is waiting for a memory request another thread continues its execution.
+This is the reason why caches are fairly small, as they play a less important role as on in \CPU architectures.
+
+\subsubsection*{\GPU Thread Execution}
+The execution of threads on a \GPU is very different compared to the execution on a traditional multi-core \CPU:
+multiple threads are grouped by the hardware and executed together.
+Such a group of threads is called a \emph{warp} by Nvidia.
+In the Kepler architecture 32 threads form a warp and a SM selects 4 warps and for each warp 2 instructions to be executed in parallel on its single-precision cores, double-precision units, special function units, and memory units.
+
+All threads grouped into a warp are forced to perform the same instruction in the same clock cycle.
+Is it possible that two or more threads in the same warp have to execute different instructions in the next cycle.
+In this case the next instruction from the first threads is chosen and executed by all threads in the warp which have to execute the same instruction.
+All threads which do not share the same instructions pause the execution.
+In the next cycle the instruction from a thread which had paused before is chosen and executed.
+Using this execution strategy threads can be executed together even if they do not have completely identical instruction streams, even though, it is beneficial to group threads which share most instructions, as this reduces the amount of threads pausing their execution.
+
+Programmers are advised to optimize their code, so that threads which will be executed together perform the same instructions.
+Threads in the same warp taking different branches in the code can hurt the performance and should, therefore, be avoided if possible.
+
+\subsubsection*{\GPU Memory Accesses}
+Accessing the memory is an expensive operation.
+The \GPU can optimize accesses when the memory is accesses in certain fixed patterns.
+If the threads organized in a warp access a contiguous area of the memory the hardware can \emph{coalesce} the memory access and perform a single memory request instead of issuing individual requests for every thread.
+Several other patterns of access exists which are detected by the hardware to coalesce the memory accesses by multiple threads.
+
+This is a major optimization opportunity for many \GPU programs, as the available memory bandwidth can only be utilized properly if memory accesses are coalesced.
+Uncoalesced memory accesses offer only a fraction of performance and can severely hurt the performance.
+
+
+\subsection*{\GPU Shared Memory}
+% shared memory
+
+\section{Programming of Multi-Core CPUs and GPUs}
   % programming approaches for multi-core CPUs and GPUs (Threads, OpenMP, CUDA, OpenACC)
 
 \subsection{The OpenCL Programming Model}
