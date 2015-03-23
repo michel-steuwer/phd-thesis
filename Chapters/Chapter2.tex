@@ -294,23 +294,31 @@ This model is also well suited for modern multi-core \CPUs.
 Back then (and still today) programs were often poorly designed, hard to maintain, and hard to reason about.
 Dijkstra identified the low-level \code{go to} statement as a major reason for programmers writing ``spaghetti code''.
 In this famous letter~\cite{} he argued that instead programs should have a more rigid structure organizing code in procedures and using higher level control structures like \code{if} and \code{while}.
-Dijkstra's argument eventually helped to overcome unstructured sequentiell programming and to introduce structured programming~\cite{}.
+Dijkstra's letter eventually helped to overcome unstructured sequentiell programming and to establish structured programming~\cite{}.
 The new structures proposed to replace \code{go to} where suggested based on observations of common use cases -- or \emph{patterns} of use -- of the \code{go to} statement in sequential programming.
+By capturing an entire pattern of usage these patterns raise the abstraction level and make it easier to reason about them.
+A \code{if A then B else C} statement has a clear high-level semantic which is easy to understand and reason about, for example is it clear to the programmer -- and the compiler -- that \code{B} and \code{C} can not both be executed.
+This helps the programmer to understand the source code and the compiler to produce an optimized executable.
+The equivalent code containing multiple \code{go to} statements obtains the same high-level semantic by combining the low-level operations with their low-level semantics.
+Both, programmer and compiler, have to ``figure out'' what the high-level semantic is by means of analyzing the sequence of low-level operations and reconstruction the high-level semantic.
 
-Researchers have more recently suggested similar arguments to move away from traditional parallel programming towards \emph{structured parallel programing}.
+Researchers have more recently suggested similar arguments to Dijkstra's for moving away from traditional parallel programming towards \emph{structured parallel programing}.
 For parallel programming using message passing Gorlatch argues similar to Dijkstra that single send and receive statements should be avoided and replaced by collective operations~\cite{}.
 Here each collective operation, \eg, broadcast, scatter, or reduce, captures a certain common communication pattern traditionally implemented with individual send and receive statements.
 In~\cite{} the authors argue that \emph{structured parallel patterns}, each capturing a common computation and communication behavior, should be used to replace explicit thread programming to improve the maintainability of software.
-The book discusses a set of parallel patterns and their implementation in different recent programming approaches for multi-core \CPUs.
-The underlying ideas go far back to the 1980s where Cole was the first to introduced the concept of using parallel patterns, called \emph{algorithmic skeletons}, to structure and, therefore, simplify parallel programs~\cite{Cole1991}.
+The book discusses a set of parallel patterns and their implementation in different recent programming approaches.
+The underlying ideas go far back to the 1980s where Cole was the first to introduced \emph{algorithmic skeletons} to structure and, therefore, simplify parallel programs~\cite{Cole1991}.
+As with sequential structured programming, structured parallel programming raise the abstraction level by providing higher level construct: collective operations, parallel patterns, or algorithmic skeletons.
+The higher level of abstraction both simplify the reasoning about the code for a programmer and enable higher level optimizations performed by the compiler.
+
+As our work directly extends the ideas of Cole we will discuss algorithmic skeletons in more detail next.
 
 \subsection{Algorithmic Skeletons}
 Cole introduced algorithmic skeletons as special higher order functions which describe the ``computational skeleton'' of a parallel algorithm.
 Higher order functions are a well-known concept from functional programming and describe functions accepting (or returning) other functions as its arguments.
-This abstraction is often useful, as it allows to write more abstract and generic functions.
+This is often useful, as it allows to write more abstract and generic functions.
 
-An example for an algorithmic skeletons is the \emph{divide \& conquer skeleton} which was among the original suggested skeletons by Cole~\cite{Cole1991}.
-It was defined as:
+An example for an algorithmic skeletons is the \emph{divide \& conquer skeleton} which was among the original suggested skeletons by Cole~\cite{Cole1991}:
 \begin{align*}
   D_C\ indivisible\ split\ join\ f% &= F\\
 %  \textit{where}\ F\ P &= f\ P, \textit{ if  } indivisible\ P\nonumber\\
@@ -328,20 +336,24 @@ Applications like the discrete Fourier transformation, approximate integration, 
 The application developer provides implementations for the functions required by the algorithmic skeleton to obtain a program which can be applied to the input data.
 
 An algorithmic skeleton has a parallel implementation.
-In the example of the $D_C$ skeleton the implementation follows the well-known divide and conquer technique which divides problems into multiple sub-problems which can be solved in parallel.
+In the example of the $D_C$ skeleton the implementation follows the well-known divide and conquer technique which divides problems into multiple sub-problems which can be solved independently in parallel.
 The implementation of the algorithmic skeleton hides the complexities of parallelism from the user.
-It, therefore, provides a higher level interface abstracting away the details of the parallel execution, including low-level details like synchronization and communication of threads.
+It, therefore, provides a higher level interface abstracting away the details of the parallel execution, including low-level details like launching multiple threads, as well as synchronization and communication of threads.
 
-\paragraph{Classification of Algorithmic Skeletons}
-Algorithmic skeletons can be broadly classified into three distinct classes~\cite{}:
+\paragraph{A Classification of Algorithmic Skeletons}
+Algorithmic skeletons can broadly be classified into three distinct classes~\cite{}:
 \begin{itemize}
-  \item \emph{data-parallel skeletons}
-  \item \emph{task-parallel skeletons}
-  \item \emph{resolution skeletons}
+  \item \emph{data-parallel skeletons} transform typically large amounts of data,
+  \item \emph{task-parallel skeletons} operate on distinct tasks which potentially interact with each other,
+  \item \emph{resolution skeletons} capture a family of related problems.
 \end{itemize}
 
+Examples of data-parallel skeletons are \emph{map} which applies a given function to each element of its input data in parallel, or \emph{reduce} which performs a parallel reduction based on a given binary operator.
+Well known task-parallel skeletons are \emph{farm (\aka, master-worker)} where independent tasks are scheduled for parallel execution by the workers, or \emph{pipeline} where multiple stages are connected sequentially and the execution of all stages can overlap to create parallelism.
+Finally, the discussed \emph{divide \& conquer} skeleton is an example of a resolution skeleton which captures the family of problems which can be solved by applying the divide \& conquer technique.
 
-... We focus in this thesis on data-parallel skeletons which match the throughput oriented \GPU architecture.
+In this thesis we will mainly focus on data-parallel skeletons, as they match the data parallel \GPU architecture.
+We will also introduce two new resolution skeletons which capture two specific application domains and where we can provide an efficient \GPU implementation as well.
 
 \subsection{State of the Art of Structured Parallel Programming}
 
