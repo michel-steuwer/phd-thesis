@@ -290,17 +290,67 @@ This model is also well suited for modern multi-core \CPUs.
 
 \section{Structured Parallel Programming}
 % structured parallel programming & functional foundations
-All programming approaches discussed so far ... low-level.
+\emph{Structured programming} emerged in the 1960s and 1970s as a reaction of the ``software crises''.
+Back then (and still today) programs were often poorly designed, hard to maintain, and hard to reason about.
+Dijkstra identified the low-level \code{go to} statement as a major reason for programmers writing ``spaghetti code''.
+In this famous letter~\cite{} he argued that instead programs should have a more rigid structure organizing code in procedures and using higher level control structures like \code{if} and \code{while}.
+Dijkstra's argument eventually helped to overcome unstructured sequentiell programming and to introduce structured programming~\cite{}.
+The new structures proposed to replace \code{go to} where suggested based on observations of common use cases -- or \emph{patterns} of use -- of the \code{go to} statement in sequential programming.
+
+Researchers have more recently suggested similar arguments to move away from traditional parallel programming towards \emph{structured parallel programing}.
+For parallel programming using message passing Gorlatch argues similar to Dijkstra that single send and receive statements should be avoided and replaced by collective operations~\cite{}.
+Here each collective operation, \eg, broadcast, scatter, or reduce, captures a certain common communication pattern traditionally implemented with individual send and receive statements.
+In~\cite{} the authors argue that \emph{structured parallel patterns}, each capturing a common computation and communication behavior, should be used to replace explicit thread programming to improve the maintainability of software.
+The book discusses a set of parallel patterns and their implementation in different recent programming approaches for multi-core \CPUs.
+The underlying ideas go far back to the 1980s where Cole was the first to introduced the concept of using parallel patterns, called \emph{algorithmic skeletons}, to structure and, therefore, simplify parallel programs~\cite{Cole1991}.
+
+\subsection{Algorithmic Skeletons}
+Cole introduced algorithmic skeletons as special higher order functions which describe the ``computational skeleton'' of a parallel algorithm.
+Higher order functions are a well-known concept from functional programming and describe functions accepting (or returning) other functions as its arguments.
+This abstraction is often useful, as it allows to write more abstract and generic functions.
+
+An example for an algorithmic skeletons is the \emph{divide \& conquer skeleton} which was among the original suggested skeletons by Cole~\cite{Cole1991}.
+It was defined as:
+\begin{align*}
+  D_C\ indivisible\ split\ join\ f% &= F\\
+%  \textit{where}\ F\ P &= f\ P, \textit{ if  } indivisible\ P\nonumber\\
+%                     &= join\ (map\ F\ (split\ P)), \textit{ otherwise}\nonumber
+\end{align*}
+The algorithmic skeleton $D_C$ accepts four functions as its argument:
+\begin{itemize}
+  \item $indivisible$ is a function deciding if the given problem should be solved recursively,
+  \item $split$ is a function decomposing a given problem into multiple sub-problems,
+  \item $join$ is a function combining multiple solved sub-problems into a larger solution,
+  \item $f$ is a function solving an indivisible problem, \ie, the base case.
+\end{itemize}
+
+Applications like the discrete Fourier transformation, approximate integration, or matrix multiplication can be implemented with this algorithmic skeleton.
+The application developer provides implementations for the functions required by the algorithmic skeleton to obtain a program which can be applied to the input data.
+
+An algorithmic skeleton has a parallel implementation.
+In the example of the $D_C$ skeleton the implementation follows the well-known divide and conquer technique which divides problems into multiple sub-problems which can be solved in parallel.
+The implementation of the algorithmic skeleton hides the complexities of parallelism from the user.
+It, therefore, provides a higher level interface abstracting away the details of the parallel execution, including low-level details like synchronization and communication of threads.
+
+\paragraph{Classification of Algorithmic Skeletons}
+Algorithmic skeletons can be broadly classified into three distinct classes~\cite{}:
+\begin{itemize}
+  \item \emph{data-parallel skeletons}
+  \item \emph{task-parallel skeletons}
+  \item \emph{resolution skeletons}
+\end{itemize}
 
 
-\subsection{Functional Programming Foundations}
+... We focus in this thesis on data-parallel skeletons which match the throughput oriented \GPU architecture.
 
 \subsection{State of the Art of Structured Parallel Programming}
+
   % map reduce for clusters
 
   % TBB for multi-core CPUs
 
   % skeleton libraries (MPI & multicore)
+  Study from 2010 includes many important skeleton libraries, we will discuss more recent skeleton libraries in the related work in section ...
 
 
 %\from{HIPS begin}
