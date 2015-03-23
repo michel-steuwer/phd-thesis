@@ -5,115 +5,115 @@
 \label{chapter:background}
 \label{chapter:state-of-the-art}
 
-\from{HIPS begin}
-\section{GPU programming using OpenCL (HIPS)}
-
-The OpenCL standard~\cite{OpenCL} can be used for programming any OpenCL-capable device.
-These devices embrace most modern GPUs and other accelerators, e.\,g., the Cell BE, as well as standard multi-core CPUs.
-
-OpenCL distinguishes between a \emph{host} system, usually containing one or several CPUs, and \emph{devices} that are integrated into the host system.
-An OpenCL device logically consists of one or more \emph{compute units} (CUs) that are divided into one or more \emph{processing elements} (PEs).
-All computation on the device is performed in the PEs.
-OpenCL applications run on the host and call \emph{kernel functions} which are executed simultaneously by multiple PEs on one or more devices.
-A single instance of a kernel function is called a \emph{work-item} and can be identified by its \emph{global ID}.
-Every work-item executes the same code, but the execution can vary per work-item due to branching according to the global ID.
-Work-items are organized in \emph{work-groups}.
-When a kernel function is started, the host code specifies how many work-items are launched and how many work-items form a work-group.
-All work-items in one work-group are executed on the same CU.
-Therefore, the size of a work-group can have a significant effect on the runtime performance.
-
-In OpenCL, host and device have separate memories.
-Thus, functions are provided to transfer data from the host's to the device's memory (\emph{upload}) and back (\emph{download}).
-Memory areas have to be allocated on the device before data can be accessed by it and deallocated thereafter.
-
-For portability across a wide range of devices, kernel functions are compiled at runtime.
-The host program passes the kernel's source code as a plain string to the OpenCL driver to create executable binary code.
-This is different compared to CUDA which provides a special compiler \texttt{nvcc} to compile the device code and the host code.
-
-Creating applications for multi-GPU systems introduces new challenges, like partitioning the application appropriately and, explicitly implementing data transfer between devices~\cite{SchellmannVG08}.
-The host application must coordinate and perform synchronization and data exchange explicitly.
-The source code for performing such exchanges further increases the amount of boilerplate code.
-
-In the following, we describe how our SkelCL library addresses these problems of GPGPU programming.
-\from{HIPS end}
-
-
-\from{HiStencils begin}
-\section{Stencils Using OpenCL (HiStencils)}
-\label{sec:background}
-
-A \emph{stencil computation} is a computation pattern on a multi-dimensional grid, where each point of the grid is updated (often iteratively) as a function of its neighboring points.
-Each point of the grid stores a set of application-dependent values.
-The computation performed to update the values of each point is called the \emph{stencil operation}.
-A stencil operation updates the value of a point depending on the values of the neighboring points.
-The points taken into account for a stencil operation are defined by the \emph{stencil shape}.
-
-Let us consider how stencil computations are implemented on manycore systems with GPUs using the state-of-the-art OpenCL standard.
-Listing~\ref{lst:sobel_opencl} presents the structure of an OpenCL implementation of the Sobel operator on one GPU, a typical stencil computation used in image processing for detecting edges in images.
-Lines 9--13 show how the direct neighboring elements, e.g., the \emph{upper left} (\texttt{ul}) neighbor, are accessed and passed to a function performing the Sobel operation in line 16.
-Many low-level details have to be considered for a correct implementation, like raw pointer handling, including index computations (e.g., line 10), and explicit out-of-bound  accesses handling (e.g., line 9).
-
-\begin{lstlisting}[%
-caption={Structure of the OpenCL implementation of Sobel edge detection},%
-float=tbp,%
-label={lst:sobel_opencl}]
-kernel
-  void sobel(global const char* in_img,
-             global char* out_img,
-             int w, int h) {
-  int i = get_global_id(0);
-  int j = get_global_id(1);
-
-  if (i < w && j < h) {
-    char ul = (j-1 > 0 && i-1 > 0)
-        ? in_img[((j-1)*w)+(i-1)] : 0;
-    ...
-    char lr = (j+1 < h && i+1 < w)
-        ? in_img[((j+1)*w)+(i+1)] : 0;
-
-    out_img[j*w+i] =
-        computeSobel(ul, ..., lr);
-  }
-}
-\end{lstlisting}
-
-The OpenCL version is obviously correct, but not efficient:
-the fast local GPU memory is not used and the control flow diverges heavily between different work items, which is disadvantageous on current GPU architectures.
-However, the corresponding optimizations require a deep knowledge of the GPU's architecture and must be programmed and tuned manually and are, therefore, a complicated task for application developers.
-If the program is to be used on a multi-GPU system then the application developer has to additionally implement and optimize the explicit data distribution across GPUs and the communication between them.
-\from{HiStencils end}
-
-\from{PACT begin}
-\section{OpenCL (PACT)}
-\paragraph{OpenCL Execution Model}
-OpenCL can be used to program manycore CPUs and GPUs.
-Both are typically represented in the system as an accelerator.
-Programming these devices consists of writing a compute \emph{kernel} in OpenCL C that executes on the device and writing the host code that orchestrates data movement, allocates memory and manages the execution on the device.
-
-\paragraph{Thread Organization and Synchronization}
-Most GPUs are organized as multicore processors with each core executing multiple threads concurrently.
-OpenCL represents this with the concept of \emph{workgroups} that contain \emph{local threads}.
-Threads within a core are typically grouped in \emph{warps} (using Nvidia terminology) where each thread executes in a lock-step synchronized manner.
-Only one warp is active at a time and execution switches to a different warp when the pipeline stalls to hide memory latency.
-OpenCL allows to synchronize threads at the kernel level on the host or at the workgroup level using a barrier function synchronizing the local threads.
-Threads within a warp are implicitly synchronized on GPUs.
-
-
-\paragraph{Vector Units}
-Most modern CPUs and devices such as AMD GPUs integrates vector units that can process more than on data element at a time.
-The OpenCL programming model exposes this with special data types such as \texttt{int4} where any operations on this type will be executed in the vector units.
-In the absence of vector units in the hardware, the OpenCL compiler scalarizes the code automatically.
-
-\paragraph{Memory Coalescing}
-On GPUs, requests to the main device memory are usually performed at the granularity of a cache line, which is typically 64 bytes.
-Therefore, due to the organization of the threads in warps, it is important to ensure that consecutive threads access consecutive memory elements to maximize memory bandwidth.
-
-\paragraph{Local Memory}
-Most GPUs have a per-core cache and a local memory shared among all local threads.
-OpenCL defines a global and local address space.
-On GPUs, local memory has a high bandwidth and low latency and is used to store frequently accessed data.
-On CPUs, local memory is usually simply mapped to a region of global memory.
-\from{PACT end}
+%\from{HIPS begin}
+%\section{GPU programming using OpenCL (HIPS)}
+%
+%The OpenCL standard~\cite{OpenCL} can be used for programming any OpenCL-capable device.
+%These devices embrace most modern GPUs and other accelerators, e.\,g., the Cell BE, as well as standard multi-core CPUs.
+%
+%OpenCL distinguishes between a \emph{host} system, usually containing one or several CPUs, and \emph{devices} that are integrated into the host system.
+%An OpenCL device logically consists of one or more \emph{compute units} (CUs) that are divided into one or more \emph{processing elements} (PEs).
+%All computation on the device is performed in the PEs.
+%OpenCL applications run on the host and call \emph{kernel functions} which are executed simultaneously by multiple PEs on one or more devices.
+%A single instance of a kernel function is called a \emph{work-item} and can be identified by its \emph{global ID}.
+%Every work-item executes the same code, but the execution can vary per work-item due to branching according to the global ID.
+%Work-items are organized in \emph{work-groups}.
+%When a kernel function is started, the host code specifies how many work-items are launched and how many work-items form a work-group.
+%All work-items in one work-group are executed on the same CU.
+%Therefore, the size of a work-group can have a significant effect on the runtime performance.
+%
+%In OpenCL, host and device have separate memories.
+%Thus, functions are provided to transfer data from the host's to the device's memory (\emph{upload}) and back (\emph{download}).
+%Memory areas have to be allocated on the device before data can be accessed by it and deallocated thereafter.
+%
+%For portability across a wide range of devices, kernel functions are compiled at runtime.
+%The host program passes the kernel's source code as a plain string to the OpenCL driver to create executable binary code.
+%This is different compared to CUDA which provides a special compiler \texttt{nvcc} to compile the device code and the host code.
+%
+%Creating applications for multi-GPU systems introduces new challenges, like partitioning the application appropriately and, explicitly implementing data transfer between devices~\cite{SchellmannVG08}.
+%The host application must coordinate and perform synchronization and data exchange explicitly.
+%The source code for performing such exchanges further increases the amount of boilerplate code.
+%
+%In the following, we describe how our SkelCL library addresses these problems of GPGPU programming.
+%\from{HIPS end}
+%
+%
+%\from{HiStencils begin}
+%\section{Stencils Using OpenCL (HiStencils)}
+%\label{sec:background}
+%
+%A \emph{stencil computation} is a computation pattern on a multi-dimensional grid, where each point of the grid is updated (often iteratively) as a function of its neighboring points.
+%Each point of the grid stores a set of application-dependent values.
+%The computation performed to update the values of each point is called the \emph{stencil operation}.
+%A stencil operation updates the value of a point depending on the values of the neighboring points.
+%The points taken into account for a stencil operation are defined by the \emph{stencil shape}.
+%
+%Let us consider how stencil computations are implemented on manycore systems with GPUs using the state-of-the-art OpenCL standard.
+%Listing~\ref{lst:sobel_opencl} presents the structure of an OpenCL implementation of the Sobel operator on one GPU, a typical stencil computation used in image processing for detecting edges in images.
+%Lines 9--13 show how the direct neighboring elements, e.g., the \emph{upper left} (\texttt{ul}) neighbor, are accessed and passed to a function performing the Sobel operation in line 16.
+%Many low-level details have to be considered for a correct implementation, like raw pointer handling, including index computations (e.g., line 10), and explicit out-of-bound  accesses handling (e.g., line 9).
+%
+%\begin{lstlisting}[%
+%caption={Structure of the OpenCL implementation of Sobel edge detection},%
+%float=tbp,%
+%label={lst:sobel_opencl}]
+%kernel
+%  void sobel(global const char* in_img,
+%             global char* out_img,
+%             int w, int h) {
+%  int i = get_global_id(0);
+%  int j = get_global_id(1);
+%
+%  if (i < w && j < h) {
+%    char ul = (j-1 > 0 && i-1 > 0)
+%        ? in_img[((j-1)*w)+(i-1)] : 0;
+%    ...
+%    char lr = (j+1 < h && i+1 < w)
+%        ? in_img[((j+1)*w)+(i+1)] : 0;
+%
+%    out_img[j*w+i] =
+%        computeSobel(ul, ..., lr);
+%  }
+%}
+%\end{lstlisting}
+%
+%The OpenCL version is obviously correct, but not efficient:
+%the fast local GPU memory is not used and the control flow diverges heavily between different work items, which is disadvantageous on current GPU architectures.
+%However, the corresponding optimizations require a deep knowledge of the GPU's architecture and must be programmed and tuned manually and are, therefore, a complicated task for application developers.
+%If the program is to be used on a multi-GPU system then the application developer has to additionally implement and optimize the explicit data distribution across GPUs and the communication between them.
+%\from{HiStencils end}
+%
+%\from{PACT begin}
+%\section{OpenCL (PACT)}
+%\paragraph{OpenCL Execution Model}
+%OpenCL can be used to program manycore CPUs and GPUs.
+%Both are typically represented in the system as an accelerator.
+%Programming these devices consists of writing a compute \emph{kernel} in OpenCL C that executes on the device and writing the host code that orchestrates data movement, allocates memory and manages the execution on the device.
+%
+%\paragraph{Thread Organization and Synchronization}
+%Most GPUs are organized as multicore processors with each core executing multiple threads concurrently.
+%OpenCL represents this with the concept of \emph{workgroups} that contain \emph{local threads}.
+%Threads within a core are typically grouped in \emph{warps} (using Nvidia terminology) where each thread executes in a lock-step synchronized manner.
+%Only one warp is active at a time and execution switches to a different warp when the pipeline stalls to hide memory latency.
+%OpenCL allows to synchronize threads at the kernel level on the host or at the workgroup level using a barrier function synchronizing the local threads.
+%Threads within a warp are implicitly synchronized on GPUs.
+%
+%
+%\paragraph{Vector Units}
+%Most modern CPUs and devices such as AMD GPUs integrates vector units that can process more than on data element at a time.
+%The OpenCL programming model exposes this with special data types such as \texttt{int4} where any operations on this type will be executed in the vector units.
+%In the absence of vector units in the hardware, the OpenCL compiler scalarizes the code automatically.
+%
+%\paragraph{Memory Coalescing}
+%On GPUs, requests to the main device memory are usually performed at the granularity of a cache line, which is typically 64 bytes.
+%Therefore, due to the organization of the threads in warps, it is important to ensure that consecutive threads access consecutive memory elements to maximize memory bandwidth.
+%
+%\paragraph{Local Memory}
+%Most GPUs have a per-core cache and a local memory shared among all local threads.
+%OpenCL defines a global and local address space.
+%On GPUs, local memory has a high bandwidth and low latency and is used to store frequently accessed data.
+%On CPUs, local memory is usually simply mapped to a region of global memory.
+%\from{PACT end}
 
 % include related work
 \input{Chapters/Chapter2/related_work}

@@ -120,7 +120,7 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {$\label{lst:lmosem:upload:loop}$
 
 \paragraph{Step 1}
 The implementation of step 1 performs the three sub-steps shown in \autoref{lst:lmosem:seq_code}.
-Because of GPU memory restrictions, the \OpenCL implementation is not straightforward, therefore, we will not show the detailed code here.
+Because of memory restrictions on the \GPU, the \OpenCL implementation is not straightforward, therefore, we will not show the detailed code here.
 An \OpenCL kernel is launched where each work-item processes multiple events one after another.
 For each event first $A_i$ is computed, then the local error for $A_i$ is computed using the current image estimate $f_l$ which is finally added to $c_l$.
 
@@ -129,7 +129,7 @@ In mathematics it is convenient to think of this as a sparse vector containing t
 As most voxels are not intersected by the line, most entries in the vector remain zero.
 Therefore, in the \OpenCL code $A_i$ is represented as an array of pairs, where the first entry of each pair is the index of a voxel in the image space and the second entry is the length of the intersection with this voxel.
 
-Synchronization between work-items in \OpenCL is highly restricted, \ie, synchronization is only possible for work-items organized in the same work-group.
+Synchronization between work-items in \OpenCL is restricted, \ie, synchronization is only allowed between work-items organized in the same work-group.
 Therefore, it is not possible to efficiently protect the writing operation to $c_l$ to avoid race conditions.
 We have conducted studies and found that for this particular algorithm these race conditions are acceptable as they do not substantially decrease the numerical accuracy of the computed result~\cite{SchellmannGoMeKoScWuBu2009}.
 
@@ -163,7 +163,7 @@ Even if we only copied data between GPUs, without processing them on the CPU, we
 
 \paragraph{Step 2}
 \autoref{lst:lmosem:step_2} shows the implementation of step 2.
-In \OpenCL, computations are specified as \emph{kernels} which are created from the source code specifying the computation.
+Computations are specified as \emph{kernels} in \OpenCL which are created from the source code specifying the computation.
 The computation in step 2 is, therefore, described as a string in lines \autoref{lst:lmosem:step_2:string:start}--\autoref{lst:lmosem:step_2:string:stop}.
 The operations used here are the same as in the sequential code.
 
