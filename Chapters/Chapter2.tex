@@ -150,12 +150,28 @@ In addition to these optimizations it is important to keep in mind that the appl
 An often crucial optimization is to minimizing the data transfer between the \CPU and the \GPU or overlap the transfer with computations on the \GPU.
 
 \section{Programming of Multi-Core CPUs and GPUs}
-  % programming approaches for multi-core CPUs and GPUs (Threads, OpenMP, OpenACC, CUDA)
-Multi-core \CPUs are currently predominately programmed using low-level programming approaches.
-These approaches give the programmer much flexibility and control over the exact behavior of their parallel application.
-Often the programmer pays a high cost for this flexibility, that is the burden of developing a correct and efficient program lies almost entirely on the programmer.
+One of the most popular approaches for writing parallel software for multi-core \CPUs is \emph{multithreading}.
+There exists threading libraries for almost all popular programming languages, including C~\cite{} and \Cpp~\cite{}.
+Threads are conceptionally similar to processes in an operating system, with the major difference that threads share the same address space in memory while processes usually do not.
+This enables threads to communicate and work efficiently with each other by using the same memory.
+Programmers have great flexibility and control over the exact behavior of the threads and their interaction, including the important questions of when and how many threads to use, how tasks and data is divided across threads, and how threads synchronize and communicate with each other.
+The disadvantage of the high flexibility is that the burden of developing a correct and efficient program lies almost entirely on the programmer.
+The interaction of threads executing concurrently can be very complex to reason about and traditional debugging techniques are often not sufficient as the execution is not deterministic any more.
 
-% data-parallel programming model
+\OpenMP~\cite{} is a popular alternative approach focusing on exploiting parallelism from loops in sequential programs.
+The focus on loops is based on the observation that loops often iterate over large data sets performing operations on every data item without any dependencies between iterations.
+These workloads are traditionally called \emph{embarrassingly parallel} and can be parallelized in a straightforward manner.
+In \OpenMP the programmer annotates such loops with compiler directives and a compiler supporting the \OpenMP standard automatically generates code for performing the computations of the loop in parallel.
+Recent version of the \OpenMP standard and the closely related \OpenACC~\cite{} standard support execution on \GPUs as well.
+Here the programmer has to additionally specify the data regions which should be copied to and from the \GPU prior and after the computation.
+\OpenMP and \OpenACC allow for a fairly easy transition from sequential code to parallel code exploiting multi-core \CPUs and \GPUs.
+Performance is often not optimal as  current compilers are do not powerful enough to apply important optimizations like cache optimizations, ensuring coalesced memory accesses, and the usage of the local memory.
+
+\CUDA and \OpenCL are the most popular approaches for programming \GPU systems.
+While \CUDA can only be used for programming \GPUs manufactured by Nvidia, \OpenCL is a standard for programming \GPUs, multi-core \CPUs, and other types of parallel processors regardless of their hardware vendor.
+All major processor manufactures support the \OpenCL standard, including AMD, ARM, IBM, Intel, and Nvidia.
+\CUDA and \OpenCL are similar programming approaches.
+We will investigate the \OpenCL programming approach in the following in detail, as it is the technical foundation of the work presented later in \autoref{part:skelcl} and \autoref{part:codeGeneration}.
 
 
 \subsection{The OpenCL Programming Approach}
@@ -169,14 +185,22 @@ The newer \OpenCL standards version 2.0 and 2.1 are currently not supported on N
 We will briefly discuss all four models.
 
 \paragraph{The \OpenCL Platform Model}
-\OpenCL distinguishes between a \emph{host} which is connected to multiple \emph{\OpenCL devices}.
+\autoref{fig:opencl} shows the \OpenCL platform model.
+\OpenCL distinguishes between a \emph{host} which is connected to multiple \OpenCL \emph{devices}.
 In a system comprising of a multi-core \CPU and a \GPU, the \GPU constitutes an \OpenCL device and the multi-core \CPU plays the dual rule of the host and an \OpenCL device as well.
 An \OpenCL application executes sequentially on the host and offloads parallel computations to the \OpenCL devices.
 
-\OpenCL specifies that each device is divided into one or more \emph{compute units} which are again divided into one or more \emph{processing elements}.
-When we compare this to our discussion of multi-core \CPUs, there is a clear relationship: A \CPU core corresponds to a compute unit and the function units inside a \CPU core correspond to the processing elements.
+\OpenCL specifies that each device is divided into one or more \emph{compute units} (CU) which are again divided into one or more \emph{processing elements} (PE).
+When we compare this to our discussion of multi-core \CPUs, there is a clear relationship:
+a \CPU core corresponds to a compute unit and the function units inside of the \CPU core performing the computations correspond to the processing elements.
 For the \GPU: a streaming multiprocessor corresponds to a compute unit and the lightweight \GPU cores correspond to the processing elements.
 
+\begin{figure}
+  \centering
+  \includegraphics[width=.95\textwidth]{OpenCL}
+  \caption{The \OpenCL Platform and Memory Model}
+  \label{fig:opencl}
+\end{figure}
 
 \paragraph{The \OpenCL Memory Model}
 Each device in \OpenCL has its own memory.
@@ -185,6 +209,7 @@ Therefore, data has to be moved between the host and device memory which is issu
 
 On the device \OpenCL distinguished four memory regions:
 global memory, constant memory, local memory, and private memory.
+These memory regions are visible in \autoref{fig:opencl}.
 
 The \emph{global memory} is shared by all compute units of the device and permits read and write modifications from the host and device.
 % Dynamic memory allocations are possible from the host, but there is no possibility to allocate global memory from the device side.
@@ -199,6 +224,7 @@ The \emph{local memory} is a memory region private to a compute unit.
 It permits read and write accesses from the device, the host has no access to his memory region.
 % Memory can either be allocated dynamically from the host or statically from the device.
 The local memory directly corresponds to the fast per-SM shared memory of modern \GPUs.
+On multi-core \CPUs the local memory is usually only a logical distinction and mapped to the same physical memory as the global memory.
 
 The \emph{private memory} is a memory region private to a processing element.
 The device has full read and write access, but the host has no access at all.
@@ -216,19 +242,37 @@ A \emph{synchronization command} enforces a certain order of execution of comman
 Finally, a \emph{kernel execution command} executes a computation on the device.
 
 A \OpenCL \emph{kernel} is a function which is executed in parallel on an \OpenCL device.
+\autoref{lst:openclExample} shows a simple \OpenCL kernel performing matrix multiplication.
 When launching a kernel on a device the programmer explicitly specifies how many threads will execute in parallel on the device.
 A thread executing a kernel is called a \emph{work-item} in \OpenCL.
 Work-items are grouped together in \emph{work-groups} which allow a more coarse-grain organization of the execution.
 Furthermore, all work-items of a work-group share the same local memory and synchronization between work-items of the same work-group is possible and forbidden for work-items from different work-groups.
 This is possible because all work-items from the same work-group are guaranteed to be executed on the same CU where this guarantee does not hold for work-items from different work-groups.
 
+\begin{lstlisting}[float, caption={Example of an \OpenCL kernel.}, label={lst:openclExample}]
+kernel void matMultKernel(global float* a, global float* b,$\label{lst:openclExample:1}$
+                          global float* c, int width) {$\label{lst:openclExample:2}$
+ int colId = get_global_id(0); int rowId = get_global_id(1);$\label{lst:openclExample:3}$
+
+ float sum = 0.0f;
+ for (int i = 0; i < width; ++i)
+   sum += a[rowId * width + k] * b[k * width + colId];
+
+ c[rowId * width + colId] = sum;
+}
+\end{lstlisting}
+
 \OpenCL kernels are implemented in a dialect of C, starting with \OpenCL 2.1 a dialect of \Cpp, with certain restrictions as well as extensions.
 The most prominent restrictions are:
 recursive functions and function pointers are not supported, as well as system calls, including \code{malloc}, \code{printf}, file I/O, etc.
 The most important extensions are:
-qualifiers for pointers reflecting the four address spaces and vector data types, like \code{float4}.
+qualifiers for pointers reflecting the four address spaces (as the \code{global} qualifier in lines~\ref{lst:openclExample:1} and~\ref{lst:openclExample:2} of \autoref{lst:openclExample}) and vector data types, like \code{float4}.
 Furthermore, \OpenCL provides a set of functions which can be used to identify the executing work-item and work-group.
+One example is the \code{get\_global\_id} function used in line~\ref{lst:openclExample:3} of \autoref{lst:openclExample}.
 This is usually used so that different work-items operate on different sets of the input data.
+In \autoref{lst:openclExample} each work-item computes one item of the result matrix \code{c} of matrix multiplication by multiplying and summing up a row and column of the input matrices \code{a} and \code{b}.
+This kernel only produces the correct result if exactly one work-item per element of the result matrix is launched.
+If the host program launches a different configuration of work-items out of bound memory accesses will occur or only part of the computation will be performed.
 
 \paragraph{The \OpenCL Programming Model}
 
@@ -246,6 +290,8 @@ This model is also well suited for modern multi-core \CPUs.
 
 \section{Structured Parallel Programming}
 % structured parallel programming & functional foundations
+All programming approaches discussed so far ... low-level.
+
 
 \subsection{Functional Programming Foundations}
 
