@@ -5,6 +5,354 @@
 \label{chapter:background}
 \label{chapter:state-of-the-art}
 
+In this chapter we will introduce and discuss the technical background of this thesis.
+
+We will start by discussing the structure and functionality of multi-core \CPUs and \GPUs.
+We will particular focus on \GPUs as their architecture is quite different to traditional \CPUs.
+In addition, \GPUs will be the main hardware target of the \SkelCL programming model presented later.
+Then we will discuss the most common programming approaches for multi-core \CPUs and \GPUs, with a particular focus on \OpenCL.
+
+We will then introduce structured parallel programming and discuss its foundations in functional programming.
+In this approach predefined parallel patterns (\aka, as \emph{algorithmic skeletons}) hiding the complexities of parallelism are used for expressing parallel programs.
+This thesis very much builds upon this idea, developing a structured parallel programming model for \GPUs and a novel system compiling pattern-based programs to efficient hardware-specific implementations.
+We will finish this chapter by discussing several state-of-the-art implementations of structured parallel programming for cluster systems and multi-core \CPUs.
+
+\section{Modern Parallel Processors}
+% structure and functionality of:
+As discussed in the introduction virtually all modern processors feature multiple cores to further increase their performance and energy efficiency.
+Here we will look at two distinct types of modern parallel processors: multi-core \CPUs and \GPUs.
+Multi-core \CPUs are \emph{latency oriented} architectures~\cite{GarlandK10}, \ie, they are optimized to hide memory latencies with large caches and various other advanced architectural features, like out-of-order execution and extensive branch prediction.
+\GPUs are \emph{throughput-oriented} architectures~\cite{GarlandK10}, \ie, they are optimized to increase the overall computational throughput of many parallel tasks.
+
+We will discuss both architectures in the following two sections.
+
+\subsection{Multi-Core \CPUs}
+% multi-core CPUs
+\autoref{fig:multicore} shows an abstract representation of the structural design of a typical multi-core \CPU architecture, like Intel's latest \CPU architecture: Haswell.
+\begin{figure}
+  \centering
+  \includegraphics[width=.75\textwidth]{CPU}
+  \caption{Multi-core architecture.}
+  \label{fig:multicore}
+\end{figure}
+% describe caches
+The \CPU is divided into multiple cores each of which feature two levels of caches.
+The smallest but fastest cache is called L1 cache and is typically divided into a distinct cache for instructions and a data cache each of 32 kilobyte for the Haswell architecture.
+Each core also features a second level cache (L2 cache) of 256 kilobyte for the Haswell architecture.
+The \CPU has a large cache (L3 cache) which is shared by all cores.
+This cache is often several megabytes large, for Intel's Haswell architecture the L3 cache is at least 2 and up to 45 megabytes in size.
+
+% describe core: branch prediction, out-of-order execution, SIMD units
+Each \CPU core performs computations completely independently of the other cores, but consist itself of multiple execution units which can perform computations in parallel.
+This happens transparent to the programmer even when executing a sequential program.
+The \CPU core exploits \emph{instruction level parallelism} (ILP) by performing out-of-order execution which reorders instructions prior to execution while still respecting their dependencies.
+If two or more instructions have no dependencies they can be executed in parallel.
+In the Intel Haswell architecture 4 arithmetic operations and 4 memory operations can be performed in parallel in one clock cycle on every core.
+Furthermore, most modern \CPU architectures support SIMD vector extensions like the \emph{Advanced Vector Extensions} (AVX) or the older \emph{Streaming SIMD Extensions} (SSE).
+These extensions add additional instructions to the instruction set architecture allowing the compiler to generate code which explicitly groups data into vectors of a small fixed size on which can be operated in parallel.
+The current AVX extension allows vectors of up to 256 bits, or the equivalent of grouping and processing 8 single precision floating point numbers in parallel.
+Most modern optimizing compilers perform some form of automatic vectorization, but often programmers vectorize programs manually when the compiler fails to generate sufficient optimized code.
+
+% make conclusions: latency oriented => caches important, good performance for single and multiple threads, comparably low core count and hyper threading -> limited thread-level parallelism
+The design of multi-core \CPUs is motivated by the overall goal to provide high-performance when executing multi threaded programs and yet still have a high single-core performance when executing sequential programs~\cite{GarlandK10}.
+This is why the individual cores are very sophisticated at executing a series of instructions as fast as possible, applying out-of-order execution and featuring other architectural features like a deep pipeline for decoding and executing instructions combined with advanced branch prediction.
+Unfortunately, the design of these complex cores make switching between multiple threads running on the same core expensive, as the execution pipeline has to be flushed and the register content for the first thread has to be saved before resuming the execution on the second thread.
+To address this issue some multi-core architectures feature \emph{simultaneous multi threading} (SMT), \aka, as \emph{hyper threading}, where a single \CPU core can execute multiple (usually 2 or 4) threads in parallel and switching between the threads is cheap.
+His technique is used to mitigate the effect memory latency can have on the execution:
+if a thread is waiting for a memory request another thread can continue executing.
+The other central component to prevent waiting times for memory requests is the cache hierarchy.
+As we will see, multi-core \CPUs feature considerably larger caches than \GPUs.
+The caches help to keep the threads running in parallel on the multi-core \CPU busy.
+
+% Possible optimizations
+Among the most important optimizations to achieve high performance on these modern multi-core \CPUs are:
+exploiting the SIMD vector extensions and optimizing the cache usage~\cite{IntelCPUOptimizingGuide}.
+
+\subsection{Graphics Processing Units}
+  % GPUs
+\autoref{fig:gpu} shows an abstract representation of the structural design of a typical \GPU architecture, like Nvidia's latest \GPU architecture for the high-performance computing market: Kepler.
+\begin{figure}
+  \centering
+  \includegraphics[width=.75\textwidth]{GPU}
+  \caption{GPU architecture}
+  \label{fig:gpu}
+\end{figure}
+% describe cores and execution
+While the overall design looks fairly similar to the design of the multi-core \CPU the architecture of the \GPU is actually very different in its details.
+The lightweight \GPU cores are grouped together into what Nvidia calls a \emph{Streaming Multiprocessor} (SM).
+In the Kepler architecture a SM features 192 single-precision cores, 64 double-precision units, 32 special function units, and 32 memory units.
+% \autoref{fig:gpuSM} shows the design of a SM in the Kepler architecture.
+The 192 single-precision cores are very lightweight compared to the complex \CPU cores we discussed in the previous subsection.
+A single \GPU core does not support SIMD vectorization, performs the straightforward in-order execution, and does not perform complex branch prediction.
+This design makes the implementation of such a core in hardware very cheap and enables the grouping of hundreds of cores in a single SM.
+
+% describe caches and memory
+Modern \GPUs feature two levels of caches:
+the first level (L1) is private to each SM and the second level cache (L2) is shared among all SMs.
+Compared to the cache sizes of the \CPU the caches on the \GPU are fairly small.
+The Kepler architecture features a L1 cache of 48 kilobyte and a L2 cache of 1.5 megabyte.
+It is important to notice that these caches are shared by a vast amount of threads being executed on the \GPU:
+the 48 kilobyte L1 cache are shared among the up to 2048 threads being executed on the particular SM and the L2 cache is shared among $\approx{}$\!30,\,000 threads.
+
+Besides caches each SM on a \GPU features also a scratchpad memory, called \emph{shared memory} in Nvidia's \GPU architectures.
+This memory is small (16 or 48 kilobytes) but very fast, comparable to the L1 cache.
+Where the L1 cache is automatically managed by a cache controller, the shared memory is explicitly managed by the programmer.
+
+% make conclusions: throughput oriented => cores and threads important, different trade off: poor performance for single thread very good performance for data parallel applications => bad when: a lot of branching, less caches => memory accesses are expensive (coalescing ...)
+The design of \GPUs is motivated by the overall goal to deliver maximal throughput even if this requires to sacrifice the performance of single threads~\cite{GarlandK10}.
+This is why the \GPU cores are lightweight offering poor sequential performance but thousands of cores combined offering a very high computational throughput.
+Memory latencies are mitigated by a high oversubscription of threads:
+in the Kepler architecture a SM can manage up to 2048 threads which can be scheduled for execution on the 192 cores.
+If a thread is waiting for a memory request another thread continues its execution.
+This is the reason why caches are fairly small, as they play a less important role as on in \CPU architectures.
+
+\subsubsection*{\GPU Thread Execution}
+The execution of threads on a \GPU is very different compared to the execution on a traditional multi-core \CPU:
+multiple threads are grouped by the hardware and executed together.
+Such a group of threads is called a \emph{warp} by Nvidia.
+In the Kepler architecture 32 threads form a warp and a SM selects 4 warps and for each warp 2 instructions to be executed in parallel on its single-precision cores, double-precision units, special function units, and memory units.
+
+All threads grouped into a warp perform the same instructions in a lockstep manner.
+Is is possible that two or more threads follow different execution paths.
+In this case all threads sharing a common execution path execute together while the other threads pause their execution.
+It is beneficial to avoid warps with divergent execution paths, as this reduces or eliminates the amount of threads pausing their execution.
+Nvidia calls this execution model: single-instruction, multiple-thread (SIMT).
+
+Programmers are advised to optimize their code, so that all threads in a warp follow the same execution path.
+Threads in the same warp taking different branches in the code can substantially hurt the performance and should, therefore, be avoided if possible.
+
+\subsubsection*{\GPU Memory Accesses}
+Accessing the \GPU's main memory, called \emph{global memory}, is an expensive operation.
+The \GPU can optimize accesses when the global memory is accesses in certain fixed patterns.
+If the threads organized in a warp access a contiguous area of the memory the hardware can \emph{coalesce} the memory access and perform a single memory request instead of issuing individual requests for every thread.
+Several other patterns of access exists which are detected by the hardware to coalesce the memory accesses by multiple threads.
+
+This is a major optimization opportunity for many \GPU programs, as the available memory bandwidth can only be utilized properly if memory accesses are coalesced.
+Uncoalesced memory accesses offer only a fraction of performance and can severely hurt the performance.
+
+
+\subsection*{\GPU Shared Memory}
+% shared memory
+The usage of the shared memory featured in each SM can substantially increase performance -- when used properly.
+The programmer is responsible for exploiting this memory by explicitly moving data between the global memory and the shared memory.
+All threads executing on the same SM have shared access to the shared memory at a high bandwidth and low latency.
+When multiple threads need to access the same data item is often beneficial to first load the data item into the shared memory by a single thread and perform all successive accesses on the local memory.
+This is similar to a cache with the difference, that the programmer explicitly controls its behavior.
+The shared memory can also be used to efficiently synchronize and communicate with other threads running on the same SM.
+In fact on current \GPUs it is only possible for threads running on the same SM to synchronize, global synchronization between arbitrary thread running on different SMs is not possible.
+
+\bigskip
+Current \GPU architectures are more sensitive to optimizations as \CPU architectures are.
+The most important optimizations on \GPUs are:
+exploit the available parallelism by launching the right amount of threads, ensure that accesses to the global memory are coalesced, use the shared memory to minimize accesses to the global memory, and avoid divergent branches for threads organized in a warp~\cite{CUDATuningKepler2015}.
+
+In addition to these optimizations it is important to keep in mind that the application exploiting the \GPU is still executed on the \CPU and typically only offload computational intensive tasks to the \GPU.
+An often crucial optimization is to minimizing the data transfer between the \CPU and the \GPU or overlap the transfer with computations on the \GPU.
+
+\section{Programming of Multi-Core CPUs and GPUs}
+One of the most popular approaches for writing parallel software for multi-core \CPUs is \emph{multithreading}.
+There exists threading libraries for almost all popular programming languages, including C~\cite{} and \Cpp~\cite{}.
+Threads are conceptionally similar to processes in an operating system, with the major difference that threads share the same address space in memory while processes usually do not.
+This enables threads to communicate and work efficiently with each other by using the same memory.
+Programmers have great flexibility and control over the exact behavior of the threads and their interaction, including the important questions of when and how many threads to use, how tasks and data is divided across threads, and how threads synchronize and communicate with each other.
+The disadvantage of the high flexibility is that the burden of developing a correct and efficient program lies almost entirely on the programmer.
+The interaction of threads executing concurrently can be very complex to reason about and traditional debugging techniques are often not sufficient as the execution is not deterministic any more.
+
+\OpenMP~\cite{} is a popular alternative approach focusing on exploiting parallelism from loops in sequential programs.
+The focus on loops is based on the observation that loops often iterate over large data sets performing operations on every data item without any dependencies between iterations.
+These workloads are traditionally called \emph{embarrassingly parallel} and can be parallelized in a straightforward manner.
+In \OpenMP the programmer annotates such loops with compiler directives and a compiler supporting the \OpenMP standard automatically generates code for performing the computations of the loop in parallel.
+Recent version of the \OpenMP standard and the closely related \OpenACC~\cite{} standard support execution on \GPUs as well.
+Here the programmer has to additionally specify the data regions which should be copied to and from the \GPU prior and after the computation.
+\OpenMP and \OpenACC allow for a fairly easy transition from sequential code to parallel code exploiting multi-core \CPUs and \GPUs.
+Performance is often not optimal as  current compilers are do not powerful enough to apply important optimizations like cache optimizations, ensuring coalesced memory accesses, and the usage of the local memory.
+
+\CUDA and \OpenCL are the most popular approaches for programming \GPU systems.
+While \CUDA can only be used for programming \GPUs manufactured by Nvidia, \OpenCL is a standard for programming \GPUs, multi-core \CPUs, and other types of parallel processors regardless of their hardware vendor.
+All major processor manufactures support the \OpenCL standard, including AMD, ARM, IBM, Intel, and Nvidia.
+\CUDA and \OpenCL are similar programming approaches.
+We will investigate the \OpenCL programming approach in the following in detail, as it is the technical foundation of the work presented later in \autoref{part:skelcl} and \autoref{part:codeGeneration}.
+
+
+\subsection{The OpenCL Programming Approach}
+\OpenCL is a standard for programming multi-core \CPUs, \GPUs, and other types of parallel processors.
+\OpenCL was created in 2008 and has since been refined multiple times.
+In this thesis we will use the \OpenCL standard version 1.1 which was ratified in June 2010.
+This is the most commonly supported version of the standard with support from all major hardware vendors: AMD, ARM, Intel, and Nvidia.
+The newer \OpenCL standards version 2.0 and 2.1 are currently not supported on Nvidia \GPUs.
+
+\OpenCL is defined in terms of four models: platform model, memory model, execution model, and programming model.
+We will briefly discuss all four models.
+
+\paragraph{The \OpenCL Platform Model}
+\autoref{fig:opencl} shows the \OpenCL platform model.
+\OpenCL distinguishes between a \emph{host} which is connected to multiple \OpenCL \emph{devices}.
+In a system comprising of a multi-core \CPU and a \GPU, the \GPU constitutes an \OpenCL device and the multi-core \CPU plays the dual rule of the host and an \OpenCL device as well.
+An \OpenCL application executes sequentially on the host and offloads parallel computations to the \OpenCL devices.
+
+\OpenCL specifies that each device is divided into one or more \emph{compute units} (CU) which are again divided into one or more \emph{processing elements} (PE).
+When we compare this to our discussion of multi-core \CPUs, there is a clear relationship:
+a \CPU core corresponds to a compute unit and the function units inside of the \CPU core performing the computations correspond to the processing elements.
+For the \GPU: a streaming multiprocessor corresponds to a compute unit and the lightweight \GPU cores correspond to the processing elements.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.95\textwidth]{OpenCL}
+  \caption{The \OpenCL Platform and Memory Model}
+  \label{fig:opencl}
+\end{figure}
+
+\paragraph{The \OpenCL Memory Model}
+Each device in \OpenCL has its own memory.
+This memory is logically and possibly physically distinct from the memory on the host.
+Therefore, data has to be moved between the host and device memory which is issued explicitly by the programmer.
+
+On the device \OpenCL distinguished four memory regions:
+global memory, constant memory, local memory, and private memory.
+These memory regions are visible in \autoref{fig:opencl}.
+
+The \emph{global memory} is shared by all compute units of the device and permits read and write modifications from the host and device.
+% Dynamic memory allocations are possible from the host, but there is no possibility to allocate global memory from the device side.
+The global memory is usually the biggest but slowest memory area on an \OpenCL device.
+
+The \emph{constant memory} is a region of the global memory which remains constant during device execution.
+% The host can dynamically allocate regions of the constant memory and can read and write to it.
+% The device can statically allocate constant memory and only read from it.
+The host can read and write to the constant memory, but the device can only read from it.
+
+The \emph{local memory} is a memory region private to a compute unit.
+It permits read and write accesses from the device, the host has no access to his memory region.
+% Memory can either be allocated dynamically from the host or statically from the device.
+The local memory directly corresponds to the fast per-SM shared memory of modern \GPUs.
+On multi-core \CPUs the local memory is usually only a logical distinction and mapped to the same physical memory as the global memory.
+
+The \emph{private memory} is a memory region private to a processing element.
+The device has full read and write access, but the host has no access at all.
+The private memory contains all variables which are private to a single thread.
+
+
+\paragraph{The \OpenCL Execution Model}
+The communication between host and a particular device is performed using a \emph{command queue}.
+The host submits a command into a \emph{command queue} which by-default processes all commands in a first in first out order.
+Command queues can also be configured to operate out-of-order where no order of execution of commands is guaranteed.
+
+There exists three types of commands.
+A \emph{memory command} indicates to copy data from the host to the device or from the device to the host.
+A \emph{synchronization command} enforces a certain order of execution of commands.
+Finally, a \emph{kernel execution command} executes a computation on the device.
+
+A \OpenCL \emph{kernel} is a function which is executed in parallel on an \OpenCL device.
+\autoref{lst:openclExample} shows a simple \OpenCL kernel performing matrix multiplication.
+When launching a kernel on a device the programmer explicitly specifies how many threads will execute in parallel on the device.
+A thread executing a kernel is called a \emph{work-item} in \OpenCL.
+Work-items are grouped together in \emph{work-groups} which allow a more coarse-grain organization of the execution.
+Furthermore, all work-items of a work-group share the same local memory and synchronization between work-items of the same work-group is possible and forbidden for work-items from different work-groups.
+This is possible because all work-items from the same work-group are guaranteed to be executed on the same CU where this guarantee does not hold for work-items from different work-groups.
+
+\begin{lstlisting}[float, caption={Example of an \OpenCL kernel.}, label={lst:openclExample}]
+kernel void matMultKernel(global float* a, global float* b,$\label{lst:openclExample:1}$
+                          global float* c, int width) {$\label{lst:openclExample:2}$
+ int colId = get_global_id(0); int rowId = get_global_id(1);$\label{lst:openclExample:3}$
+
+ float sum = 0.0f;
+ for (int i = 0; i < width; ++i)
+   sum += a[rowId * width + k] * b[k * width + colId];
+
+ c[rowId * width + colId] = sum;
+}
+\end{lstlisting}
+
+\OpenCL kernels are implemented in a dialect of C, starting with \OpenCL 2.1 a dialect of \Cpp, with certain restrictions as well as extensions.
+The most prominent restrictions are:
+recursive functions and function pointers are not supported, as well as system calls, including \code{malloc}, \code{printf}, file I/O, etc.
+The most important extensions are:
+qualifiers for pointers reflecting the four address spaces (as the \code{global} qualifier in lines~\ref{lst:openclExample:1} and~\ref{lst:openclExample:2} of \autoref{lst:openclExample}) and vector data types, like \code{float4}.
+Furthermore, \OpenCL provides a set of functions which can be used to identify the executing work-item and work-group.
+One example is the \code{get\_global\_id} function used in line~\ref{lst:openclExample:3} of \autoref{lst:openclExample}.
+This is usually used so that different work-items operate on different sets of the input data.
+In \autoref{lst:openclExample} each work-item computes one item of the result matrix \code{c} of matrix multiplication by multiplying and summing up a row and column of the input matrices \code{a} and \code{b}.
+This kernel only produces the correct result if exactly one work-item per element of the result matrix is launched.
+If the host program launches a different configuration of work-items out of bound memory accesses will occur or only part of the computation will be performed.
+
+\paragraph{The \OpenCL Programming Model}
+
+\OpenCL supports two programming models: task parallel programming and data parallel programming.
+The predominant programming model for \OpenCL is the data parallel programming model.
+
+In the \emph{task parallel programming model} kernels are executed by a single work-item.
+Programmers exploit parallelism by launching multiple tasks which are possibly executed concurrently on an \OpenCL device.
+This programming model is not well suited for exploiting the capabilities of modern \GPUs and, therefore, not widely used.
+
+In the \emph{data parallel programming model} kernel are executed by many work-items organized in multiple work-groups.
+Parallelism is exploited mainly by the multiple work-items executing a single kernel in parallel.
+This programming model is well suited for exploiting modern \GPUs and, therefore, widely used.
+This model is also well suited for modern multi-core \CPUs.
+
+\section{Structured Parallel Programming}
+% structured parallel programming & functional foundations
+\emph{Structured programming} emerged in the 1960s and 1970s as a reaction of the ``software crises''.
+Back then (and still today) programs were often poorly designed, hard to maintain, and hard to reason about.
+Dijkstra identified the low-level \code{go to} statement as a major reason for programmers writing ``spaghetti code''.
+In this famous letter~\cite{} he argued that instead programs should have a more rigid structure organizing code in procedures and using higher level control structures like \code{if} and \code{while}.
+Dijkstra's argument eventually helped to overcome unstructured sequentiell programming and to introduce structured programming~\cite{}.
+The new structures proposed to replace \code{go to} where suggested based on observations of common use cases -- or \emph{patterns} of use -- of the \code{go to} statement in sequential programming.
+
+Researchers have more recently suggested similar arguments to move away from traditional parallel programming towards \emph{structured parallel programing}.
+For parallel programming using message passing Gorlatch argues similar to Dijkstra that single send and receive statements should be avoided and replaced by collective operations~\cite{}.
+Here each collective operation, \eg, broadcast, scatter, or reduce, captures a certain common communication pattern traditionally implemented with individual send and receive statements.
+In~\cite{} the authors argue that \emph{structured parallel patterns}, each capturing a common computation and communication behavior, should be used to replace explicit thread programming to improve the maintainability of software.
+The book discusses a set of parallel patterns and their implementation in different recent programming approaches for multi-core \CPUs.
+The underlying ideas go far back to the 1980s where Cole was the first to introduced the concept of using parallel patterns, called \emph{algorithmic skeletons}, to structure and, therefore, simplify parallel programs~\cite{Cole1991}.
+
+\subsection{Algorithmic Skeletons}
+Cole introduced algorithmic skeletons as special higher order functions which describe the ``computational skeleton'' of a parallel algorithm.
+Higher order functions are a well-known concept from functional programming and describe functions accepting (or returning) other functions as its arguments.
+This abstraction is often useful, as it allows to write more abstract and generic functions.
+
+An example for an algorithmic skeletons is the \emph{divide \& conquer skeleton} which was among the original suggested skeletons by Cole~\cite{Cole1991}.
+It was defined as:
+\begin{align*}
+  D_C\ indivisible\ split\ join\ f% &= F\\
+%  \textit{where}\ F\ P &= f\ P, \textit{ if  } indivisible\ P\nonumber\\
+%                     &= join\ (map\ F\ (split\ P)), \textit{ otherwise}\nonumber
+\end{align*}
+The algorithmic skeleton $D_C$ accepts four functions as its argument:
+\begin{itemize}
+  \item $indivisible$ is a function deciding if the given problem should be solved recursively,
+  \item $split$ is a function decomposing a given problem into multiple sub-problems,
+  \item $join$ is a function combining multiple solved sub-problems into a larger solution,
+  \item $f$ is a function solving an indivisible problem, \ie, the base case.
+\end{itemize}
+
+Applications like the discrete Fourier transformation, approximate integration, or matrix multiplication can be implemented with this algorithmic skeleton.
+The application developer provides implementations for the functions required by the algorithmic skeleton to obtain a program which can be applied to the input data.
+
+An algorithmic skeleton has a parallel implementation.
+In the example of the $D_C$ skeleton the implementation follows the well-known divide and conquer technique which divides problems into multiple sub-problems which can be solved in parallel.
+The implementation of the algorithmic skeleton hides the complexities of parallelism from the user.
+It, therefore, provides a higher level interface abstracting away the details of the parallel execution, including low-level details like synchronization and communication of threads.
+
+\paragraph{Classification of Algorithmic Skeletons}
+Algorithmic skeletons can be broadly classified into three distinct classes~\cite{}:
+\begin{itemize}
+  \item \emph{data-parallel skeletons}
+  \item \emph{task-parallel skeletons}
+  \item \emph{resolution skeletons}
+\end{itemize}
+
+
+... We focus in this thesis on data-parallel skeletons which match the throughput oriented \GPU architecture.
+
+\subsection{State of the Art of Structured Parallel Programming}
+
+  % map reduce for clusters
+
+  % TBB for multi-core CPUs
+
+  % skeleton libraries (MPI & multicore)
+  Study from 2010 includes many important skeleton libraries, we will discuss more recent skeleton libraries in the related work in section ...
+
+
 %\from{HIPS begin}
 %\section{GPU programming using OpenCL (HIPS)}
 %
@@ -116,4 +464,4 @@
 %\from{PACT end}
 
 % include related work
-\input{Chapters/Chapter2/related_work}
+%\input{Chapters/Chapter2/related_work}
