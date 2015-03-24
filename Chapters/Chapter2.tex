@@ -12,10 +12,10 @@ We will particular focus on \GPUs as their architecture is quite different to tr
 In addition, \GPUs will be the main hardware target of the \SkelCL programming model presented later.
 Then we will discuss the most common programming approaches for multi-core \CPUs and \GPUs, with a particular focus on \OpenCL.
 
-We will then introduce structured parallel programming and discuss its foundations in functional programming.
+We will then introduce structured parallel programming and discuss its origin in functional programming.
 In this approach predefined parallel patterns (\aka, as \emph{algorithmic skeletons}) hiding the complexities of parallelism are used for expressing parallel programs.
 This thesis very much builds upon this idea, developing a structured parallel programming model for \GPUs and a novel system compiling pattern-based programs to efficient hardware-specific implementations.
-We will finish this chapter by discussing several state-of-the-art implementations of structured parallel programming for cluster systems and multi-core \CPUs.
+% We will finish this chapter by discussing several state-of-the-art implementations of structured parallel programming for cluster systems and multi-core \CPUs.
 
 \section{Modern Parallel Processors}
 % structure and functionality of:
@@ -151,23 +151,23 @@ An often crucial optimization is to minimizing the data transfer between the \CP
 
 \section{Programming of Multi-Core CPUs and GPUs}
 One of the most popular approaches for writing parallel software for multi-core \CPUs is \emph{multithreading}.
-There exists threading libraries for almost all popular programming languages, including C~\cite{} and \Cpp~\cite{}.
+There exists threading libraries for almost all popular programming languages, including C~\cite{Cstandard,Pthreads} and \Cpp~\cite{Cppstandard}.
 Threads are conceptionally similar to processes in an operating system, with the major difference that threads share the same address space in memory while processes usually do not.
 This enables threads to communicate and work efficiently with each other by using the same memory.
 Programmers have great flexibility and control over the exact behavior of the threads and their interaction, including the important questions of when and how many threads to use, how tasks and data is divided across threads, and how threads synchronize and communicate with each other.
 The disadvantage of the high flexibility is that the burden of developing a correct and efficient program lies almost entirely on the programmer.
 The interaction of threads executing concurrently can be very complex to reason about and traditional debugging techniques are often not sufficient as the execution is not deterministic any more.
 
-\OpenMP~\cite{} is a popular alternative approach focusing on exploiting parallelism from loops in sequential programs.
+\OpenMP~\cite{OpenMP} is a popular alternative approach focusing on exploiting parallelism from loops in sequential programs.
 The focus on loops is based on the observation that loops often iterate over large data sets performing operations on every data item without any dependencies between iterations.
 These workloads are traditionally called \emph{embarrassingly parallel} and can be parallelized in a straightforward manner.
 In \OpenMP the programmer annotates such loops with compiler directives and a compiler supporting the \OpenMP standard automatically generates code for performing the computations of the loop in parallel.
-Recent version of the \OpenMP standard and the closely related \OpenACC~\cite{} standard support execution on \GPUs as well.
+Recent version of the \OpenMP standard and the closely related \OpenACC~\cite{OpenACC} standard support execution on \GPUs as well.
 Here the programmer has to additionally specify the data regions which should be copied to and from the \GPU prior and after the computation.
 \OpenMP and \OpenACC allow for a fairly easy transition from sequential code to parallel code exploiting multi-core \CPUs and \GPUs.
 Performance is often not optimal as  current compilers are do not powerful enough to apply important optimizations like cache optimizations, ensuring coalesced memory accesses, and the usage of the local memory.
 
-\CUDA and \OpenCL are the most popular approaches for programming \GPU systems.
+\CUDA~\cite{CUDAProgrammingGuide} and \OpenCL~\cite{OpenCL} are the most popular approaches for programming \GPU systems.
 While \CUDA can only be used for programming \GPUs manufactured by Nvidia, \OpenCL is a standard for programming \GPUs, multi-core \CPUs, and other types of parallel processors regardless of their hardware vendor.
 All major processor manufactures support the \OpenCL standard, including AMD, ARM, IBM, Intel, and Nvidia.
 \CUDA and \OpenCL are similar programming approaches.
@@ -181,7 +181,7 @@ In this thesis we will use the \OpenCL standard version 1.1 which was ratified i
 This is the most commonly supported version of the standard with support from all major hardware vendors: AMD, ARM, Intel, and Nvidia.
 The newer \OpenCL standards version 2.0 and 2.1 are currently not supported on Nvidia \GPUs.
 
-\OpenCL is defined in terms of four models: platform model, memory model, execution model, and programming model.
+\OpenCL is defined in terms of four theoretical models: platform model, memory model, execution model, and programming model.
 We will briefly discuss all four models.
 
 \paragraph{The \OpenCL Platform Model}
@@ -284,7 +284,7 @@ Programmers exploit parallelism by launching multiple tasks which are possibly e
 This programming model is not well suited for exploiting the capabilities of modern \GPUs and, therefore, not widely used.
 
 In the \emph{data parallel programming model} kernel are executed by many work-items organized in multiple work-groups.
-Parallelism is exploited mainly by the multiple work-items executing a single kernel in parallel.
+Parallelism is mainly exploited by the multiple work-items executing a single kernel in parallel.
 This programming model is well suited for exploiting modern \GPUs and, therefore, widely used.
 This model is also well suited for modern multi-core \CPUs.
 
@@ -293,8 +293,8 @@ This model is also well suited for modern multi-core \CPUs.
 \emph{Structured programming} emerged in the 1960s and 1970s as a reaction of the ``software crises''.
 Back then (and still today) programs were often poorly designed, hard to maintain, and hard to reason about.
 Dijkstra identified the low-level \code{go to} statement as a major reason for programmers writing ``spaghetti code''.
-In this famous letter~\cite{} he argued that instead programs should have a more rigid structure organizing code in procedures and using higher level control structures like \code{if} and \code{while}.
-Dijkstra's letter eventually helped to overcome unstructured sequentiell programming and to establish structured programming~\cite{}.
+In this famous letter~\cite{Dijkstra68a} he argued that instead programs should have a more rigid structure organizing code in procedures and using higher level control structures like \code{if} and \code{while}.
+Dijkstra's letter eventually helped to overcome unstructured sequentiell programming and to establish structured programming~\cite{DahlDiHo1972}.
 The new structures proposed to replace \code{go to} where suggested based on observations of common use cases -- or \emph{patterns} of use -- of the \code{go to} statement in sequential programming.
 By capturing an entire pattern of usage these patterns raise the abstraction level and make it easier to reason about them.
 A \code{if A then B else C} statement has a clear high-level semantic which is easy to understand and reason about, for example is it clear to the programmer -- and the compiler -- that \code{B} and \code{C} can not both be executed.
@@ -302,10 +302,10 @@ This helps the programmer to understand the source code and the compiler to prod
 The equivalent code containing multiple \code{go to} statements obtains the same high-level semantic by combining the low-level operations with their low-level semantics.
 Both, programmer and compiler, have to ``figure out'' what the high-level semantic is by means of analyzing the sequence of low-level operations and reconstruction the high-level semantic.
 
-Researchers have more recently suggested similar arguments to Dijkstra's for moving away from traditional parallel programming towards \emph{structured parallel programing}.
-For parallel programming using message passing Gorlatch argues similar to Dijkstra that single send and receive statements should be avoided and replaced by collective operations~\cite{}.
+Researchers have more recently suggested similar arguments to Dijkstra's for addressing the challenges attached with traditional parallel programming by introducing \emph{structured parallel programing}.
+For parallel programming using message passing Gorlatch argues similar to Dijkstra that single send and receive statements should be avoided and replaced by collective operations~\cite{Gorlatch04}.
 Here each collective operation, \eg, broadcast, scatter, or reduce, captures a certain common communication pattern traditionally implemented with individual send and receive statements.
-In~\cite{} the authors argue that \emph{structured parallel patterns}, each capturing a common computation and communication behavior, should be used to replace explicit thread programming to improve the maintainability of software.
+In~\cite{McCoolRoRe2012} the authors argue that \emph{structured parallel patterns}, each capturing a common computation and communication behavior, should be used to replace explicit thread programming to improve the maintainability of software.
 The book discusses a set of parallel patterns and their implementation in different recent programming approaches.
 The underlying ideas go far back to the 1980s where Cole was the first to introduced \emph{algorithmic skeletons} to structure and, therefore, simplify parallel programs~\cite{Cole1991}.
 As with sequential structured programming, structured parallel programming raise the abstraction level by providing higher level construct: collective operations, parallel patterns, or algorithmic skeletons.
@@ -315,7 +315,7 @@ As our work directly extends the ideas of Cole we will discuss algorithmic skele
 
 \subsection{Algorithmic Skeletons}
 Cole introduced algorithmic skeletons as special higher order functions which describe the ``computational skeleton'' of a parallel algorithm.
-Higher order functions are a well-known concept from functional programming and describe functions accepting (or returning) other functions as its arguments.
+Higher order functions are a well-known concept in functional programming and describe functions accepting (or returning) other functions as its arguments.
 This is often useful, as it allows to write more abstract and generic functions.
 
 An example for an algorithmic skeletons is the \emph{divide \& conquer skeleton} which was among the original suggested skeletons by Cole~\cite{Cole1991}:
@@ -341,7 +341,7 @@ The implementation of the algorithmic skeleton hides the complexities of paralle
 It, therefore, provides a higher level interface abstracting away the details of the parallel execution, including low-level details like launching multiple threads, as well as synchronization and communication of threads.
 
 \paragraph{A Classification of Algorithmic Skeletons}
-Algorithmic skeletons can broadly be classified into three distinct classes~\cite{}:
+Algorithmic skeletons can broadly be classified into three distinct classes~\cite{Gonzalez-VelezL10}:
 \begin{itemize}
   \item \emph{data-parallel skeletons} transform typically large amounts of data,
   \item \emph{task-parallel skeletons} operate on distinct tasks which potentially interact with each other,
@@ -355,14 +355,45 @@ Finally, the discussed \emph{divide \& conquer} skeleton is an example of a reso
 In this thesis we will mainly focus on data-parallel skeletons, as they match the data parallel \GPU architecture.
 We will also introduce two new resolution skeletons which capture two specific application domains and where we can provide an efficient \GPU implementation as well.
 
-\subsection{State of the Art of Structured Parallel Programming}
+\subsection{Advantages of Structured Parallel Programming}
+Structured parallel programming offers various advantages over traditional unstructured parallel programming.
 
-  % map reduce for clusters
+\paragraph{Simplicity}
+Structured parallel programming raises the level of abstraction by providing higher level constructs which serve as basic building blocks like algorithmic skeletons.
+Lower level details are hidden from the programmer and handled internally by the implementation.
+This simplifies the reasoning about programs and helps in the development process as well as increases the maintainability of the software.
 
-  % TBB for multi-core CPUs
+\paragraph{Safety and Determinism}
+As potentially dangerous low-level parallel operations are not used directly by the programmer issues like deadlocks and race conditions can be entirely avoided in structured parallel programming -- given a correct and safe implementation of the provided algorithmic skeletons.
+Furthermore, the high-level semantic of the algorithmic skeletons can guarantee determinism where the lacking of determinism in the parallel execution is a major concern in low-level unstructured parallel programming complicating development, debugging, and maintainability of the software.
 
-  % skeleton libraries (MPI & multicore)
-  Study from 2010 includes many important skeleton libraries, we will discuss more recent skeleton libraries in the related work in section ...
+\paragraph{Portability}
+% portability of functionality
+Algorithmic skeletons offer a single high-level interface but can be implemented in various ways on different hardware systems.
+Skeleton libraries exists targeting distributed systems, shared memory systems like multi-core \CPUs, and -- as we will discuss in this thesis -- systems with multiple \GPUs as well.
+In contrary, unstructured parallel programming commits to a low-level programming approach targeting a particular hardware architecture making portability a major issue.
+Furthermore, algorithmic skeletons evolved from functional programming and are, therefore, by-nature composabel and offer a high-level of re-use.
+
+% performance portability
+An other issue of portability is the portability of performance:
+can a certain level of performance be obtained when switching from one hardware architecture to another?
+This is virtually absent from low-level unstructured parallel programming as programmers apply low-level hardware-specific optimizations to achieve high performance.
+These optimizations are not portable, as we will show later in \autoref{chapter:codeGeneration}.
+Performance portability is an interesting, recent research topic and in this thesis we will introduce an approach using structured parallel programming to achieve performance portability.
+
+\paragraph{Predictability}
+The structure and regularity of structured parallel programming allows to build performance models which can be used in the development process to estimate the performance of the developed software.
+Many existing work is devoted to this topic showing that it is possible to predict the runtime of programs expressed with algorithmic skeletons.
+Examples for related work in this area includes work on particular algorithmic skeletons~\cite{BischofGK03}, work targeted towards distributed and grid systems~\cite{Alt2007,JavedL11}, and recently work targeting real-time systems~\cite{StegmeierFrJAUn2015}.
+
+\paragraph{Performance and Optimizations}
+Many studies have shown that structured parallel programs can offer the same level of performance as programs implemented and optimized with the traditional unstructured techniques.
+Examples include studies on grid systems~\cite{Alt2007}, distributed systems~\cite{}, as well as systems featuring multi-core \CPUs~\cite{}.
+We will investigate the performance of programs expressed with data-parallel algorithmic skeletons on systems with one or multiple \GPUs in this thesis.
+
+The high-level semantic of algorithmic skeletons enable high-level optimizations, like the rewrite rules presented in~\cite{Gorlatch00}.
+These optimizations exploit information about the algorithmic structure of a program which is often hard or impossible to extract from unstructured programs.
+In this thesis we will present a system for encoding and systematically applying such high-level optimizations to generate highly optimized code from a high-level skeleton-based program representation.
 
 
 %\from{HIPS begin}
