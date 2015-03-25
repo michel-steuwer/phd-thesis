@@ -367,9 +367,16 @@ Their implementations targeting multi-\GPU systems will be described in~\autoref
 
 Many numerical and image processing applications deal with two-dimensional data and perform calculations on each data element while taking neighboring elements into account.
 These type of applications are also known as \emph{stencil} or \emph{nearest neighbor} applications.
+\autoref{fig:stencilExample} shows a visualization of a stencil application.
+For every pixel in the left image (one pixel is highlighted in red in the middle) a function is applied which computes a weighted average of the surrounding pixels (which are highlighted in orange) to produce the resulting image on the right side.
 To facilitate the development of such applications, we introduce the \stencil skeleton that can be used with both the vector and matrix data type.
 
-\todo{Maybe show an image visualizing stencil applications ...}
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{lenaStencil.pdf}
+  \caption{Visualization of the Gaussian blur stencil application.}
+  \label{fig:stencilExample}
+\end{figure}
 
 The \stencil skeleton is customized with three parameters: a unary function $f$, an integer value $d$, and an out-of-bounds function $h$.
 The skeleton applies $f$ to each element of an input container while taking the neighboring elements within the range $d$ in each dimension into account.

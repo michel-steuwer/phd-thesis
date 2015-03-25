@@ -32,7 +32,7 @@ In this example we use \Cpp lambda expressions (lines~\autoref{lst:skelcl:dotpro
 We create the two input \code{Vector}s from C style pointers (line~\autoref{lst:skelcl:dotproduct:vecAB}).
 In line~\autoref{lst:skelcl:dotproduct:apply} we perform the computation by applying the customized skeletons to the data, before we finally return the computed result in line~\autoref{lst:skelcl:dotproduct:return}.
 
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={Implementation of the dot product computation in \SkelCL.},%
 float=t,%
 numbers=left,%
@@ -96,11 +96,12 @@ We leverage the LLVM infrastructure~\cite{Lattner2004} for building this compile
 LLVM and the related Clang project offer well-defined application programming interfaces for writing C and \Cpp related compiler tools.
 In particular the \emph{LibTooling} API allows for writing tools which search for particular patterns in the abstract syntax tree (AST) which is representing the source code and perform actions on the found code fragments.
 The \code{skelclc} custom compiler does exactly this.
-For example, the custom compiler searches for expressions like this:
+For example, the custom compiler searches for an expression like this:
 \begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={\SkelCL code snippet before transformation.}]
 auto mult = zip( [](float x, float y){ return x*y; } );
 \end{lstlisting}
 and replaces it with:
+\smallskip
 \begin{lstlisting}[numbers=none,label={lst:skelclc:after},caption={\SkelCL code snippet after transformation.}]
 auto mult = Zip<Container<float>(Container<float>,
                                  Container<float>)>(
@@ -149,8 +150,7 @@ The \code{skelclc} compiler detects these behaviors and ensures that the definit
 This frees the user from providing type definitions and source code twice, which would be required when using \OpenCL directly or using \SkelCL without the \code{skelclc} compiler.
 Code duplication should almost always be avoided as it can easily lead to hardly maintainable code and subtle bugs.
 
-\bigskip
-\spacedlowsmallcaps{Additional Arguments:}
+\paragraph{Additional Arguments:}
 In real-world applications (\eg, the LM OSEM discussed in detail in Section~\ref{section:medical-imaging}), user-defined functions often operate not only on a skeleton's input vector, but may also take additional inputs.
 With only a fixed number of input arguments, traditional skeletons would not be applicable for the implementation of such applications.
 In \SkelCL, skeletons can accept an arbitrary number of additional arguments which are passed to the skeleton's customizing function.
@@ -166,7 +166,6 @@ float a = initScalar();
 auto saxpy = zip(
       [](float x, float y, float a) { return a*x+y; } );$\label{lst:saxpy:addArgs:arg}$
 
-/* create input vectors */
 Vector<float> X(SIZE); initVector(X);
 Vector<float> Y(SIZE); initVector(Y);
 
@@ -182,8 +181,7 @@ If the container is only used for reading, it is guaranteed that no race conditi
 
 The additional argument feature is implemented in SkelCL using the variadic template feature from \Cpp.
 
-\bigskip
-\spacedlowsmallcaps{Lambda captures:}
+\paragraph{Lambda captures:}
 In \Cpp, lambda expressions can make use of variables which have been accessible at the time the lambda expression is created.
 The user has to explicitly indicate how these variable are \emph{captured}, \ie, how they will be accessed once the lambda is executed.
 A variable can either be captured \emph{by-value} or \emph{by-reference}.
@@ -208,7 +206,6 @@ float a = initScalar();
 auto saxpy = skelcl::zip(
       [a](float x, float y) { return a*x+y; }); $\label{lst:saxpy:capture:capture}$
 
-/* create input vectors */
 Vector<float> X(SIZE); initVector(X);
 Vector<float> Y(SIZE); initVector(Y);
 
@@ -220,10 +217,10 @@ Note that $a$ is no longer passed as an argument when executing the skeleton in 
 
 \vspace{1em}
 
-By supporting the capturing feature of lambda expressions \SkelCL source code becomes more \Cpp idiomatic.
-\todo{Short conclusion: additional args vs. lambda capture:
-  capture: at lambda creation time vs. add args at call time ...
-}
+Additional arguments and lambda captures are related techniques which both can be used to make additional data available inside of the user function.
+There is one main technical differences between both:
+for using lambda captures the variable to be captured has to be declared and available when \emph{declaring} the user function (in line~\ref{lst:saxpy:capture:capture} in \autoref{lst:saxpy:capture}) which is not the case for the additional argument feature where the variable has to available when \emph{executing} the skeleton (in line~\ref{lst:saxpy:addArgs:execution} in \autoref{lst:saxpy:addArgs}).
+By supporting the capturing feature of lambda expressions \SkelCL source code becomes more \Cpp idiomatic, but ultimately the user has the choice of using either feature as it fits his or her needs or personal taste.
 
 
 
@@ -619,7 +616,7 @@ StencilSequence<Pixel(Pixel)>
 
 \paragraph{Targeting Multi-\GPU Systems}
 The implicit and automatic support of systems with multiple \OpenCL devices is one of the key features of \SkelCL.
-By using distributions, \SkelCL completely liberates the user from error-prone and low-level explicit programming of data (re)distributions on multiple \GPUs. 
+By using distributions, \SkelCL completely liberates the user from error-prone and low-level explicit programming of data (re)distributions on multiple \GPUs.
 
 The \code{MapOverlap} implementation uses the overlap distribution with \textit{border regions} in which the elements calculated by a neighboring device are located.
 When it comes to iteratively executing a skeleton, data has to be transferred among devices between iteration steps, in order to ensure that data for the next iteration step is up-to-date.
@@ -658,9 +655,9 @@ We will also estimate the performance benefit gained by the specialized implemen
 Finally, we will discuss the implementation of the \allpairs skeleton on multi-device systems.
 
 \paragraph{The Generic Allpairs Skeleton}
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={Matrix multiplication expressed using the generic \allpairs skeleton.},%
-float=t,%                                                                       
+float=t,%
 numbers=left,%
 label={lst:allpairs:generic:impl}]
 auto mm = allpairs([](const Vector<float>& a,
@@ -685,9 +682,9 @@ The \code{allpairs} kernel function prepares instances of the \code{struct} repl
 After performing a boundary check, the customizing function is called in line~\ref{lst:allpairs:generic:kernel:call}.
 This \OpenCL kernel is executed once for every element of the output matrix $C$.
 
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={OpenCL kernel used in the implementation of the generic \allpairs skeleton.},%
-float=t,%                                                                       
+float=t,%
 numbers=left,%
 label={lst:allpairs:generic:kernel}]
 struct {$\label{lst:allpairs:generic:kernel:structStart}$
@@ -718,7 +715,7 @@ On modern GPUs, accesses to the global memory are very expensive, taking up to 8
 
 Let us assume targeting \GPU architectures and estimate the number of global (and, therefore, expensive) memory accesses required for computing an element of the matrix multiplication in the generic case.
 One global memory read access for every element of both input vectors is performed, and a single global memory write access is required to write the result into the output matrix.
-Therefore, 
+Therefore,
 \begin{equation}
   n\cdot m\cdot (d + d + 1)
   \label{eq:mm:accesses}
@@ -729,9 +726,9 @@ Using the local memory for matrix multiplication is a well-known optimization wh
 
 \paragraph{The Specialized Allpairs Skeleton}
 \autoref{lst:allpairs:special:impl} shows matrix multiplication expressed using the specialized \allpairs skeleton.
-\begin{lstlisting}[%                                                             
+\begin{lstlisting}[%
 caption={Matrix multiplication expressed using the specialized \allpairs skeleton.},%
-float=b,%                                                                       
+float=b,%
 numbers=left,%
 label={lst:allpairs:special:impl}]
 auto mult  = zip([](float x, float y){return x*y;});
