@@ -37,8 +37,8 @@ Similarly, before any data is accessed on the host, the implementation of \SkelC
 Using the \code{clEnqueueWriteBuffer} (see lines~\ref{lst:lmosem:upload:1:start}--\ref{lst:lmosem:upload:1:end} in \autoref{lst:lmosem:upload}) and \code{clEnqueueReadBuffer} (see \autoref{lst:lmosem:redistribution}) functions nine arguments have to be specified to perform a single data transfer in \OpenCL.
 The \SkelCL container classes shield the programmer from these low-level operations like memory allocation (on the devices) and data transfers between host and device.
 
-Developing applications on two-dimensional data for modern parallel architectures is cumbersome and challenging, since efficient memory handling is essential for achieving good performance.
-In case of \GPUs, it is key for high performance to exploit the memory hierarchy by using the fast but small on-chip memory.
+Developing applications working with two-dimensional data for modern parallel architectures is cumbersome and challenging, since efficient memory handling is essential for high performance.
+In case of \GPUs, it is key for achieving good performance to exploit the memory hierarchy by using the fast but small on-chip memory.
 Therefore, in addition to the vector as a one-dimensional abstract data structure, \SkelCL offers a specific abstract data type for handling two-dimensional data, the matrix.
 We will see later in \autoref{sec:opt_allpairs_skeleton} and \autoref{section:skelcl-library} how \SkelCL automatically exploits the memory hierarchy to improve performance.
 
@@ -56,7 +56,7 @@ In addition, kernels take pointers to device memory as input and contain program
 These pointers are unsafe as they have to be used carefully, because no boundary checks are performed by \OpenCL.
 
 To shield the application developer from these low-level programming issues, \SkelCL extends \OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{Cole1991}.
-Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner, thus hiding the details of parallelism and communication from the user~\cite{GorlatchCo2011}.
+Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner hiding the details of parallelism and communication from the user~\cite{GorlatchCo2011}.
 
 \SkelCL provides four basic data-parallel skeletons: \map, \zip, \reduce, and \scan,
 as well as two more advanced skeletons targeting specific application domains: \stencil and \allpairs.
@@ -82,7 +82,10 @@ Using parenthesis we can \emph{section} a binary operator which we write using p
   (\oplus\ y)\ x &=  x \oplus y
 \end{align*}
 
-As our data structures we use vectors written as $[x_1, x_2, \ldots, x_n]$ and matrices written as $\DottedMatrix{m_{1,1}}{m_{1,m}}{m_{n,1}}{m_{n,m}}$.
+As our data structures we use vectors written as $\vec{x} = [x_1, x_2, \ldots, x_n]$ and matrices written as:
+\begin{align*}
+M = \DottedMatrix{m_{1,1}}{m_{1,m}}{m_{n,1}}{m_{n,m}}.
+\end{align*}
 
 \paragraph{The Map skeleton}
 The \map skeleton is a well-known basic algorithmic skeleton, applying the customizing function to each element of a container in parallel.
@@ -266,8 +269,7 @@ For multi-device systems, \SkelCL's parallel container data types (vector and ma
 Each device may access different parts of a container or may even not access it at all.
 For example, when implementing work-sharing on multiple \GPUs, the \GPUs will access disjoint parts of input data, such that copying only a part of the vector to a \GPU is more efficient than copying the whole data to each \GPU.
 
-To simplify the partitioning of a container on multiple devices, \SkelCL introduces the concept of \emph{distributions}.
-A distribution describes how the container's data is distributed among the available devices.
+To simplify the partitioning of a container on multiple devices, \SkelCL introduces the concept of \emph{distributions} which describe how the container's data is distributed among the available devices.
 It allows the application developer to abstract from the challenges of managing memory ranges which are shared or partitioned across multiple devices: the programmer can think of a distributed container as of a self-contained entity.
 
 
@@ -363,7 +365,7 @@ Their implementations targeting multi-\GPU systems will be described in~\autoref
 
 \subsubsection{The Stencil Skeleton}
 
-Many numerical and image processing applications dealing with two-dimensional data perform calculations for data elements taking neighboring elements into account.
+Many numerical and image processing applications deal with two-dimensional data and perform calculations on each data element while taking neighboring elements into account.
 These type of applications are also known as \emph{stencil} or \emph{nearest neighbor} applications.
 To facilitate the development of such applications, we introduce the \stencil skeleton that can be used with both the vector and matrix data type.
 

@@ -116,9 +116,9 @@ The user is free to write the expression in \autoref{lst:skelclc:after} explicit
 For every skeleton available in \SkelCL, there exists a function like \code{zip} which is transformed by \code{skelclc} to a call of the constructor of the corresponding skeleton class.
 
 \paragraph{Maintaining type safety}
-Each skeleton in \SkelCL is represented by a templated class, as seen in \autoref{lst:skelclc:after} for the \zip skeleton.
+Each skeleton is represented by a templated class, as seen in \autoref{lst:skelclc:after} for the \zip skeleton.
 The template arguments of the skeleton define the types which can be used when executing the skeleton.
-When executing a skeleton of type \code{skeleton<T(U)>}, an object of type \code{U} has to be provided to receive an object of type \code{T}.
+For a skeleton of type \code{skeleton<T(U)>}, an object of type \code{U} has to be provided on execution to receive an object of type \code{T}.
 In this respect skeletons behave exactly like functions in \Cpp which can be represented using the \code{std::function<T(U)>} template class.
 Skeletons taking more then one argument (like the \code{zip} skeleton) are represented as \code{skeleton<T(U, V)>}.% using the \emph{variadic template} feature of \Cpp.
 
@@ -352,7 +352,7 @@ Finally, the \OpenCL kernel is enqueued with a global size corresponding to the 
 \subsection{Algorithmic Skeletons Implementation}
 \label{section:skelcl-library:skeletons}
 The \SkelCL library implements each skeleton of the \SkelCL programming model using one or more \OpenCL kernels.
-In this subsection, we briefly discuss the implementation of each skeleton targeting single- and multi-device systems.
+In this subsection, we discuss the implementation of each skeleton targeting single- and multi-device systems.
 
 
 
@@ -671,7 +671,7 @@ auto mm = allpairs([](const Vector<float>& a,
                         return c; });
 \end{lstlisting}
 
-\autoref{lst:allpairs:generic:impl} shows the \SkelCL program for computing matrix multiplication using the generic \allpairs skeleton.
+\autoref{lst:allpairs:generic:impl} shows the program for computing matrix multiplication using the generic \allpairs skeleton.
 The implementation of the customizing function is straightforward.
 It is expressed as a lambda expression that receives a pair of vectors, multiplies their elements and sums them up.
 
@@ -728,7 +728,7 @@ By using the fast but small local memory, this number of global memory accesses 
 Using the local memory for matrix multiplication is a well-known optimization which we systematically apply to a generic skeleton, rather than to a particular application as usually done in the literature.
 
 \paragraph{The Specialized Allpairs Skeleton}
-\autoref{lst:allpairs:special:impl} shows the matrix multiplication application expressed using the specialized \allpairs skeleton.
+\autoref{lst:allpairs:special:impl} shows matrix multiplication expressed using the specialized \allpairs skeleton.
 \begin{lstlisting}[%                                                             
 caption={Matrix multiplication expressed using the specialized \allpairs skeleton.},%
 float=b,%                                                                       
@@ -778,7 +778,7 @@ In~\cite{Friese2013} the parameters $c = 32$, $r=8$, $s=32$, and $k=64$ are used
 
 We will report measurements of the performance difference for the two skeleton implementations on real hardware in \autoref{chapter:skelcl-evaluation}.
 
-\paragraph{The Allpairs Skeleton using Multiple Devices}
+\paragraph{The Allpairs Skeleton using Multiple GPUs}
 \label{sec:allpairs:multi_gpu}
 \begin{figure}[b]
   \centering
