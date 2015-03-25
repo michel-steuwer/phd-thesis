@@ -378,7 +378,7 @@ Furthermore, the high-level semantic of the algorithmic skeletons can guarantee 
 \paragraph{Portability}
 % portability of functionality
 Algorithmic skeletons offer a single high-level interface but can be implemented in various ways on different hardware systems.
-Skeleton libraries exists targeting distributed systems~\cite{}, shared memory systems like multi-core \CPUs~\cite{}, and -- as we will discuss in this thesis -- systems with multiple \GPUs as well.
+Skeleton libraries exists targeting distributed systems~\cite{Kuchen02,AldinucciCDKT12,MatsuzakiKIHA04}, shared memory systems like multi-core \CPUs~\cite{AldinucciDaKiTo2011,CiechanowiczK10,LeytonP10}, and -- as we will discuss in this thesis -- systems with multiple \GPUs as well.
 In contrary, unstructured parallel programming commits to a low-level programming approach targeting a particular hardware architecture making portability a major issue.
 Furthermore, algorithmic skeletons evolved from functional programming and are, therefore, by-nature composabel and offer a high-level of re-use.
 
@@ -396,7 +396,7 @@ Examples for related work in this area includes work on particular algorithmic s
 
 \paragraph{Performance and Optimizations}
 Many studies have shown that structured parallel programs can offer the same level of performance as programs implemented and optimized with traditional unstructured techniques.
-Examples include studies on grid systems~\cite{Alt2007}, distributed systems~\cite{}, as well as systems featuring multi-core \CPUs~\cite{}.
+Examples include application studies on grid systems~\cite{Alt2007}, distributed systems~\cite{CiechanowiczKSGK09}, as well as systems featuring multi-core \CPUs~\cite{AldinucciMT10}.
 We will investigate the performance of programs expressed with data-parallel algorithmic skeletons on systems with one or multiple \GPUs in this thesis.
 
 The high-level semantic of algorithmic skeletons enable high-level optimizations like the rewrite rules presented in~\cite{Gorlatch00}.

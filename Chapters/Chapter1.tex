@@ -49,7 +49,7 @@ This has profound effects on the design and development of software running on m
 Most programming languages allow programmers to exploit multiple cores by the means of \emph{threads}.
 A thread is a sequence of instructions defined by the programmer which can be scheduled by the runtime to be executed on a particular core.
 Multiple threads can be executed concurrently and the programmer is responsible to use synchronization primitives, like locks or semaphores, for coordinating the execution of multiple threads.
-Programming with threads is widely regarded as extremely difficult~\cite{} mainly because multiple threads operate on a shared memory region.
+Programming with threads is widely regarded as extremely difficult~\cite{Lee06} mainly because multiple threads operate on a shared memory region.
 Even when programs are constructed carefully subtle problems can arise which are hard to detect but can have severe consequences.
 Nevertheless, threads are still the de-facto standard for programming multi-core \CPUs.
 
