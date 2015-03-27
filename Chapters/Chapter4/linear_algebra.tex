@@ -1,21 +1,20 @@
 \section{Linear Algebra Applications}
 \label{section:skelcl:evaluation:linearAlgebra}
 
-In this section we are going to evaluate \SkelCL using three linear algebra applications:
+In this section we are going to evaluate \SkelCL using two linear algebra applications:
 \begin{itemize}
-  \item the sum of absolute values of a vector,
-  \item the dot product of two vectors, and
-  \item the multiplication of two dense matrices.
+  \item the sum of absolute values of a vector and
+  \item the dot product of two vectors.
 \end{itemize}
 
-These three applications are all included in BLAS~\cite{Dongarra2002,Dongarra2002a}, the well known library of basic linear algebra functions.
+Both applications are included in BLAS~\cite{Dongarra2002,Dongarra2002a}, the well known library of basic linear algebra functions.
 The BLAS functions are used as basic building blocks by many HPC applications.
-Especially dense matrix multiplication is an important operation found in numerous scientific applications.
+% Especially dense matrix multiplication is an important operation found in numerous scientific applications.
 
-Here we want to investigate how easily these three applications can be expressed with skeletons in \SkelCL.
+Here we want to investigate how easily these applications can be expressed with skeletons in \SkelCL.
 Furthermore, we are interested in the runtime performance of the \SkelCL implementations.
 
-\subsection{Sum of Absolute Values}
+\subsection*{Sum of Absolute Values}
 \label{sec:asum}
 \autoref{eq:asum} shows the mathematical definition of the sum of absolute values (short \emph{asum}) for a vector $\vec{x}$ of length $n$ with elements $x_i$:
 \begin{equation}
@@ -36,10 +35,9 @@ In the \SkelCL programming model we can express \emph{asum} using the \map and \
       \end{array}
     \right.\nonumber
 \end{align}
-
 The \map skeleton applies the $(|\, .\, |)$ function to each element of the input vector before the \reduce skeleton is used to sum up the elements.
 
-The implementation using the \SkelCL library is shown in \autoref{lst:skelcl:asum}.
+The implementation of $asum$ using the \SkelCL library is shown in \autoref{lst:skelcl:asum}.
 In lines~\ref{lst:skelcl:asum:skeletons:start}--\ref{lst:skelcl:asum:skeletons:end} the customized skeletons are defined.
 The \map skeleton in \autoref{eq:asum:skelcl} corresponds directly to lines~\ref{lst:skelcl:asum:skeletons:start} and~\ref{lst:skelcl:asum:abs} in \autoref{lst:skelcl:asum} where the $|\, .\, |$ function is represented using a \Cpp lambda expression.
 Line~\ref{lst:skelcl:asum:skeletons:end} corresponds directly to the \reduce skeleton in \autoref{eq:asum:skelcl}.
@@ -62,21 +60,8 @@ float asum(const Vector<float>& x) {
   return result[0]; }$\label{lst:skelcl:asum:return}$
 \end{lstlisting}
 
-We compare this implementation against a native OpenCL implementation and an implementation using the CUBLAS library.
 
-\subsubsection*{Programming effort}
-\todo{...}
-
-\subsubsection*{Performance experiments}
-\todo{...}
-
-\paragraph{Discussion}
-As discussed in \autoref{chapter:skelcl} the \SkelCL library implementation generates one (or more) OpenCL kernel for each skeleton.
-This procedure makes it difficult to \emph{merge} multiple OpenCL kernels into a single one, which would be required to achieve a competitive performance to the native OpenCL implementation.
-In \autoref{ch:fifth}, we will discuss a novel compilation technique addressing this challenge.
-This technique supports the generation of a single efficient OpenCL kernel, also for implementing applications like the \emph{asum} example.
-
-\subsection{Dot Product}
+\subsection*{Dot Product}
 \label{sec:dot}
 The computation of the dot product, \aka scalar product, is a common mathematical operation performed on two input vectors $\vec{x}$ and $\vec{y}$ of identical length $n$ as defined in \autoref{eq:dot_product}:
 \begin{equation}
@@ -85,15 +70,14 @@ The computation of the dot product, \aka scalar product, is a common mathematica
 \end{equation}
 
 \subsubsection*{\SkelCL Implementation}
-In \SkelCL we can express $dotProduct$ using the \zip and \reduce skeletons as follows:
+In the \SkelCL programming model we can express $dotProduct$ using the \zip and \reduce skeletons as follows:
 \begin{equation}
   dotProduct\ \vec{x}\ \vec{y} = reduce\ (+)\ 0\ \big(\ zip\ (\times)\ \vec{x}\ \vec{y}\ \big)
 \end{equation}
-
-The \zip skeleton performs the pairwise multiplication of the input vectors before the \reduce skeleton is used to sum up the intermediate results.
+The \zip skeleton performs pairwise multiplication of the input vectors before the \reduce skeleton is used to sum up the intermediate results.
 
 \autoref{lst:skelcl:dot} shows the implementation using the \SkelCL library.
-The structure of the implementation is very similar to the \emph{asum} application discussed in \autoref{sec:asum}.
+The structure of the implementation is very similar to the \emph{asum} application.
 Here we use the \code{front} member function to access the first (and only) element of the computed result vector.
 
 \begin{lstlisting}[%                                                             
@@ -108,11 +92,51 @@ float dotProduct(const Vector<float>& x,
   return sumUp( mult( x, y ) ).front(); }$\label{lst:skelcl:dot:call}$
 \end{lstlisting}
 
-\subsubsection*{Programming effort}
+
+
+
+
+\bigskip
+
+We now compare the \SkelCL implementations shown in \autoref{lst:skelcl:asum} and \autoref{lst:skelcl:dot} against a native OpenCL implementation and an implementation using the CUBLAS library respectively.
+
+
+\subsection*{Programming effort}
 \todo{...}
 
-\subsubsection*{Performance experiments}
-\todo{...}
+\subsection*{Performance experiments}
+\autoref{fig:skelcl:asum} shows the runtime for the \emph{asum} application and \autoref{fig:skelcl:dot} shows the runtime for the computation of the dot product.
+The figures use a logarithmic scale on the vertical axis and shows the runtime for different sizes of the input vectors: from 4 megabyte to 512 megabyte.
+The shown results include data transfer to and from the \GPU and the computation performed on the \GPU.
 
-\input{Chapters/Chapter4/matrix_matrix_multiplication.tex}
+The results clearly show that the \SkelCL version is the slowest, followed by the naive \OpenCL implementation, and, finally, the implementation using CUBLAS which is the fastest.
+For both applications the performance difference between the versions is roughly similar independent of the input size.
+For \emph{asum} \SkelCL is between $2$ and $3.2$ times slower than the naive \OpenCL version and up to $7$ times slower than the CUBLAS version.
+For dot product \SkelCL is on average about $2.25$ times slower than the naive \OpenCL version and between $3.5$ and $4$ times slower than CUBLAS.
+We will discuss the bad performance of the \SkelCL implementation separately in the next subsection.
+
+The CUBLAS version is on average about $2.3$ faster than the naive \OpenCL version for \emph{asum} and $1.7$ for the dot product application.
+One has to keep in mind, that these benchmark are mostly dominated by the memory transfers moving data between \CPU and \GPU which are the same in all three version.
+This explains the rather small difference in runtime between the naive \OpenCL version and the optimized CUBLAS version.
+
+\begin{figure}[tb]
+  \centering
+  \begin{subfigure}[t]{.45\textwidth}
+    \hspace{-.1\textwidth}\includegraphics[width=1.2\textwidth]{Plots/Asum/asum.pdf}
+    \caption{Runtime for \emph{asum}.}
+    \label{fig:skelcl:asum}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{.45\textwidth}
+    \hspace{-.1\textwidth}\includegraphics[width=1.2\textwidth]{Plots/DotProduct/dotProduct.pdf}
+    \caption{Runtime dot product.}
+    \label{fig:skelcl:dot}
+  \end{subfigure}
+\end{figure}
+
+\subsection*{Discussion}
+As discussed in \autoref{chapter:skelcl} the \SkelCL library implementation generates one (or more) OpenCL kernel for each skeleton.
+This procedure makes it difficult to \emph{merge} multiple OpenCL kernels into a single one, which would be required to achieve a competitive performance to the native OpenCL implementation.
+In \autoref{ch:fifth}, we will discuss a novel compilation technique addressing this challenge.
+This technique supports the generation of a single efficient OpenCL kernel, also for implementing applications like the \emph{asum} example.
 

@@ -3,7 +3,7 @@ require('grid')
 require('reshape2')
 
 # row.names = NULL forces numbering of the lines and, thus, preserves the order
-performance <- read.csv("dotProduct.csv", sep=";", comment.char="#", header=TRUE, row.names=NULL)
+performance <- read.csv("asum.csv", sep=";", comment.char="#", header=TRUE, row.names=NULL)
 performance <- melt(performance)
 colnames(performance) <- c("Size", "Versions", "value")
 
@@ -23,11 +23,11 @@ labs <- labs(x = "Data Size", y = "Runtime in ms  (log scale)")
 # create plot
 plot <- ggplot(performance, aes(x = reorder(Size, rownumbers), y = value, group=Versions)) +
   geom_line(aes(color = Versions)) +
-  scale_y_log10(expand = c(0,0), limits = c(1,1000)) +
+  scale_y_log10(expand = c(0,0), limits = c(0.5,1000)) +
   scale_x_discrete(expand=c(0,0.1)) +
   labs + theme
 
 # save plot to file
-ggsave(file = "dotProduct.pdf", width = 6, height = 5)
+ggsave(file = "asum.pdf", width = 6, height = 5)
 
 plot
