@@ -1,7 +1,7 @@
 \section{Linear Algebra Applications}
 \label{section:skelcl:evaluation:linearAlgebra}
 
-In this section we are going to evaluate \SkelCL using two linear algebra applications:
+In this section we are going to evaluate \SkelCL using two basic linear algebra applications:
 \begin{itemize}
   \item the sum of absolute values of a vector and
   \item the dot product of two vectors.
@@ -113,9 +113,9 @@ The results clearly show that the \SkelCL version is the slowest, followed by th
 For both applications the performance difference between the versions is roughly similar independent of the input size.
 For \emph{asum} \SkelCL is between $2$ and $3.2$ times slower than the naive \OpenCL version and up to $7$ times slower than the CUBLAS version.
 For dot product \SkelCL is on average about $2.25$ times slower than the naive \OpenCL version and between $3.5$ and $4$ times slower than CUBLAS.
-We will discuss the bad performance of the \SkelCL implementation separately in the next subsection.
+We will discuss the reasons for the bad performance of the \SkelCL implementation in the next subsection.
 
-The CUBLAS version is on average about $2.3$ faster than the naive \OpenCL version for \emph{asum} and $1.7$ for the dot product application.
+The CUBLAS version is about $2$ faster than the naive \OpenCL version for \emph{asum} and $1.7$ for the dot product application.
 One has to keep in mind, that these benchmark are mostly dominated by the memory transfers moving data between \CPU and \GPU which are the same in all three version.
 This explains the rather small difference in runtime between the naive \OpenCL version and the optimized CUBLAS version.
 
@@ -135,8 +135,33 @@ This explains the rather small difference in runtime between the naive \OpenCL v
 \end{figure}
 
 \subsection*{Discussion}
-As discussed in \autoref{chapter:skelcl} the \SkelCL library implementation generates one (or more) OpenCL kernel for each skeleton.
-This procedure makes it difficult to \emph{merge} multiple OpenCL kernels into a single one, which would be required to achieve a competitive performance to the native OpenCL implementation.
-In \autoref{ch:fifth}, we will discuss a novel compilation technique addressing this challenge.
-This technique supports the generation of a single efficient OpenCL kernel, also for implementing applications like the \emph{asum} example.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=.9\textwidth]{Plots/Reduce/reduce.pdf}
+  \caption{Relative runtime compared to CUBLAS of the naive \OpenCL and \SkelCL versions of \emph{asum} and reduce.}
+  \label{fig:skelcl:reduce}
+\end{figure}
+As discussed in \autoref{chapter:skelcl} the \SkelCL library implementation generates one \OpenCL kernel for each skeleton (and two for the \reduce skeleton).
+This procedure makes it difficult to \emph{fuse} multiple skeleton implementations into a single \OpenCL kernel, which would be required to achieve a competitive performance for the \emph{asum} and dot product benchmark.
+
+To validate this explanation and quantify the effect of launching additional kernels we measured the performance of \SkelCL's \reduce skeleton on its own.
+This measurement is similar to the \emph{asum} benchmark, but without applying the \map skeleton for obtaining the absolute value of every element, \ie, we measured the \emph{sum} benchmark:
+\begin{equation}
+  sum\ \vec{x} = reduce\ (+)\ 0\ \vec{x}
+  \label{eq:sum}
+\end{equation}
+For comparison we also changed the naive \OpenCL implementation of \emph{asum} to not apply the absolute value function to every element.
+\autoref{fig:skelcl:reduce} shows the performance results of the naive \OpenCL version and the \SkelCL version for \emph{asum} on the left and \emph{sum} on the right.
+The plots show the performance relative to the performance of the CUBLAS implementation of \emph{asum}.
+We can see, that the performance difference for \emph{asum} and \emph{sum} it is very small (only up to $4$\%) for the naive \OpenCL version.
+This makes sense, as the most part of the computation is spend for reducing the elements and not for applying a simple function to each element.
+For the \SkelCL implementations the difference between the two benchmarks is very large.
+This is due to the fact that for \emph{asum} a separate \OpenCL kernel is launched which reads each value from the global memory, applies the absolute value function to it, and stores the result back to global memory.
+The reduction kernel then starts by reading each element back from global memory.
+This leads to a huge difference in runtime, where the \emph{asum} benchmark is up to $6.2$ times slower than the \emph{sum} benchmark.
+Furthermore, we can see that for the \emph{sum} benchmark the \SkelCL implementation outperforms the naive \OpenCL implementation and is only between $16$\% and $37$\% slower than the CUBLAS \emph{asum} implementation.
+
+In \autoref{ch:fifth}, we will discuss a novel compilation technique which addresses this challenge.
+This technique supports the generation of a single efficient OpenCL kernel for applications like the \emph{asum} and dot product examples.
 
