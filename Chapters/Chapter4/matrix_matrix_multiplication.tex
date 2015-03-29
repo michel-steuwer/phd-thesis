@@ -87,20 +87,21 @@ We compare six different implementations of matrix multiplication:
   \item the optimized OpenCL implementation from~\cite{KirkHw2010} using \GPU local memory,
   \item the optimized BLAS implementation by AMD~\cite{APPML} written in OpenCL,
   \item the optimized BLAS implementation by Nvidia~\cite{cuBLAS} written in CUDA,
-  \item the \SkelCL implementation in~\autoref{lst:skelcl:mm:generic} using the generic \allpairs skeleton,
-  \item the \SkelCL implementation in~\autoref{lst:skelcl:mm:special} using the specialized \allpairs skeleton.
+  \item the \SkelCL implementation using the generic \allpairs skeleton shown in \autoref{lst:skelcl:mm:generic},
+  \item the \SkelCL implementation using the specialized \allpairs skeleton shown in \autoref{lst:skelcl:mm:special}.
 \end{enumerate}
 
 \paragraph{1. OpenCL implementation}
-The kernel of the first, unoptimized OpenCL implementation from~\cite{KirkHw2010} is shown in \autoref{lst:naive_opencl}.
+\autoref{lst:naive_opencl} shows the kernel of the first, unoptimized \OpenCL implementation from~\cite{KirkHw2010}.
 \begin{lstlisting}[%                                                             
+postbreak=\space, breakautoindent=true, breakindent=78pt, breaklines,
 caption={[\OpenCL kernel of matrix multiplication without optimizations.]\OpenCL kernel of matrix multiplication without optimizations~\cite{KirkHw2010}.},%
 float=tb,%
 numbers=left,%
 label={lst:naive_opencl}]
-kernel void mm(global float* A, global float* B,
-               global float* C, int m, int d, int n) {
-  int row = get_global_id(0); int col = get_global_id(1);
+kernel void mm(global float* A, global float* B,        global float* C, int m, int d, int n) {
+  int row = get_global_id(0);
+  int col = get_global_id(1);
   float sum = 0.0f;
   for (int k = 0; k < d; k++)
     sum += A[row * d + k] * B[k * n + col];
@@ -111,17 +112,19 @@ kernel void mm(global float* A, global float* B,
 \paragraph{2. Optimized OpenCL implementations}
 The kernel of the optimized OpenCL implementation from~\cite{KirkHw2010} using local memory is shown in \autoref{lst:local_mem_opencl}.
 \begin{lstlisting}[%                                                             
+postbreak=\space, breakautoindent=true, breakindent=78pt, breaklines,
 caption={[\OpenCL kernel of the optimized matrix multiplication usgin local memory.]\OpenCL kernel of the optimized matrix multiplication using local memory~\cite{KirkHw2010}.},%
 float=tb,%
 numbers=left,%
 label={lst:local_mem_opencl}]
 #define T_WIDTH 16
-kernel void mm(global float* A, global float* B,
-               global float* C, int m, int d, int n) {
+kernel void mm(global float* A, global float* B,        global float* C, int m, int d, int n) {
   local float Al[T_WIDTH][T_WIDTH];$\label{lst:local_mem_opencl:allocA}$
   local float Bl[T_WIDTH][T_WIDTH];$\label{lst:local_mem_opencl:allocB}$
-  int row = get_global_id(0); int col = get_global_id(1);
-  int l_row = get_local_id(0);  int l_col = get_local_id(1);
+  int row = get_global_id(0);
+  int col = get_global_id(1);
+  int l_row = get_local_id(0);
+  int l_col = get_local_id(1);
   float sum = 0.0f;
   for (int m = 0; m < d / T_WIDTH; ++m {$\label{lst:local_mem_opencl:loop}$
     Al[l_row][l_col] = A[row * d + (m * T_WIDTH + l_col)];$\label{lst:local_mem_opencl:loadA}$
@@ -172,7 +175,7 @@ Furthermore, the skeleton-based implementations are more general, as they can be
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_loc}
+  \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_loc}
   \caption[Programming effort of four \OpenCL-based and two \SkelCL-based matrix multiplication implementations.]%
           {Programming effort (Lines of Code) of four \OpenCL-based vs. two \SkelCL-based implementations.}
   \label{fig:mat_mult_loc}
@@ -186,7 +189,7 @@ Furthermore, the skeleton-based implementations are more general, as they can be
     Implementation & \CPU & \GPU \\
     \midrule
     \OpenCL           & 77 &  7 \\
-    Optimized \OpenCL & 71 & 17 \\
+    Optimized \OpenCL & 77 & 17 \\
     cuBLAS            & 81 & -- \\
     clBLAS            & 65 & -- \\
     Generic \allpairs  & \multirow{2}{*}{5} & \multirow{2}{*}{5}\\
@@ -250,7 +253,7 @@ For detailed numbers, see \autoref{tab:mat_mult_single}.
 
 Clearly, the naive \OpenCL-based implementation and the \SkelCL-based implementation using the generic \allpairs skeleton are the slowest, because both do not use the fast \GPU local memory, in contrast to all other implementations.
 
-The \SkelCL-based implementation using the specialized \allpairs skeleton performs between 5.0 and 6.8 times faster than the implementation using the generic allpairs skeleton, but is 33\% slower on $16384\times 16384$ matrices than the optimized \OpenCL-based implementation using local memory.
+The implementation which uses the specialized \allpairs skeleton performs between 5.0 and 6.8 times faster than the implementation using the generic allpairs skeleton, but is 33\% slower on $16384\times 16384$ matrices than the optimized \OpenCL-based implementation using local memory.
 However, the latter implementation can only be used for square matrices and, therefore, it benefits from omitting many conditional statements and boundary checks.
 
 \begin{figure}[tb]

@@ -1,9 +1,49 @@
-Size;   CUBLAS; OpenCL; SkelCL
-4MB;     0.993; 2.153; 4.764
-8MB;     1.803; 4.146; 8.836
-16MB;    3.479; 8.155; 16.686
-32MB;    6.801; 16.122; 47.033
-64MB;   13.340; 32.086; 93.223
-128MB; 26.399; 60.070; 184.755
-256MB; 52.676; 119.826; 383.412
-512MB; 104.630;251.638; 763.784
+ Size; Version; Benchmark; value
+  4MB;  CUBLAS; asum;   0.993
+  8MB;  CUBLAS; asum;   1.803
+ 16MB;  CUBLAS; asum;   3.479
+ 32MB;  CUBLAS; asum;   6.801
+ 64MB;  CUBLAS; asum;  13.340
+128MB;  CUBLAS; asum;  26.399
+256MB;  CUBLAS; asum;  52.676
+512MB;  CUBLAS; asum; 104.630
+  4MB;  OpenCL; asum;   2.153
+  8MB;  OpenCL; asum;   4.146
+ 16MB;  OpenCL; asum;   8.155
+ 32MB;  OpenCL; asum;  16.122
+ 64MB;  OpenCL; asum;  32.086
+128MB;  OpenCL; asum;  60.070
+256MB;  OpenCL; asum; 119.826
+512MB;  OpenCL; asum; 251.638
+  4MB;  SkelCL; asum;   4.764
+  8MB;  SkelCL; asum;   8.836
+ 16MB;  SkelCL; asum;  16.686
+ 32MB;  SkelCL; asum;  47.033
+ 64MB;  SkelCL; asum;  93.223
+128MB;  SkelCL; asum; 184.755
+256MB;  SkelCL; asum; 383.412
+512MB;  SkelCL; asum; 763.784
+  4MB;  CUBLAS;  dot product;   1.961
+  8MB;  CUBLAS;  dot product;   3.631
+ 16MB;  CUBLAS;  dot product;   6.897
+ 32MB;  CUBLAS;  dot product;  13.378
+ 64MB;  CUBLAS;  dot product;  26.603
+128MB;  CUBLAS;  dot product;  61.758
+256MB;  CUBLAS;  dot product; 105.541
+512MB;  CUBLAS;  dot product; 227.362
+  4MB;  OpenCL;  dot product;   3.261
+  8MB;  OpenCL;  dot product;   6.242
+ 16MB;  OpenCL;  dot product;  11.455
+ 32MB;  OpenCL;  dot product;  22.561
+ 64MB;  OpenCL;  dot product;  47.941
+128MB;  OpenCL;  dot product;  90.298
+256MB;  OpenCL;  dot product; 176.236
+512MB;  OpenCL;  dot product; 388.597
+  4MB;  SkelCL;  dot product;   5.000
+  8MB;  SkelCL;  dot product;  10.000
+ 16MB;  SkelCL;  dot product;  20.000
+ 32MB;  SkelCL;  dot product;  54.000
+ 64MB;  SkelCL;  dot product; 107.000
+128MB;  SkelCL;  dot product; 214.000
+256MB;  SkelCL;  dot product; 438.000
+512MB;  SkelCL;  dot product; 876.000

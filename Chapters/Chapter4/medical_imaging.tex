@@ -68,7 +68,7 @@ Therefore, we use a hybrid strategy for implementing LM OSEM:
 \emph{Step~1} is parallelized using the PSD approach, while we use ISD for \emph{Step~2}.
 This results in the sequence of five phases shown in \autoref{fig:lmosem:em_distribution2}:
 \begin{enumerate}
-\item \emph{Upload:} the subset ($S$) is divided into sub-subsets, one sub-subset per \GPU.
+\item \emph{Upload:} the subset ($S$) is divided into sub-subsets (one per \GPU).
       One sub-subset and the reconstruction image ($f$) are uploaded to each \GPU;
 \item \emph{Step 1:} each \GPU computes the local error image ($c_l$) for its sub-subset;
 \item \emph{Redistribution:} the local error images that are distributed on all \GPUs are downloaded and combined into a single error image on the host by performing element-wise addition.
@@ -154,10 +154,10 @@ If the voxel of the error image is greater than zero, the voxel of the reconstru
 
 \subsubsection*{Programming effort}
 The lengthy and cumbersome \OpenCL implementation of the LM OSEM was already discussed in \autoref{chapter:skelcl}.
-We also compare our \SkelCL-based implementation against a CUDA-based implementation using multiple \GPUs which has already been implemented by~\citeauthor{SchellmannGoMeKoScWuBu2009} and presented in a research paper~\cite{SchellmannGoMeKoScWuBu2009}.
-Both, \CUDA and \OpenCL, require a considerable amount of boilerplate code for running a kernel on multiple \GPUs, in particular for uploading and downloading data to and from the \GPUs.
+It is based on the work presented in~\cite{SchellmannGoMeKoScWuBu2009}.
+\OpenCL requires a considerable amount of boilerplate code for running a kernel on multiple \GPUs, in particular for uploading and downloading data to and from the \GPUs.
 
-The parallelization strategies are the same for all three versions.
+The parallelization strategies are the same for both versions.
 However, when using \SkelCL's vector data type, we avoid additional programming effort to implement data transfer between host and \GPU or between multiple \GPUs, and we obtain a multi-\GPU-ready implementation of LM OSEM for free.
 
 \begin{figure}
@@ -168,18 +168,16 @@ However, when using \SkelCL's vector data type, we avoid additional programming 
   \label{fig:list-mode_OSEM:LOC}
 \end{figure}
 
-\autoref{fig:list-mode_OSEM:LOC} shows the lines of code required for each implementation.
-The amount of lines required on the \GPU is similar for all implementations.
-This is not surprising, as these code describes the computation performed on the \GPU which is similar for all implementations.
+\autoref{fig:list-mode_OSEM:LOC} shows the lines of code required for both implementation.
+The amount of lines required on the \GPU is similar.
+This is not surprising, as these code describes the computation performed on the \GPU which is similar for both implementations.
 The host code required for implementing the management of the \GPU execution differs significantly across implementations.
-For a single \GPU, the \OpenCL-based implementation has the longest code (206 LOC), \ie about 2.5 times longer than the \CUDA-based host program (88 LOC) and more than 11 times longer than the \SkelCL program.
-Our \SkelCL-based implementation has 18 LOC, \ie its length is only about 20\% of the \CUDA-based version.
+For a single \GPU, the \OpenCL-based implementation has the longest code (206 LOC), \ie, more than 11 times longer than the \SkelCL program which has 18 LOC.
 
-Using multiple \GPUs in \OpenCL and \CUDA requires explicit code for additional data transfers between \GPUs.
-Prior to \CUDA 4.0, also multi-threaded code was required to manage several \GPUs.
-This accounts for additional 42 LOC for the \CUDA-based implementation and additional 37 LOC for the \OpenCL-based one.
+Using multiple \GPUs in \OpenCL requires explicit code for additional data transfers between \GPUs.
+This accounts for additional 37 LOC for the \OpenCL-based implementation.
 In \SkelCL, only 8 additional LOC are necessary to describe the changes of data distribution.
-These lines are easily recognizable in the \SkelCL program (lines~\ref{lst:em:skelcl:upload:start}--\ref{lst:em:skelcl:upload:end}, \ref{lst:em:skelcl:redistribute:start}--\ref{lst:em:skelcl:redistribute:end} in \autoref{lst:em_skelcl}, plus 3 lines during the initialization) and make this high-level code arguably better understandable and maintainable than the \CUDA and \OpenCL versions.
+These lines are easily recognizable in the \SkelCL program (lines~\ref{lst:em:skelcl:upload:start}--\ref{lst:em:skelcl:upload:end}, \ref{lst:em:skelcl:redistribute:start}--\ref{lst:em:skelcl:redistribute:end} in \autoref{lst:em_skelcl}, plus 3 lines during the initialization) and make this high-level code arguably better understandable and maintainable than the \OpenCL version.
 
 
 
@@ -194,16 +192,12 @@ These lines are easily recognizable in the \SkelCL program (lines~\ref{lst:em:sk
 
 
 \subsubsection*{Performance experiments}
-We evaluated the runtimes of our three implementations of LM OSEM by reconstructing an image of $150\times 150\times 280$ voxels from a real-world PET data set with about $10^8$ events.
+We evaluated the runtimes of our two implementations of LM OSEM by reconstructing an image of $150\times 150\times 280$ voxels from a real-world PET data set with about $10^8$ events.
 From this data set, about $10^2$ equally sized subsets are created.
 In our experiments, we measured the average runtime of processing one subset.
 To perform a full reconstruction producing a detailed reconstruction image, all subsets are processed multiple times, making LM OSEM a time-intensive application that runs several hours on a single-core \CPU.
-Unlike \CUDA, both \OpenCL and \SkelCL compile kernels at runtime.
-As compilation is only required once, when launching the implementation, but not during the subset iterations, we excluded compilation time from our runtime measurements.
 
-\autoref{fig:list-mode_OSEM:runtime} shows the runtime of our three implementations of LM OSEM using up to four \GPUs.
-We observe that \CUDA always provides best performance, being about 20\% faster than \OpenCL and \SkelCL on the same number of \GPUs.
-As \SkelCL is built on top of \OpenCL, we consider the difference to \OpenCL as the overhead introduced by \SkelCL.
+\autoref{fig:list-mode_OSEM:runtime} shows the runtime of both implementations of LM OSEM using up to four \GPUs.
 While the differences in the programming effort to implement the \SkelCL and \OpenCL versions are significant, the differences in runtime are quite small.
 When running on a single \GPU, both implementations take the same time (3.66 seconds) to complete.
 With two and four \GPUs, the \OpenCL implementation slightly outperforms the \SkelCL implementation, being 1.2\% and 4.7\% faster.
@@ -215,7 +209,7 @@ In conclusion, this example shows that \SkelCL is suitable for implementing a re
   \centering
   \includegraphics[width=.75\textwidth]{ASHES/lmosemIteration}
   \caption[Average runtime of one iteration of the LM OSEM algorithm.]%
-          {Average runtime of one iteration of the LM OSEM algorithm using \SkelCL, \OpenCL, and \CUDA.}
+          {Average runtime of one iteration of the LM OSEM algorithm using \SkelCL and \OpenCL.}
   \label{fig:list-mode_OSEM:runtime}
 \end{figure}
 

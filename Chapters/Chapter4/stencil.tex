@@ -123,11 +123,13 @@ The implementations using \code{MapOverlap} and \code{Stencil} are only $5-10\%$
 \end{figure} 
 
 \autoref{fig:gaussAbs} shows the measured total runtime of the Gaussian blur using:
-1) a na{\"i}ve OpenCL implementation using global memory,
-2) an optimized OpenCL version using local memory,
-3) \code{MapOverlap}-based implementation, and
-4) the \code{Stencil}-based implementation, correspondingly.
-We observe that on larger stencil shape sizes, the \code{MapOverlap} and \code{Stencil}-based versions outperform the na{\"i}ve OpenCL implementation by $65\%$ and $62\%$, respectively.
+\begin{itemize}
+  \item[1)] a na{\"i}ve OpenCL implementation using global memory,
+  \item[2)] an optimized OpenCL version using local memory,
+  \item[3)] \code{MapOverlap}-based implementation, and
+  \item[4)] the \code{Stencil}-based implementation, correspondingly.
+\end{itemize}
+We observe that for larger stencil shape sizes, the \code{MapOverlap} and \code{Stencil}-based versions outperform the na{\"i}ve OpenCL implementation by $65\%$ and $62\%$, respectively.
 The optimized OpenCL version, which copies all necessary elements into local memory prior to calculation, is $5\%$ faster than \code{MapOverlap} and $10\%$ faster than \code{Stencil} for small stencil shapes.
 When increasing the stencil shape size, this disadvantage is reduced to $3\%$ for \code{MapOverlap} and $5\%$ for \code{Stencil} with stencil shape's extent of $10$ in each direction.
 

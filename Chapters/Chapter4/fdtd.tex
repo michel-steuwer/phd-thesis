@@ -2,7 +2,7 @@
 \label{sec:physicsSim}
 
 Physics simulations are a very important class of scientific applications.
-As one representative we study the \emph{Finite-Difference-Time-Domain (\FDTD) Method} used for Random Lasing Simulations.
+We study one representative: the \emph{Finite-Difference-Time-Domain (\FDTD) Method} used for Random Lasing Simulations.
 This simulation from the field of optical physics simulates the propagation of light through a medium.
 
 In the simulation two fields, the electric field $\vec{E}$ and the magnetic field $\vec{H}$, are iteratively updated using stencils computations.
@@ -64,6 +64,8 @@ for (...) { // for each iteration
 \end{lstlisting}
 \end{figure}
 
+\subsection*{\SkelCL Implementation}
+
 We implemented a two-dimensional version using \SkelCL as well as a manually tuned \OpenCL implementation.
 To solve the PDEs in \autoref{eq:rot_h} and \autoref{eq:rot_d}, two separated three-point stencil computations are performed and one map computation for the gain-model is necessary.
 \autoref{eq:div_e} and \autoref{eq:div_h} are implicitly solved by the \FDTD method~\cite{Yee1966}.
@@ -77,13 +79,15 @@ To implement this, we use the \emph{additional argument} feature of SkelCL which
 The additional arguments are passed unchanged to the customizing function of the skeleton, therefore, the function customizing the stencil in line 4 now accepts $\vec{H}$ as a second parameter.
 This feature greatly increases the flexibility of applications written in SkelCL.
 
+% \subsubsection*{Programming effort}
+
 \subsubsection*{Performance experiments}
 
 In the evaluation we used a $2048 \times 2048$ sized matrix with a spatial resolution of $100$ cells per $\mu m$.
 This matrix corresponds to a square-shaped medium with the edge length of $20.1\,\mu m$.
 The medium size is actually smaller than the matrix size because of the border handling.
 To provide a physically correct simulation, the borders of the magnet field must be treated specially.
-The Stencil skeleton provides sufficient functionality to allow for such border handling in the computation code.
+The Stencil skeleton in \SkelCL provides sufficient functionality to allow for such border handling in the computation code.
 
 \begin{figure}[t]
     \centering

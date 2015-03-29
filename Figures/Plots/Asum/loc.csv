@@ -1,0 +1,13 @@
+Program,  Device,     Benchmark,  Lines
+CUBLAS,   CPU Code,   asum,       58
+CUBLAS,   GPU Code,   asum,       0
+OpenCL,   CPU Code,   asum,       91
+OpenCL,   GPU Code,   asum,       20
+SkelCL,   CPU Code,   asum,       5
+SkelCL,   GPU Code,   asum,       2
+CUBLAS,   CPU Code,   dot product,65
+CUBLAS,   GPU Code,   dot product,0
+OpenCL,   CPU Code,   dot product,96
+OpenCL,   GPU Code,   dot product,20
+SkelCL,   CPU Code,   dot product,5
+SkelCL,   GPU Code,   dot product,2

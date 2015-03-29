@@ -1,0 +1,7 @@
+Program,  Device,     Lines
+CUBLAS,   CPU Code,   65
+CUBLAS,   GPU Code,   0
+OpenCL,   CPU Code,   96
+OpenCL,   GPU Code,   20
+SkelCL,   CPU Code,   5
+SkelCL,   GPU Code,   2

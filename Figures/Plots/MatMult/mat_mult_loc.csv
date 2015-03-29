@@ -1,0 +1,13 @@
+Program,Device,Lines
+clBLAS,CPU Code   ,65
+clBLAS,GPU Code   ,0
+Optimized OpenCL,CPU Code   ,77
+Optimized OpenCL,GPU Code   ,17
+OpenCL,CPU Code   ,77
+OpenCL,GPU Code   ,7
+Generic allpairs|skeleton,CPU Code   ,5
+Generic allpairs|skeleton,GPU Code   ,5
+Allpairs skeleton|with zip-reduce,CPU Code   ,7
+Allpairs skeleton|with zip-reduce,GPU Code   ,2
+cuBLAS,CPU Code   ,81
+cuBLAS,GPU Code   ,0
