@@ -1,0 +1,41 @@
+Version; Radius; value
+OpenCL Global Memory;  1; 1364.83
+OpenCL Global Memory;  2; 1473.41
+OpenCL Global Memory;  3; 1647.33
+OpenCL Global Memory;  4; 1860.11
+OpenCL Global Memory;  5; 2138.07
+OpenCL Global Memory;  6; 2467.97
+OpenCL Global Memory;  7; 2852.46
+OpenCL Global Memory;  8; 3291.45
+OpenCL Global Memory;  9; 3997.26
+OpenCL Global Memory; 10; 4339.94
+OpenCL Local Memory;   1; 1346.06
+OpenCL Local Memory;   2; 1373.15
+OpenCL Local Memory;   3; 1441.26
+OpenCL Local Memory;   4; 1530.99
+OpenCL Local Memory;   5; 1639.56
+OpenCL Local Memory;   6; 1773.46
+OpenCL Local Memory;   7; 1929.50
+OpenCL Local Memory;   8; 2105.43
+OpenCL Local Memory;   9; 2303.03
+OpenCL Local Memory;  10; 2528.83
+MapOverlap;            1; 1417.60
+MapOverlap;            2; 1527.13
+MapOverlap;            3; 1623.15
+MapOverlap;            4; 1726.28
+MapOverlap;            5; 1860.67
+MapOverlap;            6; 2015.91
+MapOverlap;            7; 2192.93
+MapOverlap;            8; 2192.93
+MapOverlap;            9; 2392.92
+MapOverlap;           10; 2622.06
+Stencil;               1; 1485.45
+Stencil;               2; 1533.24
+Stencil;               3; 1603.75
+Stencil;               4; 1687.17
+Stencil;               5; 1799.76
+Stencil;               6; 1926.79
+Stencil;               7; 2082.32
+Stencil;               8; 2254.96
+Stencil;               9; 2456.51
+Stencil;              10; 2674.02
