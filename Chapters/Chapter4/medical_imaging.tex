@@ -1,9 +1,9 @@
 \section{Medical Imaging}
 \label{section:medical-imaging}
 At the beginning of \autoref{chapter:skelcl} we used the LM OSEM medical imaging application as our motivational example and application study to identify requirements for a high-level programming model.
-In this section we will now study how we can express the LM OSEM application using algorithmic skeletons and how the parallel container data types and \SkelCL's redistribution feature simplify the programming of multi-GPU systems.
+In this section we will now study how we can express the LM OSEM application using algorithmic skeletons and how the parallel container data types and \SkelCL's redistribution feature simplify the programming of multi-\GPU systems.
 We will start by briefly reintroducing the application and its sequential implementation before moving to the parallel implementation using first traditional \OpenCL and then \SkelCL for comparison.
-A particular focus of this section will be on multi-GPU systems and how \SkelCL radically simplifies their programming.
+A particular focus of this section will be on multi-\GPU systems and how \SkelCL radically simplifies their programming.
 
 \subsubsection*{The LM OSEM Algorithm}
 \emph{List-Mode Ordered Subset Expectation Maximization} (LM OSEM)~\cite{ReaderErFlOt1998, SchellmannGoMeKoScWuBu2009} is a time-intensive, production-quality algorithm for medical image reconstruction.
@@ -162,9 +162,9 @@ However, when using \SkelCL's vector data type, we avoid additional programming 
 
 \begin{figure}
   \centering
-  \includegraphics[width=.75\textwidth]{ASHES/loc}
+  \includegraphics[width=.9\textwidth]{Plots/LMOSEM/lmosem_loc.pdf}
   \caption[Lines of code of the LM OSEM implementations.]%
-          {Lines of code for host (light gray) and \GPU (dark gray) of the LM OSEM implementations.}
+          {Lines of code for \CPU and \GPU of the LM OSEM implementations on single- and multi-\GPU systems.}
   \label{fig:list-mode_OSEM:LOC}
 \end{figure}
 
@@ -207,9 +207,9 @@ In conclusion, this example shows that \SkelCL is suitable for implementing a re
 
 \begin{figure}
   \centering
-  \includegraphics[width=.75\textwidth]{ASHES/lmosemIteration}
+  \includegraphics[width=.75\textwidth]{Plots/LMOSEM/lmosem_runtime.pdf}
   \caption[Average runtime of one iteration of the LM OSEM algorithm.]%
-          {Average runtime of one iteration of the LM OSEM algorithm using \SkelCL and \OpenCL.}
+          {Average runtime of one iteration of the LM OSEM algorithm using \OpenCL and \SkelCL.}
   \label{fig:list-mode_OSEM:runtime}
 \end{figure}
 

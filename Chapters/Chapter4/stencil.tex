@@ -146,7 +146,7 @@ While both features are not used in this application example, they incur some ov
 The higher the computational complexity for increasing size of stencil shape, the better the overhead is hidden, leading to a maximum speedup of $1.90$ for two devices, $2.66$ for three devices, and $3.34$ for four devices.
 \begin{figure}
 	\centering
-	\includegraphics[width=.85\columnwidth]{HiStencils/SpeedupGauss.pdf}
+	\includegraphics[width=.85\columnwidth]{Plots/gauss/gauss_speedup.pdf}
 	\caption{Speedup of the Gaussian blur application on up to four \GPUs.}
 	\label{fig:GaussMult}
 \end{figure} 
@@ -289,7 +289,7 @@ No index calculations or boundary checks are necessary in the \SkelCL version wh
 \begin{figure}[tbp]
   \vspace{.5em}
   \centering
-  \includegraphics[height=4.5cm]{PaCT/lena.pdf}
+  \includegraphics[height=4.5cm]{Plots/Sobel/sobel_runtime.pdf}
   \caption{Performance results for Sobel edge detection}
   \label{fig:sobel:measurements}
 \end{figure}
@@ -351,7 +351,7 @@ During execution (line~\ref{lst:skelcl:canny:call}), the stencil operations are 
 
 \begin{figure}[tbp]
 	\centering
-	\includegraphics[width=.9\columnwidth]{HiStencils/Canny.pdf}
+	\includegraphics[width=.75\columnwidth]{Plots/Canny/canny_runtime.pdf}
 	\caption[Runtime of the Canny edge detection algorithm.]%
           {Runtime of the Canny edge detection algorithm comparing the \code{MapOverlap} and \code{Stencil} skeleton implementations.}
 	\label{fig:canny}

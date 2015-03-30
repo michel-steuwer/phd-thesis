@@ -1,0 +1,7 @@
+Version;  Devices;  value
+OpenCL;   1;        3.746
+OpenCL;   2;        2.139
+OpenCL;   4;        1.313
+SkelCL;   1;        3.756
+SkelCL;   2;        2.077
+SkelCL;   4;        1.405

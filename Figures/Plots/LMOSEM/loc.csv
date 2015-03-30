@@ -1,0 +1,9 @@
+Version,  Device,     Type,   Lines
+OpenCL,   CPU Code,   single, 399
+OpenCL,   GPU Code,   single, 193
+OpenCL,   CPU Code,   multi,  436
+OpenCL,   GPU Code,   multi,  193
+SkelCL,   CPU Code,   single,  18
+SkelCL,   GPU Code,   single, 200
+SkelCL,   CPU Code,   multi,   26
+SkelCL,   GPU Code,   multi,  200

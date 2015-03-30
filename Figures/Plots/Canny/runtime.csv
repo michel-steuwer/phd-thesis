@@ -1,0 +1,11 @@
+Version;Kind;value
+MapOverlap;Data Transfer;383.52
+MapOverlap;Gauss;81.47
+MapOverlap;Sobel;24.52
+MapOverlap;NMS;20.86
+MapOverlap;Threshholding;18.53
+Stencil;Data Transfer;217.67999999999995
+Stencil;Gauss;96.54
+Stencil;Sobel;53.44
+Stencil;NMS;47.72
+Stencil;Threshholding;2.7
