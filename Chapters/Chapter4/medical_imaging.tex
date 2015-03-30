@@ -3,7 +3,7 @@
 At the beginning of \autoref{chapter:skelcl} we used the LM OSEM medical imaging application as our motivational example and application study to identify requirements for a high-level programming model.
 In this section we will now study how we can express the LM OSEM application using algorithmic skeletons and how the parallel container data types and \SkelCL's redistribution feature simplify the programming of multi-\GPU systems.
 We will start by briefly reintroducing the application and its sequential implementation before moving to the parallel implementation using first traditional \OpenCL and then \SkelCL for comparison.
-A particular focus of this section will be on multi-\GPU systems and how \SkelCL radically simplifies their programming.
+A particular focus of this section will be on multi-\GPU systems and how \SkelCL drastically simplifies their programming.
 
 \subsubsection*{The LM OSEM Algorithm}
 \emph{List-Mode Ordered Subset Expectation Maximization} (LM OSEM)~\cite{ReaderErFlOt1998, SchellmannGoMeKoScWuBu2009} is a time-intensive, production-quality algorithm for medical image reconstruction.
@@ -44,7 +44,8 @@ for (int l = 0; l < subsets; l++) {$\label{lst:lmosem:seq_core:2:loop}$
 \end{lstlisting}
 \end{figure}
 %
-The sequential LM OSEM is an iterative algorithm refining the reconstruction image $f$ over time, at each iteration two major steps are performed:
+The sequential LM OSEM is an iterative algorithm refining the reconstruction image $f$ over time.
+At each iteration two major steps are performed:
 \begin{itemize}
   \item[] \emph{Step 1:} the error image $c_l$ is computed by performing three sub-steps: 1) computation of the row $A_i$; 2) computing the local error for row $A_i$; 3) adding the local error to $c_l$;
   \item[] \emph{Step 2:} update the reconstruction image $f$ using the error image $c_l$ computed in Step 1.
@@ -172,11 +173,11 @@ However, when using \SkelCL's vector data type, we avoid additional programming 
 The amount of lines required on the \GPU is similar.
 This is not surprising, as these code describes the computation performed on the \GPU which is similar for both implementations.
 The host code required for implementing the management of the \GPU execution differs significantly across implementations.
-For a single \GPU, the \OpenCL-based implementation has the longest code (206 LOC), \ie, more than 11 times longer than the \SkelCL program which has 18 LOC.
+For a single \GPU, the \OpenCL-based implementation requires 206 LOCs, \ie, more than 11 times the number of lines than the \SkelCL program which has 18 LOCs.
 
 Using multiple \GPUs in \OpenCL requires explicit code for additional data transfers between \GPUs.
-This accounts for additional 37 LOC for the \OpenCL-based implementation.
-In \SkelCL, only 8 additional LOC are necessary to describe the changes of data distribution.
+This accounts for additional 37 LOCs for the \OpenCL-based implementation.
+In \SkelCL, only 8 additional LOCs are necessary to describe the changes of data distribution.
 These lines are easily recognizable in the \SkelCL program (lines~\ref{lst:em:skelcl:upload:start}--\ref{lst:em:skelcl:upload:end}, \ref{lst:em:skelcl:redistribute:start}--\ref{lst:em:skelcl:redistribute:end} in \autoref{lst:em_skelcl}, plus 3 lines during the initialization) and make this high-level code arguably better understandable and maintainable than the \OpenCL version.
 
 
@@ -201,8 +202,8 @@ To perform a full reconstruction producing a detailed reconstruction image, all 
 While the differences in the programming effort to implement the \SkelCL and \OpenCL versions are significant, the differences in runtime are quite small.
 When running on a single \GPU, both implementations take the same time (3.66 seconds) to complete.
 With two and four \GPUs, the \OpenCL implementation slightly outperforms the \SkelCL implementation, being 1.2\% and 4.7\% faster.
-We presume that the increasing overhead of \SkelCL is caused by the more complex data distribution performed when using more \GPUs.
-Comparing to the significant reduction in programming effort (50\%), the runtime overhead of less than 5\% is arguably a moderate one.
+We presume that the slightly increasing overhead of \SkelCL is caused by the more complex data distribution performed when using more \GPUs.
+Comparing to the significant reduction in programming effort, the runtime overhead of less than 5\% is arguably a moderate one.
 In conclusion, this example shows that \SkelCL is suitable for implementing a real-world application and provides performance close to a native \OpenCL implementation.
 
 \begin{figure}
