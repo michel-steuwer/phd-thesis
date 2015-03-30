@@ -213,7 +213,7 @@ We performed our experiments with the six different implementations 1. -- 6. of 
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_sizes}
+  \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_sizes_gtx480}
   \caption[Runtime of different matrix multiplication implementations on an NVIDIA system.]%
           {Runtime of different matrix multiplication implementations on the NVIDIA system for different sizes of the matrices.}
   \label{fig:mat_mult_single}
@@ -258,7 +258,7 @@ However, the latter implementation can only be used for square matrices and, the
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_sizes_hd6990}
+  \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_sizes_hd6990}
   \caption[Runtime of different matrix multiplication implementations on an AMD ststem.]%
           {Runtime of all compared implementations for a matrix multiplication on the AMD system using one \GPU.}
   \label{fig:mat_mult_single_amd}
@@ -307,7 +307,7 @@ Similar to the cuBLAS implementation on the Nvidia hardware, it is not surprisin
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.9\textwidth]{HLPP/mat_mult_devices}
+  \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_devices}
   \caption[Runtime of the \allpairs based matrix multiplication implementations using multiple \GPUs.]%
           {Runtime of the \allpairs based implementations using multiple \GPUs.}
   \label{fig:mat_mult_devices}

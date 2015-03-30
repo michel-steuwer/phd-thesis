@@ -27,6 +27,7 @@ plot <- ggplot(performance, aes(x = reorder(Size, rownumbers), y = value, group=
   geom_point(size=6, aes(shape=Version)) +
   scale_y_log10(expand = c(0,0), limits = c(0.5,1000)) +
   scale_x_discrete(expand=c(0,0.5)) +
+  scale_color_manual(values=c("#fdcc8a", "#fc8d59", "#d7301f")) +
   facet_grid(. ~ Benchmark) + theme + labs
 
 # save plot to file

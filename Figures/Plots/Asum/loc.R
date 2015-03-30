@@ -17,7 +17,7 @@ labs <- labs(x = "", y = "Lines of Code")
 # create plot
 plot <- ggplot(na.omit(data), aes(x=Program, y=Lines, fill=Device)) +
   geom_bar(color="black", width=.5, stat = "identity") +
-  scale_fill_manual(values=c("#e6550d", "#fdae6b")) +
+  scale_fill_manual(values=c("#fdae6b", "#fee6ce")) + #"#e6550d", 
   scale_x_discrete() +
   facet_grid(. ~ Benchmark) + theme + labs
 

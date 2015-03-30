@@ -1,0 +1,26 @@
+Program,Devices,Size,Time
+Generic allpairs skeleton   ,1,4096 x 4096,5.772
+Generic allpairs skeleton   ,2,4096 x 4096,2.9395
+Generic allpairs skeleton   ,3,4096 x 4096,1.99966666666667
+Generic allpairs skeleton   ,4,4096 x 4096,1.52733333333333
+Allpairs skeleton with zip-reduce   ,1,4096 x 4096,1.13683333333333
+Allpairs skeleton with zip-reduce   ,2,4096 x 4096,0.613
+Allpairs skeleton with zip-reduce   ,3,4096 x 4096,0.461
+Allpairs skeleton with zip-reduce   ,4,4096 x 4096,0.367833333333333
+Generic allpairs skeleton   ,1,8192 x 8192,48.645
+Generic allpairs skeleton   ,2,8192 x 8192,24.495
+Generic allpairs skeleton   ,3,8192 x 8192,16.532
+Generic allpairs skeleton   ,4,8192 x 8192,12.540
+Allpairs skeleton with zip-reduce   ,1,8192 x 8192,8.73983333333333
+Allpairs skeleton with zip-reduce   ,2,8192 x 8192,4.588
+Allpairs skeleton with zip-reduce   ,3,8192 x 8192,3.254
+Allpairs skeleton with zip-reduce   ,4,8192 x 8192,2.60166666666667
+Generic allpairs skeleton   ,1,16384 x 16384,471.328
+Generic allpairs skeleton   ,2,16384 x 16384,236.628
+Generic allpairs skeleton   ,3,16384 x 16384,158.611
+Generic allpairs skeleton   ,4,16384 x 16384,119.786
+Allpairs skeleton with zip-reduce   ,1,16384 x 16384,68.573
+Allpairs skeleton with zip-reduce   ,2,16384 x 16384,35.294
+Allpairs skeleton with zip-reduce   ,3,16384 x 16384,24.447
+Allpairs skeleton with zip-reduce   ,4,16384 x 16384,19.198
+

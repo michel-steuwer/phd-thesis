@@ -4,7 +4,7 @@ library(ggplot2)
 # replace | with newline
 strwr <- function(str) gsub("\\|", "\n", str)
 
-my_levels <- c("OpenCL", "Optimized OpenCL", "cuBLAS", "clBLAS", "Generic allpairs|skeleton", "Allpairs skeleton|with zip-reduce")
+my_levels <- c("OpenCL", "Optimized OpenCL", "CUBLAS", "clBLAS", "Generic allpairs|skeleton", "Allpairs skeleton|with zip-reduce")
 
 # 1024 x 1024
 data <- read.table("mat_mult_loc.csv", header=TRUE, sep=",")
@@ -18,7 +18,7 @@ theme <- theme_bw() +
         legend.text = element_text(size = rel(0.75)),
         panel.border = element_rect(linetype = "solid", colour = "black", size = 1.5),
         plot.margin = unit(c(2,1.2,0,1), 'cm'),
-        legend.position="bottom",
+        legend.position="right",
         strip.background = element_rect(colour = "black", fill = "white", size = 1.5))
 
 labs <- labs(x = "", y = "Lines of Code")
@@ -26,7 +26,7 @@ labs <- labs(x = "", y = "Lines of Code")
 # create plot
 plot <- ggplot(na.omit(data), aes(x=Program, y=Lines, fill=Device)) +
   geom_bar(color="black", width=.5, stat = "identity") +
-  scale_fill_manual(values=c("#e6550d", "#fdae6b")) +
+  scale_fill_manual(values=c("#fdae6b", "#fee6ce")) + #"#e6550d", 
   scale_x_discrete(labels= strwr(levels(data$Program))) + theme + labs
 
 

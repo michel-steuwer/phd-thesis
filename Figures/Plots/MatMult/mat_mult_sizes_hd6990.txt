@@ -1,0 +1,30 @@
+Program,Device,Size,Time
+clBLAS ,1,512 x 512,0.113149166666667
+Optimized OpenCL  ,1,512 x 512,0.00590316666666667
+OpenCL ,1,512 x 512,0.00864733333333333
+Generic allpairs skeleton  ,1,512 x 512,0.00716666666666667
+Allpairs skeleton with zip-reduce  ,1,512 x 512,0.005
+
+clBLAS ,1,1024 x 1024,0.120168666666667
+Optimized OpenCL  ,1,1024 x 1024,0.0232996666666667
+OpenCL ,1,1024 x 1024,0.0466706666666667
+Generic allpairs skeleton  ,1,1024 x 1024,0.038
+Allpairs skeleton with zip-reduce  ,1,1024 x 1024,0.0226666666666667
+
+clBLAS ,1,2048 x 2048,0.143416166666667
+Optimized OpenCL  ,1,2048 x 2048,0.1105805
+OpenCL ,1,2048 x 2048,0.284436666666667
+Generic allpairs skeleton  ,1,2048 x 2048,0.2775
+Allpairs skeleton with zip-reduce  ,1,2048 x 2048,0.141333333333333
+
+clBLAS ,1,4096 x 4096,0.329525
+Optimized OpenCL  ,1,4096 x 4096,0.7430285
+OpenCL ,1,4096 x 4096,2.1780955
+Generic allpairs skeleton  ,1,4096 x 4096,2.15116666666667
+Allpairs skeleton with zip-reduce  ,1,4096 x 4096,1.0245
+
+clBLAS ,1,8192 x 8192,2.02913783333333
+Optimized OpenCL  ,1,8192 x 8192,5.568912
+OpenCL ,1,8192 x 8192,17.098272
+Generic allpairs skeleton  ,1,8192 x 8192,16.9831666666667
+Allpairs skeleton with zip-reduce  ,1,8192 x 8192,7.84216666666667

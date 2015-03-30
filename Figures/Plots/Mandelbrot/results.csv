@@ -1,0 +1,7 @@
+Version;  Type;     Kind;     value
+OpenCL;   runtime;  runtime;  24.2
+OpenCL;   lines;    host;     90
+OpenCL;   lines;    device;   28
+SkelCL;   runtime;  runtime;  25.9329
+SkelCL;   lines;    host;     31
+SkelCL;   lines;    device;   26
