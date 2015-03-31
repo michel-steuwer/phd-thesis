@@ -1,41 +1,41 @@
  Size;  Version;  Benchmark;   value; group; factor
-  4MB;   SkelCL; asum;   4.764; SkelCL-asum; 4.797583
-  8MB;   SkelCL; asum;   8.836; SkelCL-asum; 4.900721
- 16MB;   SkelCL; asum;  16.686; SkelCL-asum; 4.796206
- 32MB;   SkelCL; asum;  47.033; SkelCL-asum; 6.915601
- 64MB;   SkelCL; asum;  93.223; SkelCL-asum; 6.988231
-128MB;   SkelCL; asum; 184.755; SkelCL-asum; 6.998561
-256MB;   SkelCL; asum; 383.412; SkelCL-asum; 7.278685
-512MB;   SkelCL; asum; 763.784; SkelCL-asum; 7.299857
-  4MB;   SkelCL; sum;    1.365; SkelCL-sum;  1.374622
-  8MB;   SkelCL; sum;    2.376; SkelCL-sum;  1.317804
- 16MB;   SkelCL; sum;    4.361; SkelCL-sum;  1.253521
- 32MB;   SkelCL; sum;    8.125; SkelCL-sum;  1.194677
- 64MB;   SkelCL; sum;   15.613; SkelCL-sum;  1.170390
-128MB;   SkelCL; sum;   30.732; SkelCL-sum;  1.164135
-256MB;   SkelCL; sum;   61.010; SkelCL-sum;  1.158212
-512MB;   SkelCL; sum;  121.872; SkelCL-sum;  1.164790
-  4MB;   OpenCL; asum;   2.153; OpenCL-asum; 2.168177
-  8MB;   OpenCL; asum;   3.912; OpenCL-asum; 2.299501
- 16MB;   OpenCL; asum;   8.155; OpenCL-asum; 2.344064
- 32MB;   OpenCL; asum;  16.122; OpenCL-asum; 2.370534
- 64MB;   OpenCL; asum;  32.086; OpenCL-asum; 2.405247
-128MB;   OpenCL; asum;  60.070; OpenCL-asum; 2.275465
-256MB;   OpenCL; asum; 119.826; OpenCL-asum; 2.274774
-512MB;   OpenCL; asum; 251.638; OpenCL-asum; 2.405027
-  4MB;   OpenCL; sum;    2.058; OpenCL-sum;  2.072508
-  8MB;   OpenCL; sum;    4.146; OpenCL-sum;  2.169717
- 16MB;   OpenCL; sum;    7.779; OpenCL-sum;  2.235987
- 32MB;   OpenCL; sum;   16.093; OpenCL-sum;  2.366270
- 64MB;   OpenCL; sum;   32.038; OpenCL-sum;  2.401649
-128MB;   OpenCL; sum;   60.486; OpenCL-sum;  2.291223
-256MB;   OpenCL; sum;  120.050; OpenCL-sum;  2.279027
-512MB;   OpenCL; sum;  240.454; OpenCL-sum;  2.298136
-  4MB;   CUBLAS; asum;   0.993; CUBLAS-asum; 1
-  8MB;   CUBLAS; asum;   1.803; CUBLAS-asum; 1
- 16MB;   CUBLAS; asum;   3.479; CUBLAS-asum; 1
- 32MB;   CUBLAS; asum;   6.801; CUBLAS-asum; 1
- 64MB;   CUBLAS; asum;  13.340; CUBLAS-asum; 1
-128MB;   CUBLAS; asum;  26.399; CUBLAS-asum; 1
-256MB;   CUBLAS; asum;  52.676; CUBLAS-asum; 1
-512MB;   CUBLAS; asum; 104.630; CUBLAS-asum; 1
+  4MB;SkelCL   ; asum;   4.764; SkelCL-asum; 4.797583
+  8MB;SkelCL   ; asum;   8.836; SkelCL-asum; 4.900721
+ 16MB;SkelCL   ; asum;  16.686; SkelCL-asum; 4.796206
+ 32MB;SkelCL   ; asum;  47.033; SkelCL-asum; 6.915601
+ 64MB;SkelCL   ; asum;  93.223; SkelCL-asum; 6.988231
+128MB;SkelCL   ; asum; 184.755; SkelCL-asum; 6.998561
+256MB;SkelCL   ; asum; 383.412; SkelCL-asum; 7.278685
+512MB;SkelCL   ; asum; 763.784; SkelCL-asum; 7.299857
+  4MB;SkelCL   ; sum;    1.365; SkelCL-sum;  1.374622
+  8MB;SkelCL   ; sum;    2.376; SkelCL-sum;  1.317804
+ 16MB;SkelCL   ; sum;    4.361; SkelCL-sum;  1.253521
+ 32MB;SkelCL   ; sum;    8.125; SkelCL-sum;  1.194677
+ 64MB;SkelCL   ; sum;   15.613; SkelCL-sum;  1.170390
+128MB;SkelCL   ; sum;   30.732; SkelCL-sum;  1.164135
+256MB;SkelCL   ; sum;   61.010; SkelCL-sum;  1.158212
+512MB;SkelCL   ; sum;  121.872; SkelCL-sum;  1.164790
+  4MB;OpenCL   ; asum;   2.153; OpenCL-asum; 2.168177
+  8MB;OpenCL   ; asum;   3.912; OpenCL-asum; 2.299501
+ 16MB;OpenCL   ; asum;   8.155; OpenCL-asum; 2.344064
+ 32MB;OpenCL   ; asum;  16.122; OpenCL-asum; 2.370534
+ 64MB;OpenCL   ; asum;  32.086; OpenCL-asum; 2.405247
+128MB;OpenCL   ; asum;  60.070; OpenCL-asum; 2.275465
+256MB;OpenCL   ; asum; 119.826; OpenCL-asum; 2.274774
+512MB;OpenCL   ; asum; 251.638; OpenCL-asum; 2.405027
+  4MB;OpenCL   ; sum;    2.058; OpenCL-sum;  2.072508
+  8MB;OpenCL   ; sum;    4.146; OpenCL-sum;  2.169717
+ 16MB;OpenCL   ; sum;    7.779; OpenCL-sum;  2.235987
+ 32MB;OpenCL   ; sum;   16.093; OpenCL-sum;  2.366270
+ 64MB;OpenCL   ; sum;   32.038; OpenCL-sum;  2.401649
+128MB;OpenCL   ; sum;   60.486; OpenCL-sum;  2.291223
+256MB;OpenCL   ; sum;  120.050; OpenCL-sum;  2.279027
+512MB;OpenCL   ; sum;  240.454; OpenCL-sum;  2.298136
+  4MB;CUBLAS   ; asum;   0.993; CUBLAS-asum; 1
+  8MB;CUBLAS   ; asum;   1.803; CUBLAS-asum; 1
+ 16MB;CUBLAS   ; asum;   3.479; CUBLAS-asum; 1
+ 32MB;CUBLAS   ; asum;   6.801; CUBLAS-asum; 1
+ 64MB;CUBLAS   ; asum;  13.340; CUBLAS-asum; 1
+128MB;CUBLAS   ; asum;  26.399; CUBLAS-asum; 1
+256MB;CUBLAS   ; asum;  52.676; CUBLAS-asum; 1
+512MB;CUBLAS   ; asum; 104.630; CUBLAS-asum; 1

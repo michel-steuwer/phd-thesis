@@ -16,6 +16,7 @@ theme <- theme_bw() +
         panel.border = element_rect(linetype = "solid", colour = "black", size = 1.5),
         plot.margin = unit(c(2,1.2,0,1), 'cm'),
         legend.position="right",
+        legend.title = element_blank(),
         strip.background = element_rect(colour = "black", fill = "white", size = 1.5))
 
 labs <- labs(x = "", y = "Lines of Code")
@@ -23,7 +24,7 @@ labs <- labs(x = "", y = "Lines of Code")
 # create plot
 plot <- ggplot(na.omit(data), aes(x=Version, y=value, fill=Kind)) +
   geom_bar(color="black", width=.5, stat = "identity") +
-  scale_fill_manual(values=c("#fee6ce", "#fdae6b")) +
+  scale_fill_manual(values=c("#fdae6b", "#fee6ce")) +
   scale_x_discrete(labels= strwr(levels(data$Version))) + theme + labs
 
 # save plot to file

@@ -27,6 +27,6 @@ plot <- ggplot(data, aes(x = Version, y = value, fill=Kind)) +
 
 
 # save plot to file
-ggsave(file = "fdtd_runtime.pdf", width = 6, height = 4)
+ggsave(file = "fdtd_runtime.pdf", width = 6, height = 4.5)
 
 plot

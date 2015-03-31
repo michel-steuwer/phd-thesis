@@ -1,9 +1,9 @@
 Version;Kind;value
-OpenCL global memory;host;57
-OpenCL global memory;device;13
-|OpenCL local memory;host;65
-|OpenCL local memory;device;88
-MapOverlap;host;15
-MapOverlap;device;9
-|Stencil;host;15
-|Stencil;device;9
+OpenCL global memory;CPU code;57
+OpenCL global memory;GPU code;13
+|OpenCL local memory;CPU code;65
+|OpenCL local memory;GPU code;88
+MapOverlap;CPU code;15
+MapOverlap;GPU code;9
+|Stencil;CPU code;15
+|Stencil;GPU code;9

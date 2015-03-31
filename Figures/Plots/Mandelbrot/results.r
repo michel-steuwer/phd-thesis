@@ -63,6 +63,7 @@ theme <- theme_bw() +
         panel.border = element_rect(linetype = "solid", colour = "black", size = 1.5),
         plot.margin = unit(c(2,1.2,0,1), 'cm'),
         legend.position="top",
+        legend.title = element_blank(),
         strip.background = element_rect(colour = "black", fill = "white", size = 1.5))
 
 
@@ -71,7 +72,7 @@ labs <- labs(x = "", y = "Lines of Code")
 # create plot
 lPlot <- ggplot(na.omit(lines), aes(x=Version, y=value, fill=Kind)) +
   geom_bar(color="black", width=.5, stat = "identity") +
-  scale_fill_manual(values=c("#fee6ce", "#fdae6b")) + #"#e6550d", 
+  scale_fill_manual(values=c("#fdae6b", "#fee6ce")) + #"#e6550d", 
   scale_x_discrete() + theme + labs
 
 

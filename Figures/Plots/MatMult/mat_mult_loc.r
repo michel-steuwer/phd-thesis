@@ -19,6 +19,7 @@ theme <- theme_bw() +
         panel.border = element_rect(linetype = "solid", colour = "black", size = 1.5),
         plot.margin = unit(c(2,1.2,0,1), 'cm'),
         legend.position="right",
+        legend.title = element_blank(),
         strip.background = element_rect(colour = "black", fill = "white", size = 1.5))
 
 labs <- labs(x = "", y = "Lines of Code")
