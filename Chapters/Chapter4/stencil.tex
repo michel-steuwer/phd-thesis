@@ -114,7 +114,7 @@ This is an important advantage of \SkelCL over the \OpenCL implementations of th
 
 \begin{figure}[tbp]
 	\centering
-	\includegraphics[width=\columnwidth]{Plots/gauss/gauss_runtime.pdf}
+	\includegraphics[width=.9\columnwidth]{Plots/gauss/gauss_runtime.pdf}
 	\caption[Runtime of the Gaussian blur using different implementations.]%
           {Runtime of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an OpenCL version using local memory and SkelCL's MapOverlap and Stencil skeletons.}
 	\label{fig:gaussAbs}
@@ -349,7 +349,7 @@ During execution (line~\ref{lst:skelcl:canny:call}), the stencil operations are 
 
 \begin{figure}[tbp]
 	\centering
-	\includegraphics[width=.75\columnwidth]{Plots/Canny/canny_runtime.pdf}
+	\includegraphics[width=.65\columnwidth]{Plots/Canny/canny_runtime.pdf}
 	\caption[Runtime of the Canny edge detection algorithm.]%
           {Runtime of the Canny edge detection algorithm comparing the \code{MapOverlap} and \code{Stencil} skeleton implementations.}
 	\label{fig:canny}

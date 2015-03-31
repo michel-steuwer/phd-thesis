@@ -2,7 +2,7 @@
 \label{sec:reduce:case-study}
 \label{section:reduce:case-study}
 To understand the problems of performance and portability in the context of modern parallel processors, we will study a simple application example: parallel reduction.
-This discussion is based on the presentation \emph{``Optimizing Parallel Reduction in CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
+This discussion is based on the presentation \emph{``Optimizing Parallel Reduction in CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing the parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
 Optimization guidelines like this exist from almost every hardware vendor giving developers advice on how to most efficiently exploit their hardware~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide}.
 
 In \autoref{chapter:skelcl} we saw that we can express a parallel reduction using a single algorithmic skeleton: \reduce.
@@ -18,7 +18,7 @@ For implementing the parallel summation of an array, we study an approach using 
 We start with the elements to be reduced in the leafs of the reduction tree shown in \autoref{fig:reduce:tree}.
 The first \OpenCL kernel is executed in parallel by multiple \OpenCL work-groups, four work-groups in the example shown in \autoref{fig:reduce:tree}.
 Each work-group produces a temporary result, then the second \OpenCL kernel is executed by a single \OpenCL work-group producing the final result.
-This strategy is applied as global synchronization, \ie, synchronization across work-groups, is prohibited inside a single \OpenCL kernel, but the parallel tree-based reduction requires synchronization at each level of the reduction tree.
+This strategy is applied as synchronization across work-groups is prohibited inside a single \OpenCL kernel, but the parallel tree-based reduction requires synchronization at each level of the reduction tree.
 An implementation with a single \OpenCL kernel would, therefore, be restricted to launch a single \OpenCL work-group and, thus, limit the exploited parallelism.
 
 By using the two-kernel approach, massive parallelism can be exploited in the first phase as multiple work-groups operate concurrently on independent parts of the input array.
@@ -297,7 +297,7 @@ Each if statement replaces one iteration of the loop.
 This code assumes that \code{WG\_SIZE} is a compile-time constant and, therefore, the if statements will be evaluated at compile time, avoiding costly branches at runtime.
 Different to the previous optimization, we still have to provide a barrier to ensure correct synchronization, as multiple warps are involved here.
 
-The performance improves by a factor of 1.41 as compared to the previous implementation and 21.16 to the initial implementation.
+The performance improves by a factor of 1.41 as compared to the previous implementation and 21.16 times as compared to the initial implementation.
 With this version, 36.77\% of the theoretically available memory bandwidth are used.
 
 \begin{lstlisting}[%
@@ -356,7 +356,7 @@ A while loop has been introduced (see line~\ref{lst:reduce6:while}) which, in ev
 No synchronization is required here as each work-item operates independently on different memory locations.
 The way the memory is accessed ensures that memory accesses will be coalesced (see \autoref{chapter:background}) when reading from global memory.
 
-The performance improves by a factor of 1.42 as compared to the previous implementation and 30.04 to the initial implementation.
+The performance improves by a factor of 1.42 as compared to the previous implementation and 30.04 times as compared to the initial implementation.
 With this version, 65.44\% of the theoretically available memory bandwidth are used.
 
 \begin{lstlisting}[%
@@ -516,7 +516,7 @@ We aim at developing an approach which can systematically apply optimizations an
 
 \subsection{The Need for a Pattern-Based Code Generator}
 
-Our goal in this chapter is to develop a systematic approach to achieve \emph{performance portability}, \ie, to achieve high relative performance for a given application across a set of different parallel processors.
+Our main goal in this chapter is to develop a systematic approach to achieve \emph{performance portability}, \ie, to achieve high relative performance for a given application across a set of different parallel processors.
 As we saw in the previous section, traditional approaches, like \OpenCL, are not performance portable.
 Currently, programmers often tune their implementations towards a particular hardware using hardware-specific optimizations to achieve the highest performance possible.
 This reduces portability, maintainability, and clarity of the code:
@@ -540,7 +540,7 @@ An approach using code generation could overcome this drawback, because instead 
 
 Second, most existing approaches are library-based, which makes the optimization of composition and nesting of patterns extremely complex.
 In \SkelCL, for example, each pattern is implemented as a separate \OpenCL kernel.
-When composing patterns, multiple \OpenCL kernels are executed, but often a better solution would be to fuse multiple \OpenCL kernels into a single \OpenCL kernel, thus avoiding costly operations to write and read the intermediate result into/from the global memory.
+When composing patterns, multiple kernels are executed, but often a better solution would be to fuse multiple kernels into a single kernel, thus avoiding costly operations to write and read the intermediate result into/from the global memory.
 As fusion of \OpenCL kernels in general is complicated and requires code analysis, \SkelCL currently cannot execute a fused, and, thus, fully optimized, implementation of composed patterns.
 Our envisaged approach using code generation should overcome this issue, as the code generator processes the entire pattern-based expression instead of focusing on individual patterns.
 

@@ -208,7 +208,8 @@ In the following, section we study the \OpenCL code generated for each pattern i
  & & & \textbf{\vect}\\
 \bottomrule
 \end{tabular}
-\caption{Overview of all algorithmic and \OpenCL patterns.}
+\caption[Overview of all algorithmic and \OpenCL patterns.]%
+        {Overview of all algorithmic and \OpenCL patterns. Code is generated only for the patterns highlighted in bold.}
 \label{fig:patterns:generation}
 \end{table}
 
@@ -218,7 +219,7 @@ Therefore, the code generator would have to make a choice which of the possible 
 We want to avoid such situations, as this complicates the implementation of the code generator and limits both its flexibility and the performance of the generated code.
 In our approach this decision about the implementation of \reduce has to be made before the code generator is invoked by applying the rewrite rules presented in \autoref{section:rules} which allow to derive specialized low-level implementations from high-level expressions.
 
-The code generator generates code only for the patterns highlighted in bold in \autoref{fig:patterns:generation} (all patterns in the last three columns).
+The code generator generates code only for the highlighted patterns in \autoref{fig:patterns:generation} (all patterns in the last three columns).
 The three patterns in the first column: \map, \reduce, and \reorder, have to be eliminated from an expression before the code generation process can begin.
 
 We will now discuss in more detail the code generation process for all highlighted patterns from \autoref{fig:patterns:generation}.
@@ -263,13 +264,13 @@ We will discuss the type system implementation in more detail in \autoref{sectio
 %A for loop is generated (line~\ref{lst:iterate:impl:for}) for performing the actual iterations.
 %Two pointers (\code{in} and \code{out}) are swapped after each iteration (lines~\ref{lst:iterate:impl:in} and~\ref{lst:iterate:impl:out}) and used in the code generated for the nested pattern which is emitted inside the body of the for loop (line~\ref{lst:iterate:nested}).
 %Because this code segment is taken from the parallel reduction example, the \code{size} variable, which represents the size of the current input array, is reduced by half after each iteration step (line~\ref{lst:iterate:impl:size}).
-A for-loop is emitted by the code generator for the $\iterateN\ f\ n$ pattern.
+For the $\iterateN\ f\ n$ pattern a for-loop is emitted by the code generator.
 As seen in the previous section, two pointers are generated and swapped after each iteration to provide input and output pointers to the nested pattern.
 A variable storing the size of the input array is generated and updated after each iteration, based on the effect the function $f$ has on the array size when processing the array.
 
 
 \paragraph{Parallel OpenCL Maps}
-The generation of \OpenCL code for each of the \map patterns: \mapWorkgroup, \mapLocal, \mapGlobal, \mapWarp, and \mapLane is rather straightforward.
+The \OpenCL code generation for each of the \map patterns (\mapWorkgroup, \mapLocal, \mapGlobal, \mapWarp, and \mapLane) is rather straightforward.
 
 We saw examples of the generated \OpenCL code in the previous section.
 In general, a for-loop is emitted, where the loop variable refers to the corresponding identifier, \ie, the work-group id, local work-item id, global work-item id, and so on.
@@ -444,7 +445,7 @@ Type casts are emitted by the following patterns to reflect the change of data t
 
 The \vect pattern is used to vectorize functions.
 Our current strategy is quite simplistic.
-When emitting the \OpenCL code for these functions, the data types of the input and output arguments are changed appropriately and the body of the function is checked if it contains operations which are supported on vector data types in \OpenCL, \eg, the usual arithmetic operators.
+When emitting the \OpenCL code for a vectorized function, the data types of the input and output arguments are changed appropriately and the body of the function is checked if it contains operations which are supported on vector data types in \OpenCL, \eg, the usual arithmetic operators.
 If the body contains other operations, our process fails and no \OpenCL code can be generated.
 In the future, we plan to incorporate a more advanced approach for vectorization of functions, \eg, like~\cite{KarrenbergHa2011}.
 

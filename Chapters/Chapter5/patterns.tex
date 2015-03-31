@@ -106,7 +106,7 @@ The customizing function is defined by currying \map and $f$, thus, producing a 
 Therefore, $f$ will be applied to every element of matrix $X$.
 
 \paragraph{Reduce}
-The \reduce pattern (\aka, fold or accumulate) uses a given binary operator $\oplus$ to combine all elements of the input array.
+The \reduce pattern (\aka, fold or accumulate) uses a binary operator $\oplus$ to combine all elements of the input array.
 We require the operator $\oplus$ to be associative and commutative which allows for an efficient parallel implementation.
 By requiring commutativity, our system can also generate vectorized implementations of the reduction and utilize the efficient coalesced memory access pattern, as we saw in \autoref{section:reduce:case-study}.
 In \autoref{chapter:skelcl} we defined \reduce as an algorithmic skeleton (see \autoref{definition:reduce}).
@@ -331,19 +331,25 @@ The main idea behind our approach is to identify common optimization patterns an
 \end{table}
 
 \paragraph{Parallel Maps}
-The different \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread-level parallelism in \OpenCL.
+The different low-level \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread-level parallelism in \OpenCL.
 The execution semantics and types of all these low-level \OpenCL \map patterns are the same as of the high-level \map pattern shown in \autoref{definition:pattern:map}.
 In fact, these patterns can be viewed as \emph{instantiations} of the \emph{interface} the high-level \map pattern defines, as the low-level \OpenCL pattern provide different possibilities to implement the \map pattern.
 
-\todo{describe map-warp and map-lane}
 \todo{sg: hier waere ein Bild gut, das diese maps zusammen mit der OpenCL Thread-Hierarchie zeigt}
 The \mapWorkgroup pattern assigns work to an \OpenCL work-group, \ie, following \autoref{definition:pattern:map} each \OpenCL work-group executes the given function on a different part of the input vector.
 
 The \mapLocal pattern assigns work to a local work-item inside a work-group.
-This pattern should be used in the context of a work-group and is, therefore, only valid when nested inside a \mapWorkgroup pattern, \eg, $\mapWorkgroup\ (\mapLocal\ f)$.
+This pattern only makes sense in the context of a work-group and is, therefore, only correctly used when nested inside a \mapWorkgroup pattern, \eg, $\mapWorkgroup\ (\mapLocal\ f)$.
 
 The \mapGlobal pattern can be used to assign work to work-items outside of a work-group.
 This allows us to map computations in different ways to the thread hierarchy of \OpenCL.
+
+There are two additional patterns which are only valid when generating code for Nvidia \GPUs:
+\mapWarp and \mapLane.
+These two patterns capture the notion of \emph{warps} present in Nvidia's \GPU architectures, \ie, 32 work-items are grouped and executed together (see \autoref{chapter:background} for details).
+Barrier synchronizations between work-items in the same warp can be avoided because a warp executes in a lock step manner.
+To exploit this optimization we provide the \mapWarp pattern which assigns work to a warp, \ie, a group of 32 work-items.
+The \mapLane pattern is used to assign work to an individual work-item inside a warp.
 
 %The code generation for all these map patterns is similar; we describe it using \pat{map-workgroup} as an example.
 %A loop is generated, where the iteration variable is determined by the \emph{workgroup-id} function provided by \OpenCL.
@@ -493,7 +499,7 @@ In case of more complex functions, we rely on external tools~\cite{KarrenbergHa2
 We start by defining the \asVector pattern.
 \begin{definition}
   \label{definition:pattern:asVector}
-  Let $n$ be an integer value.
+  Let $n$ be a positive integer value.
   Let $xs$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let us assume, that $m$ is evenly divisible by $n$.
   The \asVector pattern is then defined as follows:
@@ -537,7 +543,7 @@ We will almost always omit the subscript, as $n$ can be inferred from the input 
 Finally, we define the \vect pattern.
 \begin{definition}
   \label{definition:pattern:vect}
-  Let $n$ be an integer value.
+  Let $n$ be a positive integer value.
   Let $f$ be a function.
   The \vect pattern is then defined as follows:
   \begin{align*}

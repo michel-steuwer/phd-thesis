@@ -417,7 +417,7 @@ This concept is very important when considering how the reduction function is ty
 
 \paragraph{Simplification Rules}
 \autoref{eq:algo:simpl} shows our simplification rules.
-They express the fact that consecutive \splitN-\join pairs and \asVector-\asScalar pairs can be eliminated.
+These rules express the fact that consecutive \splitN-\join pairs and \asVector-\asScalar pairs can be eliminated.
 %
 \begin{rerule}{lcl}
   \join_n \circ \splitN\ n       & \rightarrow & \id\\
@@ -469,7 +469,7 @@ They express the fact that consecutive \splitN-\join pairs and \asVector-\asScal
 \end{proof}
 
 \paragraph{Fusion Rules}
-Finally, our fusion rules are shown in \autoref{eq:algo:fusion}.
+Finally, our rules for fusing consecutive patterns are shown in \autoref{eq:algo:fusion}.
 %
 \begin{rerule}{lcl}
   \map\ f \circ \map\ g
@@ -1326,7 +1326,7 @@ If a larger work-group size would be chosen, then the expression shown in \autor
 
 
 \paragraph{Fully Optimized Implementation}
-\autoref{eq:reduce16} shows our sixth and last expression implementing parallel reduction.
+\autoref{eq:reduce16} shows our final expression implementing parallel reduction.
 %\begin{figure}
 %  \begin{align*}
 %    &\hspace{-1.5em}vecSum\\
@@ -1380,7 +1380,7 @@ $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce16:1}$
   $\big) \circ \splitN\ blockSize$
 \end{lstlisting}
 %
-This expression closely resembles the seventh and finally optimized implementation of the parallel reduction shown in \autoref{lst:reduce6}.
+This expression resembles the seventh and finally optimized implementation of the parallel reduction shown in \autoref{lst:reduce6}.
 As in the original \OpenCL implementation, we increase the computational intensity by increasing the number of elements processed by a single work-group.
 We express this by choosing a larger $blockSize$ when splitting the input array the first time.
 The first \reorderStride expression ensures that memory accesses to the global memory are coalesced.
