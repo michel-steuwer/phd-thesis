@@ -1,5 +1,6 @@
 *.aux
 *.bbl
+*.bcf
 *.blg
 *.brf
 *.fdb_latexmk
@@ -15,3 +16,5 @@
 *.ind
 *.swp
 main.pdf
+main.run.xml
+diss.sublime-workspace
