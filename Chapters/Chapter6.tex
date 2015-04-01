@@ -6,148 +6,127 @@
 
 In this chapter we present application studies evaluating the performance of the \OpenCL code generated from expressions composed of parallel patterns using our systematic approach presented in the previous chapter.
 We first discuss our experimental setup used for the runtime experiments.
-We will start our evaluation by looking at the parallel reduction example which we used throughout the previous chapter and compare the performance of the manually optimized \OpenCL implementations against the systematically generated once.
+We will start our evaluation by looking at the parallel reduction example which we used throughout the previous chapter and compare the performance of the manually optimized \OpenCL implementations against the systematically generated code.
 We will then investigate application examples from linear algebra, mathematical finance, and physics.
+We will conclude the chapter with a brief study showing how the rewrite rules can be applied automatically and how effective such an automatic search strategy is for a simple application example.
 
-For all applications the high-level and low-level expression is shown as well as performance results compared against manually tuned \OpenCL code.
+For all applications we show the high-level and low-level expression as well as performance results comparing the generated \OpenCL code against manually tuned \OpenCL code.
 
 \section{Experimental Setup}
 We used three hardware platforms: an Nvidia GeForce GTX 480 \GPU, an AMD Radeon HD 7970 \GPU and a dual socket Intel Xeon E5530 server, with 8 cores in total.
 We used the latest \OpenCL runtime from Nvidia (CUDA-SDK 5.5), AMD (AMD-APP 2.8.1) and Intel (XE 2013 R3).
 The GPU drivers installed were 310.44 for Nvidia and 13.1 for AMD on our Linux system 
 
-We use the profiling APIs from \OpenCL and \CUDA to measure kernel execution time and the \textit{gettimeofday} function for the \CPU implementation.
-Following the Nvidia benchmarking methodology~\cite{Harris2007}, the data transfer time to and from the \GPU is excluded, as we focus on the quality of the generated \OpenCL kernel code.
-We repeat each experiment 1000 times and report median runtimes.
+We use the profiling \APIs from \OpenCL and \CUDA to measure kernel execution time and the \textit{gettimeofday} function for the \CPU implementation.
+We exclude the data transfer time to and from the \GPU in all runtime numbers reported in this chapter, as we want to focus on the quality of the generated \OpenCL kernel code.
+We repeat each experiment 100 times and report median runtimes.
 
-We use the following conventions to simplify the syntax:
-lowercase letters (\eg, \code{x}) denote scalar variables, letters with an arrow (\eg, $\vec{x}$) denote arrays, and capitalized letters (\eg, $A$) denote 2D arrays.
+
 
 \section{Parallel Reduction}
+In this section we evaluate the performance of three of the low-level expressions presented in \autoref{sec:deriving:reduce} which resemble corresponding \OpenCL code provided by Nvidia performing a parallel summation of an array discussed at the beginning of \autoref{chapter:codeGeneration}.
+All these expressions have been systematically derived from the high-level expression for the parallel summation:
+\begin{equation*}
+  vecSum = \reduce\ (+)\ 0
+\end{equation*}
+The formal derivations are shown in \autoref{chapter:AppendixA}.
 
 \begin{figure*}[t]
 \captionsetup[subfigure]{justification=justified,singlelinecheck=false}
 
 \begin{subfigure}[b]{\linewidth}
 \vspace{.4em}
-\begin{minipage}{.11\linewidth}
-\caption{\hspace{-.2em}\parbox[t]{.7\linewidth}{\centering Nvidia\\ GPU}}
-\label{fig:expr:autoNv}
+\begin{minipage}{.05\linewidth}
+\caption{}
+\label{fig:reduce:expr:1}
 \end{minipage}
 \hfill
-\begin{minipage}{.87\linewidth}
-\begin{lstlisting}[mathescape, basicstyle=\scriptsize\ttfamily]
-outerJoin $\circ$ outerJoin $\circ$ map-workgroup(
-  asGlobal( map-local( iterate-7( map-seq(id) $\circ$ reduce-seq(+, 0) ) $\circ$ reduce-seq(absAnd+, 0) ) ) $\circ$ reorder-stride
- ) $\circ$ outerSplit-128 $\circ$ outerSplit-2048
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[mathescape, basicstyle=\small\rmfamily]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce11:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\label{eq:reduce11:2}$
+    $\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2)\ \circ\label{eq:reduce11:3}$
+    $\join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\label{eq:reduce11:4}$
+  $\big) \circ \splitN\ 128\label{eq:reduce11:5}$
 \end{lstlisting}
 \end{minipage}
 \end{subfigure}
 
 \begin{subfigure}[b]{\linewidth}
 \vspace{0em}
-\begin{minipage}{.11\linewidth}
-\caption{\hspace{-.2em}\parbox[t]{.7\linewidth}{\centering AMD\\ GPU}}
-\label{fig:expr:autoAmd}
+\begin{minipage}{.05\linewidth}
+\caption{}
+\label{fig:reduce:expr:2}
 \end{minipage}
 \hfill
-\begin{minipage}{.87\linewidth}
-\begin{lstlisting}[mathescape, basicstyle=\scriptsize\ttfamily]
-outerJoin $\circ$ innerJoin $\circ$ outerJoin $\circ$ map-workgroup(
-   map-local( map-seq(vectorize-2(id)) $\circ$ reduce-seq(vectorize-2(absAnd+), vectorize-2(0)) ) $\circ$ reorder-stride
- ) $\circ$ outerSplit-128 $\circ$ innerSplit-2 $\circ$ outerSplit-4096
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[mathescape, basicstyle=\small\rmfamily]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce13:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
+    $\iterateN\ 7\ \big(\ \lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ$
+                $\reorderStride\ ((size\ xs)/2)\ \$\ xs\ \big)\ \circ$
+    $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ$
+    $\reorderStride\ 128$
+  $\big) \circ \splitN\ (2\times 128)$
 \end{lstlisting}
 \end{minipage}
 \end{subfigure}
 
 \begin{subfigure}[b]{\linewidth}
 \vspace{0em}
-\begin{minipage}{.11\linewidth}
-\caption{\hspace{-.2em}\parbox[t]{.7\linewidth}{\centering Intel\\ CPU}}
-\label{fig:expr:autoCPU}
+\begin{minipage}{.05\linewidth}
+\caption{}
+\label{fig:reduce:expr:3}
 \end{minipage}
 \hfill
-\begin{minipage}{.87\linewidth}
-\begin{lstlisting}[mathescape, basicstyle=\scriptsize\ttfamily]
-outerJoin $\circ$ map-workgroup( outerJoin $\circ$ innerJoin $\circ$ map-local(
-   map-seq(vectorize-4(id)) $\circ$ reduce-seq(vectorize-4(absAnd+), vectorize-4(0))
- ) $\circ$ innerSplit-4 $\circ$ outerSplit-32768 ) $\circ$ outerSplit-32768
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[mathescape, basicstyle=\small\rmfamily]
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce16:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ$
+    $\join \circ \mapWarp\ \big($
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 1\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 2\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 4\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 8\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 16\ \circ$
+      $\join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 32$
+    $\big) \circ \splitN\ 64\ \circ$
+    $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 64\ \circ$
+    $\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0))\ \circ$
+    $\splitN\ (blockSize/128)\ \circ \reorderStride\ 128$
+  $\big) \circ \splitN\ blockSize$
 \end{lstlisting}
 \end{minipage}
 \end{subfigure}
 
-\caption{Low-level expressions performing the sum of absolute values.
-         These expressions are automatically derived by our system from the high-level expression $reduce(+, 0) \circ map(abs)$.
-       }
-\label{fig:expr}
+\caption{Three low-level expressions implementing parallel reduction.}
+\label{fig:reduce:expr}
 \end{figure*}
 
-This section presents different possible low-level expression resulting from the automatic application of our rewrite rules.
-We focus our evaluation on the sum of absolute values benchmark (\bench{asum}) since it is of low complexity and yet leads to a complex design space of implementations.
-The low-level expressions for dot product and matrix vector multiplication are quite long and, therefore, not well suited to demonstrate the basic concepts of our approach.
 
-We start with \pat{reduce(+, 0) $\circ$ map(abs)} as our high-level expression.
-As we saw in Section~\ref{sec:example}, this expression can be automatically rewritten at the algorithmic level following our rules.
-The rewritten expression can then be lowered to an expression amenable for code generation by continuing to apply our rules.
-
-Figure~\ref{fig:expr} shows several lowerings of the high-level expression found by applying the automatic search technique described in Section~\ref{sec:search}.
-We can make several important observations.
-First, in all the expressions the rule merging the sequential \pat{map(abs)} followed by the sequential \pat{reduce(+, 0)} into a single \pat{reduce(absAnd+, 0)} was applied.
-The function \pat{absAnd+} is automatically derived from \pat{abs} and \pat{+} as described by the rule and corresponds to the lambda expression shown at the bottom of Figure~\ref{fig:derivation}.
-By applying this rule, the allocation of a temporary buffer storing the results of the \pat{map} can be avoided, which is always beneficial.
-The second observation is, that none of the versions make use of the local memory (although our systems fully support it).
-It is common wisdom that using local memory on the GPU enables high
-performance.
-But in this case, this is not true as each data item is only read once and not reused.
-The third key observation is, that each thread performs a large sequential reduction independent of all other threads.
-The key advantage of this type of implementation is that they do not require thread synchronization.
-
-While these observations are the same for all platforms, there are also crucial differences between the different low-level expressions.
-Both GPU versions make use of the \pat{reorder-stride} pattern, while the CPU version does not.
-On the GPU, this pattern allows for achieving coalesced memory accesses when reading from memory.
-The AMD and Intel versions are vectorized with a vector length of two and four respectively.
-The Nvidia version does not use vectorization since this platform does not benefit from vectorized code.
-On the CPU the automatic search picked the numbers for partitioning into work groups and then into work items in such a way, that inside of each work group only a single work item is active.
-This corresponds to the fact, that there is less parallelism available on a CPU compared to GPUs.
-
-Interestingly, the results of our search have some artifacts in the expressions.
-For example, we iterate seven times on a function that always produces one element since there is a \pat{reduce-seq} inside.
-While this does not seem to affect performance much, a better search strategy could probably get rid of these artifacts and achieve a slightly better performance.
+\autoref{fig:reduce:expr} shows the three expressions we will use for our performance comparison.
+The first (\autoref{fig:reduce:expr:1}) corresponds to the first unoptimized Nvidia implementation (\autoref{lst:reduce1}),
+the second (\autoref{fig:reduce:expr:2}) corresponds to an implementation by Nvidia with some optimizations applied (\autoref{lst:reduce3}), and
+the third (\autoref{fig:reduce:expr:3}) corresponds to the fully optimized Nvidia implementation (\autoref{lst:reduce6}).
 
 
-\paragraph{performance}
-
-\begin{figure*}[t]
+\begin{figure}
   \centering
-  \begin{subfigure}[b]{0.475\linewidth}
-    \includegraphics[width=\linewidth]{PLDI/first\string_results\string_nv.pdf}
-    \caption{Nvidia GPU}
-    \label{fig:ref-compare-nv}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.475\linewidth}
-    \includegraphics[width=\linewidth]{PLDI/first\string_results\string_amd.pdf} 
-    \caption{AMD GPU}
-    \label{fig:ref-compare-amd}
-  \end{subfigure}
-  \vspace{-1.5em}
-  \caption{Performance comparison of hand-written version versus automatically generated ones for two different devices.
-  Our automatically explored version \emph{auto-expl} achieves performance on par with the best high performance libraries on both platforms.}
-  \label{fig:ref-compare}
-\end{figure*}
+  \includegraphics[width=.8\linewidth]{PLDI/first\string_results\string_nv.pdf}
+  \caption{Performance comparisons for code generated for three low-level expressions against native \OpenCL code.}
+  \label{fig:reduce:expr:performance}
+\end{figure}
 
+\autoref{fig:reduce:expr:performance} shows the performance of these three versions compared to the corresponding native \OpenCL implementations by Nvidia and two additional libraries providing implementations of parallel reduction on \GPUs.
+CUBLAS~\cite{cuBLAS} represents the CUDA-specific implementation of BLAS that only runs Nvidia
+Here we used the \emph{asum} benchmark for our comparison which performs a parallel reduction but first applies a function computing the absolute value on every element of the input vector. 
+We also include a parallel reduction implemented with Thrust~\cite{BellHo2011}, a library for simplified \GPU programming developed by Nvidia and based on CUDA.
 
-We now compare our automatically generated expression with the best state of the art and the different hand-written versions.
-Figure~\ref{fig:ref-compare} shows the performance of our fully automated approach labeled \emph{auto-expl} compared with the performance of high-performance libraries offering a pre-implemented reduction pattern.
-clBlas~\cite{clBLAS} is the BLAS OpenCL implementations written by AMD that runs on both Nvidia and AMD hardware.
-cuBLAS~\cite{cuBLAS} represents the CUDA-specific implementation of BLAS that only runs Nvidia.
-We also evaluated Thrust~\cite{BellHo2011}, a library developed by Nvidia.% based on CUDA.
-
-%The results for the Nvidia system in figure~\ref{fig:ref-compare-nv} show, that the BLAS implementations are the fastest followed closely by the version found automatically by our search, which outperforms all other hand written versions.
-The results for the Nvidia system in figure~\ref{fig:ref-compare-nv} show that the version found automatically by our search outperforms all hand written versions and is very close to the performance of the BLAS implementations.
-The results for the AMD system are similar (see figure~\ref{fig:ref-compare-amd}).
-As cuBLAS and Thrust are implemented in CUDA, we are not able run these versions on AMD GPUs.
-Again, our automatically generated codes reaches performance comparable to the best hand-written version and clBLAS.
-
+The results are reported as achieved memory bandwidth which is computed from the absolute runtime of each version and the input data size.
+This metric allows to compare each version against the hardware bandwidth limit.
+The performance of the generated \OpenCL code from our three expressions matches or even slightly outperforms the corresponding native \OpenCL implementations from Nvidia.
+This should give some confidence that our systematically generated code can offer high performance, once the right set of optimizations -- encoded in our rewrite rules -- are applied.
+The performance of our generated code for the fully optimized low-level expression even matches the performance of the highly optimized CUBLAS library written by Nvidia and outperforms the Thrust library.
 
 
 
