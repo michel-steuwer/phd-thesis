@@ -10,7 +10,7 @@ We will start our evaluation by looking at the parallel reduction example which 
 We will then investigate application examples from linear algebra, mathematical finance, and physics.
 We will conclude the chapter with a brief study showing how the rewrite rules can be applied automatically and how effective such an automatic search strategy is for a simple application example.
 
-For all applications we show the high-level and low-level expression as well as performance results comparing the generated \OpenCL code against manually tuned \OpenCL code.
+For all applications we show performance results comparing the generated \OpenCL code against manually tuned \OpenCL code.
 
 \section{Experimental Setup}
 We used three hardware platforms: an Nvidia GeForce GTX 480 \GPU, an AMD Radeon HD 7970 \GPU and a dual socket Intel Xeon E5530 server, with 8 cores in total.
@@ -20,6 +20,7 @@ The GPU drivers installed were 310.44 for Nvidia and 13.1 for AMD on our Linux s
 We use the profiling \APIs from \OpenCL and \CUDA to measure kernel execution time and the \textit{gettimeofday} function for the \CPU implementation.
 We exclude the data transfer time to and from the \GPU in all runtime numbers reported in this chapter, as we want to focus on the quality of the generated \OpenCL kernel code.
 We repeat each experiment 100 times and report median runtimes.
+
 
 
 
@@ -127,10 +128,6 @@ This metric allows to compare each version against the hardware bandwidth limit.
 The performance of the generated \OpenCL code from our three expressions matches, or even slightly outperforms, the corresponding native \OpenCL implementations written by Nvidia.
 These results give some evidence that our systematically generated code can offer high performance, once the right set of optimizations -- encoded in our rewrite rules -- are applied.
 The performance of our generated code for the fully optimized low-level expression even matches the performance of the highly optimized CUBLAS library written by Nvidia and outperforms the Thrust library.
-
-
-
-
 
 \subsection{Automatically applying of the rewrite rules}
 
@@ -313,16 +310,18 @@ For more complex applications the search space becomes bigger and possible more 
 We intend to work on this topic more in the future, as we will discuss in more detail in \autoref{section:future-work}.
 
 
+
+
 \section{Linear Algebra Applications}
 
-For our linear algebra benchmarks, we have performed experiments with multiple input sizes.
+In this section we evaluate four linear algebra applications: scaling a vector with a constant (\emph{scal}), summing up the absolute values of a vector (\emph{asum}), computing the dot product of two vector (\emph{dot}), and performing a matrix vector multiplication (\emph{gemv}).
+We have performed experiments with a small and large input size.
 For \bench{scal}, \bench{asum} and \bench{dot}, the small input size corresponds to a vector size of 16M elements (64MB).
-The large input size uses 128M elements (512MB, the maximum OpenCL buffer size for our platforms).
+The large input size uses 128M elements (512MB, the maximum \OpenCL buffer size for our platforms).
 For \bench{gemv}, we use an input matrix of 4096$\times$4096 elements (64MB) and a vector size of 4096 elements (16KB) for the small input size.
 For the large input size, the matrix size is 8192$\times$16384 elements (512MB) and the vector size 8192 elements (32KB).
 
-
-We choose linear algebra kernels as our first set of benchmarks, because they are well known, easy to understand, and used as building blocks in many other applications.
+We choose linear algebra kernels as benchmarks, because they are well known, easy to understand, and used as building blocks in many other applications.
 Figure~\ref{lst:linear-algebra-expr} shows how we express vector scaling, sum of absolute values, dot product of two vectors and matrix vector multiplication using our high-level patterns.
 While three benchmarks perform computations on vectors, matrix vector multiplication illustrates a computation using a 2D data structures.
 
@@ -343,6 +342,8 @@ The dot-product from gemv (line~9) might be implemented in a totally different w
   caption={Linear algebra kernels from the BLAS library expressed using our high-level algorithmic patterns.},%
   label={lst:linear-algebra-expr}%
   ]
+$scal = \map (\lambda\ x.\ \alpha \times x)$
+
 add x y  = x + y
 mult x y = x * y
 abs x    = if (x < 0) -x else x
