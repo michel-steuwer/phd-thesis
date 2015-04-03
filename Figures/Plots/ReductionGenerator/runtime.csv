@@ -1,0 +1,9 @@
+Version;Type; value
+Listing 5.2;Hand-written  ; 22.1649
+|Figure 6.1a;Generated  ; 25.3886
+Listing 5.4;Hand-written  ; 41.5486
+|Figure 6.1b;Generated  ; 48.6003
+Listing 5.7;Hand-written  ; 115.3737
+|Figure 6.1c;Generated  ; 137.6170
+Thrust;Library  ; 109.4220
+|CUBLAS;Library  ; 139.3827

@@ -1,0 +1,7 @@
+Version;Platform; value
+Generated;Nvidia; 130.27
+CUBLAS;Nvidia; 139.23
+Generated;AMD; 195.336
+clBLAS;AMD; 207.00
+Generated;Intel; 18.79
+MKL;Intel; 11.21
