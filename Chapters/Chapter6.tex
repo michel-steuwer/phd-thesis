@@ -314,129 +314,113 @@ We intend to work on this topic more in the future, as we will discuss in more d
 
 \section{Linear Algebra Applications}
 
-In this section we evaluate four linear algebra applications: scaling a vector with a constant (\emph{scal}), summing up the absolute values of a vector (\emph{asum}), computing the dot product of two vector (\emph{dot}), and performing a matrix vector multiplication (\emph{gemv}).
+In this section we evaluate four linear algebra applications: scaling a vector with a constant ($scal$), summing up the absolute values of a vector ($asum$), computing the dot product of two vector ($dot$), and performing a matrix vector multiplication ($gemv$).
 We have performed experiments with a small and large input size.
-For \bench{scal}, \bench{asum} and \bench{dot}, the small input size corresponds to a vector size of 16M elements (64MB).
+For $scal$, $asum$ and $dot$, the small input size corresponds to a vector size of 16M elements (64MB).
 The large input size uses 128M elements (512MB, the maximum \OpenCL buffer size for our platforms).
-For \bench{gemv}, we use an input matrix of 4096$\times$4096 elements (64MB) and a vector size of 4096 elements (16KB) for the small input size.
+For $gemv$, we use an input matrix of 4096$\times$4096 elements (64MB) and a vector size of 4096 elements (16KB) for the small input size.
 For the large input size, the matrix size is 8192$\times$16384 elements (512MB) and the vector size 8192 elements (32KB).
 
 We choose linear algebra kernels as benchmarks, because they are well known, easy to understand, and used as building blocks in many other applications.
-Figure~\ref{lst:linear-algebra-expr} shows how we express vector scaling, sum of absolute values, dot product of two vectors and matrix vector multiplication using our high-level patterns.
-While three benchmarks perform computations on vectors, matrix vector multiplication illustrates a computation using a 2D data structures.
+\autoref{lst:linear-algebra-expr} shows how we express vector scaling, sum of absolute values, dot product of two vectors and matrix vector multiplication using our high-level patterns.
+While the first three benchmarks perform computations on vectors, matrix vector multiplication illustrates a computation using a 2D data structures.
 
-For scaling (line~5), the \pat{map} pattern applies a function to each element which multiplies it with a constant.
-This function is expressed by partially applying the \code{mult} function, \ie binding \code{a} to the first argument of \code{mult}.
-The sum of absolute values (line~6) and the dot product (line~7) applications both produce scalar results by performing a summation, which we express using the \pat{reduce} pattern combined with the addition.
-For dot product, a pair-wise multiplication of its two input vectors is performed before applying the reduction.
-This is expressed using the \pat{zip} and \pat{map} patterns.
+For scaling (line~\ref{lst:linear-algebra-expr:scal}), the \map pattern applies a function to each element which multiplies it with a constant $\alpha$.
+The sum of absolute values (line~\ref{lst:linear-algebra-expr:asum}) and the dot product (line~\ref{lst:linear-algebra-expr:dot}) applications both produce scalar results by performing a summation, which we express using the \reduce pattern customized with the addition.
+For dot product, a pair-wise multiplication of its two input vectors is performed before applying the reduction expressed using the \zip and \map patterns.
 
-Line~8--10 shows matrix vector multiplication as defined in BLAS: $\vec{y} = \alpha A \vec{x} + \beta \vec{y}$.
-To multiply $A$ with $\vec{x}$, the \pat{map} pattern maps the computation of the dot-product with the input vector $\vec{x}$ to each row of the matrix $A$ (line~9).
-Notice how we are reusing the high-level expressions for dot-product. % and scaling as building blocks for the more complex matrix-vector multiplication.
-This shows the power of our system: expressions describing algorithmic concepts can be reused, without committing to a particular low-level implementation.
-The dot-product from gemv (line~9) might be implemented in a totally different way from the stand-alone dot-product.
+Line~\ref{lst:linear-algebra-expr:gemv} shows matrix vector multiplication as defined in BLAS: $\vec{y} = \alpha A \vec{x} + \beta \vec{y}$.
+To multiply the matrix $A$ with the vector $\vec{x}$, the \map pattern maps the computation of the dot-product with the input vector $\vec{x}$ to each row of the matrix $A$.
+Afterwards the resulting vector is added to the scaled vector $\vec{y}$ using the \zip and \map patterns.
+Notice how we are reusing the high-level expressions for dot-product and scaling as building blocks for the more complex matrix-vector multiplication.
+This shows one strength of our system: expressions describing algorithmic concepts can be reused, without committing to a particular low-level implementation.
+The dot-product from $gemv$ might be implemented in a totally different way from the stand-alone dot-product.
 
 \begin{lstlisting}[%
   float,%
   caption={Linear algebra kernels from the BLAS library expressed using our high-level algorithmic patterns.},%
-  label={lst:linear-algebra-expr}%
+  label={lst:linear-algebra-expr},%
+  lineskip={1em}%
   ]
-$scal = \map (\lambda\ x.\ \alpha \times x)$
-
-add x y  = x + y
-mult x y = x * y
-abs x    = if (x < 0) -x else x
-
-scal a xs = map (mult a) xs
-asum xs   = reduce add 0 (map abs xs)
-dot xs ys = reduce add 0 (map mult (zip xs ys))
-
-gemv A xs ys a b =
-  map (
-    \ (Ar, y) ->
-      map add (zip
-        (scal a $\circ$ dot xs Ar)
-        scal b y
-      )
-  ) (zip A ys)
+$scal\ \alpha\ xs = \map\ (\lambda\ x.\ \alpha \times x)\ xs\label{lst:linear-algebra-expr:scal}$
+$asum\ xs   = \reduce\ (+)\ 0\ (\map\ abs\ xs)\label{lst:linear-algebra-expr:asum}$
+$dot\ xs\ ys  = \reduce\ (+)\ 0\ (\map\ (\times)\ (\zip\ xs\ ys))\label{lst:linear-algebra-expr:dot}$
+$gemv\ mat\ xs\ ys\ \alpha\ \beta =\label{lst:linear-algebra-expr:gemv}$                    $\map\ (+)\ \big(\zip\ (\map\ (scal\ \alpha \circ dot\ xs)\ mat)\ (scal\ \beta\ ys) \big)$
 \end{lstlisting}
+%$\begin{aligned}gemv\ &mat\ xs\ ys\ \alpha\ \beta =\\[-.5em]&\map\ (+)\ \big(\zip\ (\map\ (scal\ \alpha \circ dot\ xs)\ mat)\ (scal\ \beta\ ys) \big)\end{aligned}$
+
+
 
 
 \subsection{Comparison vs. Portable Implementation}
-% OpenCL is not performance portable
 
 \begin{figure}[t]
   \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
   \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
            We outperform it on most benchmarks and platforms.}
-  \label{fig:clblas}
+  \label{fig:linear-algebra-expr:clblas}
 \end{figure}
 
-First, we show how our approach performs across three platforms.
-We use the BLAS OpenCL implementations written by AMD as our baseline for this evaluation since it is inherently portable across all different platforms.
-Figure~\ref{fig:clblas} shows the performance of our approach relative to clBLAS for the BLAS routines.
+First, we show how our approach performs across our three test platforms.
+We use the BLAS OpenCL implementations written by AMD as our baseline for this evaluation since it is implemented in \OpenCL and functionally portable across all different platforms.
+\autoref{fig:linear-algebra-expr:clblas} shows the performance of our approach relative to clBLAS for our four benchmarks.
 As can be seen, we achieve better performance than clBLAS on most platforms and benchmarks.
-The speedups are the highest for the CPU, with up to 20$\times$ for the \bench{asum} benchmark with a small input size.
-The reason is that clBLAS was written and tuned specifically for an AMD GPU which usually exhibit a larger number of parallel processing units.
-As we saw in Section~\ref{search}, our systematically derived expression for this benchmark is specifically tuned for the CPU by avoiding creating too much parallelism, which is what gives us such large speedup.
+The speedups are the highest for the \CPU, with up to 20$\times$ for the $asum$ benchmark with a small input size.
+The reason is that clBLAS was written and tuned specifically for an AMD \GPU which usually exhibit a larger number of parallel processing units.
+Our systematically derived expression for this benchmark is specifically tuned for the \CPU by avoiding creating too much parallelism, which is what gives us such large speedup.
 
-Figure~\ref{fig:clblas} also shows the results we obtain relative to the Nvidia SDK \bench{BlackScholes} and SHOC molecular dynamics \bench{MD} benchmark.
-For \bench{BlackScholes}, we see that our approach is on par with the performance of the Nvidia implementation on both GPUs.
-On the CPU, we actually achieve a 2.2$\times$ speedup due to the fact that the Nvidia implementation is tuned for GPUs while our implementation generates different code for the CPU.
-For \bench{MD}, we are actually on par with the OpenCL implementation on all platforms.
+
+
 
 \subsection{Comparison vs. Highly-tuned Implementations}
 
 \begin{figure*}[t]
   \centering
-  \begin{subfigure}[b]{0.315\linewidth}
+  \begin{subfigure}[b]{0.48\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_BEST\string_nv}
     \caption{Nvidia GPU}
-    \label{fig:results-nv}
+    \label{fig:linear-algebra-expr:results:nv}
   \end{subfigure}
-  \hspace{0.015\linewidth}
-  \begin{subfigure}[b]{0.315\linewidth}
+  \hfill
+  \begin{subfigure}[b]{0.48\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_BEST\string_amd}
     \caption{AMD GPU}
-    \label{fig:results-amd}
+    \label{fig:linear-algebra-expr:results:amd}
   \end{subfigure}
-  \hspace{0.015\linewidth}
-  \begin{subfigure}[b]{0.315\linewidth}
+  \\
+  \centering
+  \begin{subfigure}[b]{0.48\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_MKL\string_intel}
     \caption{Intel CPU}
-    \label{fig:results-cpu}
+    \label{fig:linear-algebra-expr:results:intel}
   \end{subfigure}
-  \vspace{-1.5em}
   \caption{Performance comparison with state of the art platform-specific libraries; CUBLAS for Nvidia, clBLAS for AMD, MKL for Intel.
            Our approach matches the performance on all three platforms and outperforms clBLAS in some cases.
-           %of CUBLAS and MKL, and outperforms clBLAS on some routines.
          }
-   \label{fig:results}
+   \label{fig:linear-algebra-expr:results}
 \end{figure*}
 
 We compare our approach with a state of the art implementation for each platform.
 For Nvidia, we pick the highly tuned CUBLAS implementation of BLAS written by Nvidia.
-For the AMD GPU, we use the same clBLAS implementation as before given that it has been written and tuned specifically for AMD GPUs.
-Finally, for the CPU we use the Math Kernel Library (MKL) implementation of BLAS written by Intel, which is known for its high performance.
+For the AMD \GPU, we use the same clBLAS implementation as before given that it has been written and tuned specifically for AMD \GPUs.
+Finally, for the \CPU we use the Math Kernel Library (MKL) implementation of BLAS written by Intel, which is known for its high performance.
 
-Figure~\ref{fig:results-nv} shows that we actually match the performance of CUBLAS for \bench{scal}, \bench{asum} and \bench{dot} on the Nvidia GPU.
-For \bench{gemv} we outperform CUBLAS on the small size by 20\% while we are within 5\% for the large input size.
-Given that CUBLAS is a proprietary library highly tuned for Nvidia GPUs, these results should offer some confidence that our technique is able to achieve high performance.
+\autoref{fig:linear-algebra-expr:results:nv} shows that the code generated by our approach actually matches the performance of CUBLAS for $scal$, $asum$ and $dot$ on the Nvidia \GPU.
+For $gemv$ we outperform CUBLAS on the small size by 20\% while we are within 5\% for the large input size.
+Given that CUBLAS is a proprietary library highly tuned for Nvidia \GPUs, these results show that our technique is able to achieve high performance.
 
-On the AMD GPU, we are surprisingly up to 4.5$\times$ faster than the clBLAS implementation on \bench{gemv} small input size as shown in Figure~\ref{fig:results-amd}.
+On the AMD \GPU, we are surprisingly up to 4.5$\times$ faster than the clBLAS implementation on $gemv$ small input size as shown in \autoref{fig:linear-algebra-expr:results:amd}.
 The reason for this is found in the way clBLAS is implemented.
-%For the \bench{gemv} benchmark,
-clBLAS performs automatic code generation using fixed templates.
-In contrast to our approach, they only generate one implementation since they do not explore different pattern compositions.
+clBLAS generates the \OpenCL code using fixed templates.
+In contrast to our approach, only one implementation is generated since they do not explore different pattern compositions.
 
-For the Intel CPU (Figure~\ref{fig:results-cpu}), our approach beats MKL for one benchmark and matches the performance of MKL on most of the other three benchmarks.
-For the small input sizes for the \bench{scal} and \bench{dot} benchmarks we are within 13\% and 30\% respectively.
+For the Intel \CPU (\autoref{fig:linear-algebra-expr:results:intel}), our approach beats MKL for one benchmark and matches the performance of MKL on most of the other three benchmarks.
+For the small input sizes for the $scal$ and $dot$ benchmarks we are within 13\% and 30\% respectively.
 For the larger input sizes, we are on par with MKL for both benchmarks.
-The \bench{asum} implementation in the MKL does not use thread level parallelism, where our implementation does and, thus, achieves a speedup of up to 1.78 on the larger input size.
+The $asum$ implementation in the MKL does not use thread level parallelism, where our implementation does and, thus, achieves a speedup of up to 1.78 on the larger input size.
 
 
-This section has shown that our approach generates \emph{performance portable} code which is competitive with highly-tuned platform specific implementations.
+These results have shown that our approach generates \emph{performance portable} code which is competitive with highly-tuned platform specific implementations.
 
 
 
@@ -449,101 +433,102 @@ This section has shown that our approach generates \emph{performance portable} c
 
 \section{Mathematical Finance}
 
-For \bench{BlackScholes}, the problem size is fixed to 4 million elements and for \bench{MD} it is 12288 particles.
-
-The BlackScholes application uses a Monte-Carlo method for option pricing and computes for each stock price \code{s} a pair of call and put options \code{\{c,p\}}.
-Figure~\ref{fig:blackScholes} shows the BlackScholes implementation, where the function defined in line~1 computes the call and put option for a single stock price \code{s}.
-Two intermediate results \code{d1} and \code{d2} are computed and used to compute the two options, which are returned as a single pair.
-% The \code{compD1}, \code{compD2}, \code{compCall} and \code{compPut} functions are not shown here since they only contain purely sequential code implementing the BlackScholes model.
-This \code{BSComputation} function is applied to all stock prices, stored in a vector $\vec{s}$, using the \pat{map} pattern in line~4.
+The \emph{BlackScholes} application uses a Monte-Carlo method for option pricing and computes for each stock price $s$ a pair of call and put options.
+\autoref{lst:blackScholes} shows the BlackScholes implementation, where the function defined in line~\ref{lst:blackScholes:bscomp} computes the call and put option for a single stock price $s$.
+Two intermediate results $d1$ (line~\ref{lst:blackScholes:d1}) and $d2$ (line~\ref{lst:blackScholes:d2}) are computed and used to compute the two options, which are returned as a single pair (line~\ref{lst:blackScholes:return}).
+The computational functions $compD1$, $compD2$, $compCallOption$, and $compPutOption$ are not shown here since they only contain purely sequential code implementing the BlackScholes model.
+This $BSComputation$ function is applied to all stock prices, stored in a vector $stockPrices$, using the \map pattern in line~\ref{lst:blackScholes:map}.
 
 
 \begin{lstlisting}[%
   float,%
   caption={BlackScholes mathematical finance application expressed using our high-level algorithmic patterns.},%
-  label={lst:bs-expr}%
+  label={lst:blackScholes}%
   ]
-BSComputation s =
-  d1 = compD1 s
-  d2 = compD2 d1 s
-  { compCall d1 d2 s, compPut d1 d2 s }
+$BSComputation\ s =\label{lst:blackScholes:bscomp}$
+  $\textit{let}\ d1 = compD1\ s\label{lst:blackScholes:d1}$
+  $\textit{let}\ d2 = compD2\ d1\ s\label{lst:blackScholes:d2}$
+  $( compCallOption\ d1\ d2\ s,\ comPutOption\ d1\ d2\ s )\label{lst:blackScholes:return}$
 
-blackScholes = map BSComputation
+$blackScholes\ stockPrices = \map\ BSComputation\ stockPrices\label{lst:blackScholes:map}$
 \end{lstlisting}
-\begin{figure}[t]
-  \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
-  \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
-           We outperform it on most benchmarks and platforms.}
-  \label{fig:clblas}
-\end{figure}
+%\begin{figure}[t]
+%  \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
+%  \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
+%           We outperform it on most benchmarks and platforms.}
+%  \label{fig:clblas}
+%\end{figure}
 
 
 
-
-
-
-
-
-
-
-
+\autoref{fig:blackScholes:results} show the result compared to an \OpenCL implementation of the BlackScholes model provided by Nvidia as part of their software development kit.
+We measured the runtime on all three test platforms for a problem size of 4 million stock prices.
+We see that our approach is on par with the performance of the Nvidia implementation on both \GPUs.
+On the \CPU, we actually achieve a 2.2$\times$ speedup due to the fact that the Nvidia implementation is tuned for \GPUs while our implementation generates different code for the \CPU.
 
 
 
 \section{Physics Application}
 
-For \bench{BlackScholes}, the problem size is fixed to 4 million elements and for \bench{MD} it is 12288 particles.
-
-
-Another application we consider is the molecular dynamics (MD) application from the SHOC~\cite{danalis10shoc} benchmark suite.
+The molecular dynamics (MD) application is a physics simulation taken from the SHOC~\cite{DanalisMMMRSTV10} benchmark suite.
 It calculates the sum of all forces acting on a particle from its neighbors.
-Figure~\ref{fig:md} shows the implementation using our high-level patterns.
+\autoref{lst:md} shows the implementation using our high-level patterns.
 
-The function \code{updateF} (line~1) updates the force \code{f} of particle \code{p} by computing and adding the force between a single particle and one of its neighbors.
-%\code{updateF} takes an index of a neighbor \code{nId}, the vector storing all particles $\vec{p}$, and a threshold \code{t} as additional parameters.
-Using the neighbor's index \code{nId} and the vector storing all particles $\vec{p}$ the neighboring particle is accessed and the distance is computed (line~2).
-%between the neighboring particle and the particle \code{p} ist computed.
-If the distance is below threshold \code{t} the force between the two particles is calculated and added to the overall force \code{f} (line~3).
-% Otherwise the particle is ignored in the summation.
+The function \code{updateF} (line~\ref{lst:md:updateF}) updates the force $f$ influencing particle $p$ by computing and adding the force between a single particle and one of its neighbors.
+Using the neighbor's index $nId$ and the vector storing all particles $ps$ the neighboring particle is accessed (line~\ref{lst:md:access}) and the distance between the particle $p$ and its neighbor $n$ is computed (line~\ref{lst:md:distance}).
+If the distance is below threshold $t$ the force between the two particles is calculated and added to the overall force $f$ (line~\ref{lst:md:update}).
+If the distance is above the threshold the force is not updated (line~\ref{lst:md:noUpdate}).
 
+For computing the force for all particles $ps$, we use the \zip pattern~(line~\ref{lst:md:zip}) to build a vector of pairs, where each pair combines a single particle with the indices of all of its neighboring particles ($p$ and $ns$ in line~\ref{lst:md:md}).
+The function which is applied to each pair by the \map pattern in line~\ref{lst:md:md} is expressed as an lambda expression.
+Computing the resulting force exerted by all the neighbors on one particle is done by applying the \reduce pattern on the vector $ns$ storing the neighboring indices.
+We use function $updateF$ inside the reduction to compute the force for each particle with index $nId$ and add it to the overall force on $p$.
 
-
-%
-%
-
-
-For computing the force for all particles $\vec{p}$, we use the \pat{zip} pattern~(line~7) to build a vector of pairs, where each pair combines a single particle with the indices of all of its neighboring particles.
-The function which is applied to each pair by the \pat{map} pattern~(line~5) is expressed as an lambda expression~(line~6).
-Computing the resulting force exerted by all the neighbors on one particle is done by applying the \pat{reduce} pattern on vector $\vec{n}$ storing the neighboring indices.
-We use function \code{updateF} inside the reduction to compute the force for each particle with index \code{nId} and add it to the overall force on \code{p}.
-% At this point we fix all but the first two arguments as the other arguments remain constant for particle \code{p}.
-The usage of lambda expressions in our system allows for easy binding of additional information as arguments to functions.
-This application example should give some evidence that our patterns are flexible enough to implement real world applications.
+We use lambda expressions for easy binding of additional information as arguments to functions.
+This application example shows that our patterns are flexible enough to implement more complicated applications.
 
 
 \begin{lstlisting}[%
   float,%
   caption={Molecular dynamics physics application expressed using our high-level algorithmic patterns.},%
-  label={lst:md-expr}%
+  label={lst:md}%
   ]
-updateF f nId p ps t =
-  n = ps[nId]
-  d = calculateDistance p n
-  if (d < t) f + (calculateForce d)
-  else       f
+$updateF\ f\ nId\ p\ ps\ t =\label{lst:md:updateF}$
+  $\textit{let}\ n = ps[nId]\label{lst:md:access}$
+  $\textit{let}\ d = calculateDistance\ p\ n\label{lst:md:distance}$
+  $\textit{if}\ (d < t)\ f + (calculateForce\ d)\label{lst:md:update}$
+  $\textit{else}\ f\label{lst:md:noUpdate}$
 
-md ps N t = map (
-    $\lambda$ (p, ns) $\rightarrow$
-      reduce ($\lambda$ (f, nId) $\rightarrow$ updateF f nId p ps t) 0 ns
-  ) (zip ps N)
+$md\ ps\ nbhs\ t = \map\ \big(\lambda\ p,ns.\label{lst:md:md}$
+    $\reduce\ (\lambda\ f,nId.\ updateF\ f\ nId\ p\ ps\ t)\ 0\ ns$
+  $\big)\ (zip\ ps\ nbhs)\label{lst:md:zip}$
 \end{lstlisting}
 
-\begin{figure}[t]
-  \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
-  \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
-           We outperform it on most benchmarks and platforms.}
-  \label{fig:clblas}
-\end{figure}
+We performed measurements with an input size of 12288 particles.
+
+
+
+%
+%\autoref{fig:linear-algebra-expr:clblas} also shows the results we obtain relative to the Nvidia SDK \bench{BlackScholes} and SHOC molecular dynamics \bench{MD} benchmark.
+%For \bench{BlackScholes}, 
+%For \bench{MD}, we are actually on par with the OpenCL implementation on all platforms.
+
+
+%\begin{figure}[t]
+%  \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
+%  \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
+%           We outperform it on most benchmarks and platforms.}
+%  \label{fig:clblas}
+%\end{figure}
+
+
+
+
+
+
+
+
+
 
 
 
