@@ -1,0 +1,25 @@
+Benchmark;Platform;   value
+scal-small;Nvidia GPU;1.0093
+scal-small;AMD GPU;   1.483406
+scal-small;Intel CPU; 2.822859
+scal-large;Nvidia GPU;1.018674
+scal-large;AMD GPU;   1.548678
+scal-large;Intel CPU; 3.772676
+asum-small;Nvidia GPU;0.9253961
+asum-small;AMD GPU;   0.9302406
+asum-small;Intel CPU;19.96387
+asum-large;Nvidia GPU;0.96113
+asum-large;AMD GPU;   0.9971726
+asum-large;Intel CPU; 8.529321
+dot-small;Nvidia GPU; 0.9334049
+dot-small;AMD GPU;    0.9782363
+dot-small;Intel CPU;  2.866173
+dot-large;Nvidia GPU; 0.9640932
+dot-large;AMD GPU;    0.9795228
+dot-large;Intel CPU;  3.534209
+gemv-small;Nvidia GPU;2.589461
+gemv-small;AMD GPU;   4.505604
+gemv-small;Intel CPU; 1.974999
+gemv-large;Nvidia GPU;3.13722
+gemv-large;AMD GPU;   3.063014
+gemv-large;Intel CPU; 2.581609

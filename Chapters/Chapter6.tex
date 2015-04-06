@@ -355,7 +355,8 @@ $gemv\ mat\ xs\ ys\ \alpha\ \beta =\label{lst:linear-algebra-expr:gemv}$        
 \subsection{Comparison vs. Portable Implementation}
 
 \begin{figure}[t]
-  \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
+  \centering
+  \includegraphics[width=.8\linewidth]{Plots/LA/LA_vs_clBLAS.pdf}
   \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
            We outperform it on most benchmarks and platforms.}
   \label{fig:linear-algebra-expr:clblas}
@@ -452,12 +453,13 @@ $BSComputation\ s =\label{lst:blackScholes:bscomp}$
 
 $blackScholes\ stockPrices = \map\ BSComputation\ stockPrices\label{lst:blackScholes:map}$
 \end{lstlisting}
-%\begin{figure}[t]
-%  \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
-%  \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
-%           We outperform it on most benchmarks and platforms.}
-%  \label{fig:clblas}
-%\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=.65\linewidth]{Plots/BlackScholes/bs_speedup.pdf}
+  \caption{Performance of our approach relative to a portable \OpenCL implementation of the BlackScholes benchmark from Nvidia.}
+\label{fig:blackScholes:results}
+\end{figure}
 
 
 
@@ -504,9 +506,21 @@ $md\ ps\ nbhs\ t = \map\ \big(\lambda\ p,ns.\label{lst:md:md}$
   $\big)\ (zip\ ps\ nbhs)\label{lst:md:zip}$
 \end{lstlisting}
 
-We performed measurements with an input size of 12288 particles.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=.65\linewidth]{Plots/MD/md_speedup.pdf}
+  \caption{Performance of our approach relative to a portable \OpenCL implementation of the MD benchmark from the SHOC benchmark suite.}
+\label{fig:md:results}
+\end{figure}
+
+We performed measurements with an input size of 12288 particles for all three test platforms.
+The results are shown in \autoref{fig:md:results}.
+We can see, that the automatically generated \OpenCL code performs very close to the native \OpenCL implementation and is slightly faster on the Intel \CPU. 
 
 
+
+
+\section{Summary}
 
 %
 %\autoref{fig:linear-algebra-expr:clblas} also shows the results we obtain relative to the Nvidia SDK \bench{BlackScholes} and SHOC molecular dynamics \bench{MD} benchmark.

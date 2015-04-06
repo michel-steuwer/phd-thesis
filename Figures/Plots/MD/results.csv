@@ -1,0 +1,7 @@
+Version; Platform; value
+OpenCL;Nvidia GPU; 1
+Generated;Nvidia GPU; 0.9982531
+OpenCL;AMD GPU; 1
+Generated;AMD GPU; 1.011511
+OpenCL;Intel CPU; 1
+Generated;Intel CPU; 1.109293
