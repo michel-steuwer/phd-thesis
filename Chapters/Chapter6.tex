@@ -118,6 +118,7 @@ the third (\autoref{fig:reduce:expr:3}) corresponds to the fully optimized Nvidi
   \caption{Performance comparisons for code generated for three low-level expressions against native \OpenCL code.}
   \label{fig:reduce:expr:performance}
 \end{figure}
+\todo{change colors}
 
 \autoref{fig:reduce:expr:performance} shows the performance of these three versions compared to the corresponding native \OpenCL implementations by Nvidia and two additional libraries providing implementations of parallel reduction on \GPUs.
 CUBLAS~\cite{cuBLAS} represents the CUDA-specific implementation of BLAS that only runs on Nvidia hardware.
@@ -135,7 +136,7 @@ The performance of our generated code for the fully optimized low-level expressi
 For the parallel reduction benchmark we implemented a prototype search tool automatically applying the rewrite rules for finding low-level expressions which offer high-performance.
 Our prototype implementation starts with the high-level expression $\reduce\ (+)\ 0$ and transforms the expression using the rewrite rules and performs runtime experiments with the transformed expressions until a low-level \OpenCL expression is found which meats our performance expectations.
 As discussed earlier in \autoref{chapter:codeGeneration} multiple rewrite rules might be valid to be applied for a given expression, therefore, we implemented a simple strategy for deciding which rules to apply.
-This simple search strategy is loosely based on Bandit-based optimization~\cite{}.
+This simple search strategy is loosely based on Bandit-based optimization~\cite{MesmayRVP09}.
 
 Our search is an iterative process.
 Given an expression we list all the rewrite rules which are valid to be applied.
@@ -341,7 +342,7 @@ The dot-product from $gemv$ might be implemented in a totally different way from
   float,%
   caption={Linear algebra kernels from the BLAS library expressed using our high-level algorithmic patterns.},%
   label={lst:linear-algebra-expr},%
-  lineskip={1em}%
+  lineskip={1em}% TODO: smaller skip before last line
   ]
 $scal\ \alpha\ xs = \map\ (\lambda\ x.\ \alpha \times x)\ xs\label{lst:linear-algebra-expr:scal}$
 $asum\ xs   = \reduce\ (+)\ 0\ (\map\ abs\ xs)\label{lst:linear-algebra-expr:asum}$
