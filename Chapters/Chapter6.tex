@@ -6,9 +6,9 @@
 
 In this chapter we present application studies evaluating the performance of the \OpenCL code generated from expressions composed of parallel patterns using our systematic approach presented in the previous chapter.
 We first discuss our experimental setup used for the runtime experiments.
-We will start our evaluation by looking at the parallel reduction example which we used throughout the previous chapter and compare the performance of the manually optimized \OpenCL implementations against the systematically generated code.
-We will then investigate application examples from linear algebra, mathematical finance, and physics.
-We will conclude the chapter with a brief study showing how the rewrite rules can be applied automatically and how effective such an automatic search strategy is for a simple application example.
+We will then start our evaluation by looking at the parallel reduction example which we used throughout the previous chapter and compare the performance of the manually optimized \OpenCL implementations against the systematically generated code.
+We will discuss a brief study showing how the rewrite rules can be applied automatically and how effective such an automatic search strategy is for a simple application example.
+We will then investigate application examples from linear algebra, physics, and mathematical finance.
 
 For all applications we show performance results comparing the generated \OpenCL code against manually tuned \OpenCL code.
 
@@ -25,8 +25,9 @@ We repeat each experiment 100 times and report median runtimes.
 
 
 \section{Parallel Reduction}
-In this section we evaluate the performance of three of the low-level expressions presented in \autoref{sec:deriving:reduce} which resemble corresponding \OpenCL code provided by Nvidia performing a parallel summation of an array discussed at the beginning of \autoref{chapter:codeGeneration}.
-All these expressions have been systematically derived from the high-level expression for the parallel summation:
+In this section we evaluate the performance of three of the low-level expressions presented in \autoref{sec:deriving:reduce} performing a parallel summation of an array.
+These expressions resemble corresponding \OpenCL code provided by Nvidia discussed at the beginning of \autoref{chapter:codeGeneration}.
+All three expressions have been systematically derived from the high-level expression for the parallel summation:
 \begin{equation*}
   vecSum = \reduce\ (+)\ 0
 \end{equation*}
@@ -133,7 +134,7 @@ The performance of our generated code for the fully optimized low-level expressi
 
 For the parallel reduction benchmark we implemented a prototype search tool automatically applying the rewrite rules for finding low-level expressions which offer high-performance.
 Our prototype implementation starts with the high-level expression $\reduce\ (+)\ 0$ and transforms the expression using the rewrite rules and performs runtime experiments with the transformed expressions until a low-level \OpenCL expression is found which meats our performance expectations.
-As discussed earlier in \autoref{chapter:codeGeneration} multiple rules might be valid to be applied for a given expression, therefore, we implemented a simple strategy for deciding which rules to apply.
+As discussed earlier in \autoref{chapter:codeGeneration} multiple rewrite rules might be valid to be applied for a given expression, therefore, we implemented a simple strategy for deciding which rules to apply.
 This simple search strategy is loosely based on Bandit-based optimization~\cite{}.
 
 Our search is an iterative process.
@@ -149,7 +150,7 @@ We have limited the choices for these numerical parameters to a reasonable set o
 We envision to replace this simplistic search strategy with more advanced techniques in the future.
 
 \paragraph{Found expressions}
-We performed the automatic search on all three of our hardware platforms.
+We performed the automatic search on all three of our test platforms.
 
 \begin{figure*}[t]
 \captionsetup[subfigure]{justification=justified,singlelinecheck=false}
@@ -209,7 +210,7 @@ $\reduce \circ \join \circ \mapWorkgroup\ \big( \join \circ \asScalar \circ \map
 \end{figure*}
 
 Figure~\ref{fig:reduce:expr:auto} shows the best performing low-level expression found by applying our automatic search technique.
-The first expression (\autoref{fig:reduce:expr:auto:1}) was found on the Nvidia platform, the second (\autoref{fig:reduce:expr:auto:2}) on the AMD platform, and the third (\autoref{fig:reduce:expr:auto:3}) on the Intel platform.
+The first expression (\autoref{fig:reduce:expr:auto:1}) was found on the Nvidia platform, the second expression (\autoref{fig:reduce:expr:auto:2}) on the AMD platform, and the third expression (\autoref{fig:reduce:expr:auto:3}) on the Intel platform.
 We can make several important observations.
 The first observation is, that none of the expressions make use of the local memory (although our systems fully support it).
 It is common wisdom that using local memory on the \GPU enables high performance and in fact the highly tuned hand-written implementation of \textit{asum} use local memory on the \GPU.
@@ -229,12 +230,12 @@ While this does not seem to affect performance much, a better search strategy co
 
 
 \paragraph{Performance of found expressions}
-\autoref{fig:reduce:expr:automatic:performance} shows the performance of the code generated for the three expressions shown in \autoref{fig:reduce:expr:auto} performing a parallel reduction compared against the highly tuned implementations of \emph{asum}.
+\autoref{fig:reduce:expr:automatic:performance} shows the performance of the code generated for the three expressions shown in \autoref{fig:reduce:expr:auto} performing a parallel reduction.
 The three plots show the performance for the Nvidia platform (on the left), the AMD platform (in the middle), and the Intel platform (on the right).
 All plots are scaled according to the hardware bandwidth limit of the platform.
 On each platform we compare against a vendor provided, highly tuned implementation of the BLAS library, where we measured the bandwidth achieved for the \emph{asum} application.
 Where in the \emph{asum} application an additional operation (applying the absolute value function) is performed for every data item, we showed in \autoref{section:skelcl:evaluation:linearAlgebra} that the performance difference for the parallel reduction benchmark and the \emph{asum} benchmark is negligible when both are implemented properly.
-Therefore, we consider the BLAS implementations as a valid contender for a fair performance comparison.
+Therefore, we consider the BLAS implementations as valid contenders for a fair performance comparison.
 
 \begin{figure}
   \centering
@@ -245,7 +246,7 @@ Therefore, we consider the BLAS implementations as a valid contender for a fair 
 
 The results shows that the generated code for the automatically found expressions are on par with the CUBLAS implementation of Nvidia and the clBLAS implementation of AMD achieving about 95\% of their performance.
 On the Intel platform our generated code actually outperforms the MKL implementation.
-This is due to the implementation of MKL and the particular multi-core \CPU used.
+This is due to the implementation of MKL and the particular multi-core \CPU used in the experiments.
 For the \emph{asum} benchmark the MKL implementation does not use thread level parallelism, presumably with the assumption that \emph{asum} is a memory bound benchmark.
 The used multi-core \CPU is actually a two socket machine where two chips are combined on a single motherboard.
 In this configuration there are two memory controllers available -- one for each socket.
@@ -255,31 +256,24 @@ The three plots together also show that our approach offers true performance por
 Where each BLAS implementation is not-portable and bound to a specific hardware architecture, our system automatically searched and found three expressions systematically derived from a single high-level representation which offer high performance on all three platforms.
 With our approach we achieve the same relative performance on all platforms which is within 75\% of the corresponding hardware bandwidth limit.
 
-
-\paragraph{Search Efficiency}
-We now investigate the efficiency of our simple search strategy.
-Figure~\ref{fig:search} shows how many expressions were evaluated during the search.
-The evaluated expressions are grouped from left to right by the number of rules applied in the search tree.
-The red line connects the fastest expression found so far.
-
-\begin{figure*}[t]
+\begin{figure*}[p]
 %
-\begin{subfigure}[b]{0.48\linewidth}
+\centering
+\begin{subfigure}[b]{0.65\linewidth}
 \includegraphics[width=\linewidth]{nv\string_search.pdf}
 \caption{Nvidia GPU}
 \label{fig:search:nv}
 \end{subfigure}
-\hfill
+\\
 %
-\begin{subfigure}[b]{0.48\linewidth}
+\begin{subfigure}[b]{0.65\linewidth}
 \includegraphics[width=\linewidth]{amd\string_search.pdf}
 \caption{AMD GPU}
 \label{fig:search:amd}
 \end{subfigure}
 \\
-\centering
 %
-\begin{subfigure}[b]{0.48\linewidth}
+\begin{subfigure}[b]{0.65\linewidth}
 \includegraphics[width=\linewidth]{intel\string_search.pdf}
 \caption{Intel CPU}
 \label{fig:search:intel}
@@ -293,21 +287,28 @@ The red line connects the fastest expression found so far.
 \label{fig:search}
 \end{figure*}
 
+
+\paragraph{Search Efficiency}
+We now investigate the efficiency of our simple search strategy.
+Figure~\ref{fig:search} shows how many expressions were evaluated during the search.
+The evaluated expressions are grouped from left to right by the number of rules applied in the search tree.
+The red line connects the fastest expression found so far.
+
 As can be seen the performance improves steadily for all three platforms before reaching a plateau.
 For both \GPUs the best performance is reached after testing about 40 expressions.
 At this point we have fixed five derivations and found a subtree offering good performance for some expressions.
-Nevertheless, even in the later stages of the search many expressions offer bad performance, which is partly due to the sensitivity of \GPU for selecting appropriate numerical parameters.
+Nevertheless, even in the later stages of the search many expressions offer bad performance, which is mainly due to the sensitivity of \GPU for selecting appropriate numerical parameters.
 On the \CPU performance converges quicker and more expressions offer good performance.
-This shows that the \CPU is easier to optimize for and not as sensitive when selecting numerical parameters.
+This shows that for this particular benchmark the \CPU is easier to optimize for and not as sensitive when selecting numerical parameters.
 
 \bigskip
 
 \noindent
-This results show, that applying our rules automatically is feasible and capable of finding high performing low-level expressions for high-level expressions written by the programmer.
+These results show, that applying our rules automatically is feasible and capable of finding high performing low-level expressions for high-level expressions written by the programmer.
 Our approach offers true performance portability where the portable high-level expression is systematically and automatically optimized for a particular hardware architecture delivering similar relative performance on all tested devices.
-Nevertheless, we only tested our simple automatic search strategy with the parallel reduction benchmark.
+Nevertheless, we only tested our simple automatic search strategy with the parallel reduction as a single benchmark.
 For more complex applications the search space becomes bigger and possible more advanced search techniques have to be applied.
-We intend to work on this topic more in the future, as we will discuss in more detail in \autoref{section:future-work}.
+We intend to explore this topic in the future, as we will discuss in more detail in \autoref{section:future-work}.
 
 
 
@@ -322,7 +323,7 @@ For $gemv$, we use an input matrix of 4096$\times$4096 elements (64MB) and a vec
 For the large input size, the matrix size is 8192$\times$16384 elements (512MB) and the vector size 8192 elements (32KB).
 
 We choose linear algebra kernels as benchmarks, because they are well known, easy to understand, and used as building blocks in many other applications.
-\autoref{lst:linear-algebra-expr} shows how we express vector scaling, sum of absolute values, dot product of two vectors and matrix vector multiplication using our high-level patterns.
+\autoref{lst:linear-algebra-expr} shows how we express vector scaling, sum of absolute values, dot product and matrix vector multiplication using our high-level patterns.
 While the first three benchmarks perform computations on vectors, matrix vector multiplication illustrates a computation using a 2D data structures.
 
 For scaling (line~\ref{lst:linear-algebra-expr:scal}), the \map pattern applies a function to each element which multiplies it with a constant $\alpha$.
@@ -330,8 +331,8 @@ The sum of absolute values (line~\ref{lst:linear-algebra-expr:asum}) and the dot
 For dot product, a pair-wise multiplication of its two input vectors is performed before applying the reduction expressed using the \zip and \map patterns.
 
 Line~\ref{lst:linear-algebra-expr:gemv} shows matrix vector multiplication as defined in BLAS: $\vec{y} = \alpha A \vec{x} + \beta \vec{y}$.
-To multiply the matrix $A$ with the vector $\vec{x}$, the \map pattern maps the computation of the dot-product with the input vector $\vec{x}$ to each row of the matrix $A$.
-Afterwards the resulting vector is added to the scaled vector $\vec{y}$ using the \zip and \map patterns.
+To multiply the matrix $mat$ with the vector $xs$, the \map pattern maps the computation of the dot-product with the input vector $xs$ to each row of the matrix $mat$.
+Afterwards the resulting vector is added to the scaled vector $ys$ using the \zip and \map patterns.
 Notice how we are reusing the high-level expressions for dot-product and scaling as building blocks for the more complex matrix-vector multiplication.
 This shows one strength of our system: expressions describing algorithmic concepts can be reused, without committing to a particular low-level implementation.
 The dot-product from $gemv$ might be implemented in a totally different way from the stand-alone dot-product.
@@ -363,34 +364,28 @@ $gemv\ mat\ xs\ ys\ \alpha\ \beta =\label{lst:linear-algebra-expr:gemv}$        
 \end{figure}
 
 First, we show how our approach performs across our three test platforms.
-We use the BLAS OpenCL implementations written by AMD as our baseline for this evaluation since it is implemented in \OpenCL and functionally portable across all different platforms.
+We use the BLAS OpenCL implementations written by AMD as our baseline for this evaluation since it is implemented in \OpenCL and functionally portable across all test platforms.
 \autoref{fig:linear-algebra-expr:clblas} shows the performance of our approach relative to clBLAS for our four benchmarks.
 As can be seen, we achieve better performance than clBLAS on most platforms and benchmarks.
 The speedups are the highest for the \CPU, with up to 20$\times$ for the $asum$ benchmark with a small input size.
 The reason is that clBLAS was written and tuned specifically for an AMD \GPU which usually exhibit a larger number of parallel processing units.
 Our systematically derived expression for this benchmark is specifically tuned for the \CPU by avoiding creating too much parallelism, which is what gives us such large speedup.
 
-
-
-
-\subsection{Comparison vs. Highly-tuned Implementations}
-
-\begin{figure*}[t]
+\begin{figure*}[p]
   \centering
-  \begin{subfigure}[b]{0.48\linewidth}
+  \begin{subfigure}[b]{0.65\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_BEST\string_nv}
     \caption{Nvidia GPU}
     \label{fig:linear-algebra-expr:results:nv}
   \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.48\linewidth}
+  \\
+  \begin{subfigure}[b]{0.65\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_BEST\string_amd}
     \caption{AMD GPU}
     \label{fig:linear-algebra-expr:results:amd}
   \end{subfigure}
   \\
-  \centering
-  \begin{subfigure}[b]{0.48\linewidth}
+  \begin{subfigure}[b]{0.65\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_MKL\string_intel}
     \caption{Intel CPU}
     \label{fig:linear-algebra-expr:results:intel}
@@ -400,6 +395,11 @@ Our systematically derived expression for this benchmark is specifically tuned f
          }
    \label{fig:linear-algebra-expr:results}
 \end{figure*}
+
+
+
+
+\subsection{Comparison vs. Highly-tuned Implementations}
 
 We compare our approach with a state of the art implementation for each platform.
 For Nvidia, we pick the highly tuned CUBLAS implementation of BLAS written by Nvidia.
@@ -421,62 +421,13 @@ For the larger input sizes, we are on par with MKL for both benchmarks.
 The $asum$ implementation in the MKL does not use thread level parallelism, where our implementation does and, thus, achieves a speedup of up to 1.78 on the larger input size.
 
 
-These results have shown that our approach generates \emph{performance portable} code which is competitive with highly-tuned platform specific implementations.
-
-
-
-
-
-
-
-
-
-
-\section{Mathematical Finance}
-
-The \emph{BlackScholes} application uses a Monte-Carlo method for option pricing and computes for each stock price $s$ a pair of call and put options.
-\autoref{lst:blackScholes} shows the BlackScholes implementation, where the function defined in line~\ref{lst:blackScholes:bscomp} computes the call and put option for a single stock price $s$.
-Two intermediate results $d1$ (line~\ref{lst:blackScholes:d1}) and $d2$ (line~\ref{lst:blackScholes:d2}) are computed and used to compute the two options, which are returned as a single pair (line~\ref{lst:blackScholes:return}).
-The computational functions $compD1$, $compD2$, $compCallOption$, and $compPutOption$ are not shown here since they only contain purely sequential code implementing the BlackScholes model.
-This $BSComputation$ function is applied to all stock prices, stored in a vector $stockPrices$, using the \map pattern in line~\ref{lst:blackScholes:map}.
-
-
-\begin{lstlisting}[%
-  float,%
-  caption={BlackScholes mathematical finance application expressed using our high-level algorithmic patterns.},%
-  label={lst:blackScholes}%
-  ]
-$BSComputation\ s =\label{lst:blackScholes:bscomp}$
-  $\textit{let}\ d1 = compD1\ s\label{lst:blackScholes:d1}$
-  $\textit{let}\ d2 = compD2\ d1\ s\label{lst:blackScholes:d2}$
-  $( compCallOption\ d1\ d2\ s,\ comPutOption\ d1\ d2\ s )\label{lst:blackScholes:return}$
-
-$blackScholes\ stockPrices = \map\ BSComputation\ stockPrices\label{lst:blackScholes:map}$
-\end{lstlisting}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=.65\linewidth]{Plots/BlackScholes/bs_speedup.pdf}
-  \caption{Performance of our approach relative to a portable \OpenCL implementation of the BlackScholes benchmark from Nvidia.}
-\label{fig:blackScholes:results}
-\end{figure}
-
-
-
-\autoref{fig:blackScholes:results} show the result compared to an \OpenCL implementation of the BlackScholes model provided by Nvidia as part of their software development kit.
-We measured the runtime on all three test platforms for a problem size of 4 million stock prices.
-We see that our approach is on par with the performance of the Nvidia implementation on both \GPUs.
-On the \CPU, we actually achieve a 2.2$\times$ speedup due to the fact that the Nvidia implementation is tuned for \GPUs while our implementation generates different code for the \CPU.
-
-
-
 \section{Physics Application}
 
 The molecular dynamics (MD) application is a physics simulation taken from the SHOC~\cite{DanalisMMMRSTV10} benchmark suite.
 It calculates the sum of all forces acting on a particle from its neighbors.
 \autoref{lst:md} shows the implementation using our high-level patterns.
 
-The function \code{updateF} (line~\ref{lst:md:updateF}) updates the force $f$ influencing particle $p$ by computing and adding the force between a single particle and one of its neighbors.
+The function $updateF$ (line~\ref{lst:md:updateF}) updates the force $f$ influencing particle $p$ by computing and adding the force between a single particle and one of its neighbors.
 Using the neighbor's index $nId$ and the vector storing all particles $ps$ the neighboring particle is accessed (line~\ref{lst:md:access}) and the distance between the particle $p$ and its neighbor $n$ is computed (line~\ref{lst:md:distance}).
 If the distance is below threshold $t$ the force between the two particles is calculated and added to the overall force $f$ (line~\ref{lst:md:update}).
 If the distance is above the threshold the force is not updated (line~\ref{lst:md:noUpdate}).
@@ -487,7 +438,7 @@ Computing the resulting force exerted by all the neighbors on one particle is do
 We use function $updateF$ inside the reduction to compute the force for each particle with index $nId$ and add it to the overall force on $p$.
 
 We use lambda expressions for easy binding of additional information as arguments to functions.
-This application example shows that our patterns are flexible enough to implement more complicated applications.
+This example shows that our patterns are flexible enough to implement more complicated applications.
 
 
 \begin{lstlisting}[%
@@ -508,23 +459,67 @@ $md\ ps\ nbhs\ t = \map\ \big(\lambda\ p,ns.\label{lst:md:md}$
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=.65\linewidth]{Plots/MD/md_speedup.pdf}
-  \caption{Performance of our approach relative to a portable \OpenCL implementation of the MD benchmark from the SHOC benchmark suite.}
-\label{fig:md:results}
+  \begin{subfigure}[b]{0.48\linewidth}
+    \includegraphics[width=\linewidth]{Plots/MD/md_speedup.pdf}
+    \caption{Molecular Dynamics}
+    \label{fig:md:results}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\linewidth}
+    \includegraphics[width=\linewidth]{Plots/BlackScholes/bs_speedup.pdf}
+    \caption{BlackScholes}
+    \label{fig:blackScholes:results}
+  \end{subfigure}
+  \caption{Performance of our approach relative to portable \OpenCL implementation of the MD and BlackScholes benchmarks.}
+   \label{fig:bs:ms:results}
 \end{figure}
 
 We performed measurements with an input size of 12288 particles for all three test platforms.
 The results are shown in \autoref{fig:md:results}.
-We can see, that the automatically generated \OpenCL code performs very close to the native \OpenCL implementation and is slightly faster on the Intel \CPU. 
+We can see, that the automatically generated \OpenCL code performs very close to the native \OpenCL implementation and is slightly faster on the Intel \CPU.
+
+
+
+\section{Mathematical Finance}
+
+\begin{lstlisting}[%
+  float,%
+  caption={BlackScholes mathematical finance application expressed using our high-level algorithmic patterns.},%
+  label={lst:blackScholes}%
+  ]
+$BSComputation\ s =\label{lst:blackScholes:bscomp}$
+  $\textit{let}\ d1 = compD1\ s\label{lst:blackScholes:d1}$
+  $\textit{let}\ d2 = compD2\ d1\ s\label{lst:blackScholes:d2}$
+  $( compCallOption\ d1\ d2\ s,\ comPutOption\ d1\ d2\ s )\label{lst:blackScholes:return}$
+
+$blackScholes\ stockPrices = \map\ BSComputation\ stockPrices\label{lst:blackScholes:map}$
+\end{lstlisting}
+
+The \emph{BlackScholes} application uses a Monte-Carlo method for option pricing and computes for each stock price $s$ a pair of call and put options.
+\autoref{lst:blackScholes} shows the BlackScholes implementation, where the function defined in line~\ref{lst:blackScholes:bscomp} computes the call and put option for a single stock price $s$.
+Two intermediate results $d1$ (line~\ref{lst:blackScholes:d1}) and $d2$ (line~\ref{lst:blackScholes:d2}) are computed and used to compute the two options, which are returned as a single pair (line~\ref{lst:blackScholes:return}).
+%The computational functions $compD1$, $compD2$, $compCallOption$, and $compPutOption$ are not shown here since they only contain purely sequential code.
+In line~\ref{lst:blackScholes:map} the $BSComputation$ function is applied to all stock prices, stored in a vector $stockPrices$, using the \map pattern.
+
+
+\autoref{fig:blackScholes:results} show the result compared to an \OpenCL implementation of the BlackScholes model provided by Nvidia as part of their software development kit.
+We measured the runtime on all three test platforms for a problem size of 4 million stock prices.
+We see that our approach is on par with the performance of the Nvidia implementation on both \GPUs.
+On the \CPU, we actually achieve a 2.2$\times$ speedup due to the fact that the Nvidia implementation is tuned for \GPUs while our implementation generates different code for the \CPU.
+
+
+
 
 
 
 
 \section{Summary}
 
+These results have shown that our approach generates \emph{performance portable} code which is competitive with highly-tuned platform specific implementations.
+
 %
 %\autoref{fig:linear-algebra-expr:clblas} also shows the results we obtain relative to the Nvidia SDK \bench{BlackScholes} and SHOC molecular dynamics \bench{MD} benchmark.
-%For \bench{BlackScholes}, 
+%For \bench{BlackScholes},
 %For \bench{MD}, we are actually on par with the OpenCL implementation on all platforms.
 
 

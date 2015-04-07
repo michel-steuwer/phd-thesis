@@ -32,6 +32,6 @@ plot <- ggplot(data, aes(x = Platform, y = value, fill=Version)) +
   theme + labs
 
 # save plot to file
-ggsave(file = "md_speedup.pdf", width = 8, height = 5)
+ggsave(file = "md_speedup.pdf", width = 6, height = 5)
 
 plot
