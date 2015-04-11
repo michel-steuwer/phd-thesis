@@ -2,26 +2,68 @@
 
 \chapter{Towards ???}
 
- \label{ch:seventh} % For referencing the chapter elsewhere, use \autoref{ch:name}
+\label{ch:seventh} % For referencing the chapter elsewhere, use \autoref{ch:name}
 
-In this chapter ...
+The previous technical chapters have addresses the two main challenges we identified at the beginning: programmability and performance portability.
+In this chapter we will summarize SkelCL the high-level programming model introduced in \autoref{part:skelcl} which addresses the programmability challenge and the novel pattern-based code generation technique introduced in \autoref{part:codeGeneration} which addresses the performance portability challenge.
+We will especially refer back to the four main contributions of this thesis as stated in \autoref{ch:introduction}.
+Furthermore, we will describe how the two presented projects relate to each other and how they can be combined in the future for creating a unified system offering SkelCL's high-level abstractions and integration in \Cpp together with the high and portable performance provided by our code generator technique.
+
+\section{Addressing the Programmability Challenge}
+In \autoref{part:skelcl} of this thesis we introduced SkelCL which addressed the programmability challenge of modern parallel processors.
+In \autoref{chapter:skelcl} we uses a case study to show the drawbacks of programming with the state-of-the-art low-level programming approach OpenCL.
+SkelCL provides three high-level features which together overcome these drawbacks, raise the level of abstraction for the programmer and, thus, simplify parallel programming:
+\begin{itemize}
+  \item parallel container data types (explained in detail in \autoref{section:skelcl-programming-model:container}) automatically perform the low-level memory management and make its data transparently accessible to both \CPU and \GPUs;
+  \item algorithmic skeletons (explained in detail in \autoref{section:skelcl-programming-model:skeletons}) are used for easily expressing parallel programs in a structured, high-level manner;
+  \item data distribution and redistribution (explained in detail in \autoref{section:skelcl-programming-model:distribution}) greatly simplify programming of multi-GPU systems by transparently performing all necessary data transfers.
+\end{itemize}
+
+\noindent
+The SkelCL programming model is implemented as a \Cpp library (explained in detail in \autoref{section:skelcl-library}) deeply integrated with features from the latest \Cpp standard.
+
+% TODO: mention chapter 4 performance results
+
+\bigskip
+The SkelCL programming model and its implementation is the first major contribution of this thesis.
+
+\paragraph{Algorithmic Skeletons for Stencil and Allpairs}
+Alongside SkelCL we introduced two novel algorithmic skeletons.
+The \emph{stencil} skeleton (explained in detail in \autoref{section:stencil:skeleton}) simplifies stencil computations common in domains like image processing.
+The \emph{allpairs} skeleton (explained in detail in \autoref{sec:allpairs_skeleton}) allows to easily express allpairs computations like matrix matrix multiplication.
+We formally define both skeleton and provide efficient single- and multi-\GPU implementations.
+For the allpairs skeleton we identified an optimization rule, which enables an optimized implementation especially beneficial on modern \GPUs.
+
+% TODO: mention chapter 4 performance results
+
+\bigskip
+The formal definitions and efficient implementations of the two novel algorithmic skeletons is the second major contribution of this thesis.
 
 
-at the beginning of the thesis we identified two challenges.
+\section{Addressing the Performance Portability Challenge}
+In \autoref{part:codeGeneration} of this thesis we introduced a novel code generation technique which addresses the performance portability challenge.
+We started \autoref{chapter:codeGeneration} with an investigation into the portability of optimization using the low-level programming approach OpenCL and showed, that performance and optimizations in OpenCL are not portable.
+In the following we introduced a set of high-level and low-level patterns (\autoref{section:patterns}) together with provably correct rewrite rules (\autoref{section:rules}).
+The rewrite rules encode high-level algorithmic as well low-level optimizations which can be systematically applied to a program expressed with the defined patterns.
+We show the soundness of the system by giving formal definitions of the semantics and types of each pattern and proving that the rewrite rules not change the semantic of the rewritten expression.
 
-Part I addressed first challenge:
- -
- -
- -
+\bigskip
+This formal foundation makes our rewrite approach suitable for automatically optimize code in a compiler and is the third major contribution of this thesis.
+
+\paragraph{Generating Performance Portable OpenCL Code from Patterns}
+Based on the formal foundations we developed and presented in \autoref{section:opencl:code:generator} the design and implementation of a code generator which generates highly efficient, hardware-specific OpenCL code from a single pattern-based expression.
+The single high-level representation is transformed into a hardware-specific low-level representation using the rewrite rules.
+The low-level representation is then compiled to highly efficient OpenCL code.
+
+Our performance evaluation in \autoref{chapter:codeGeneration-evaluation} shows, that using this novel approach code is generated performing comparable to manually optimized library codes on three different parallel processors.
+This novel code generation approach offers true performance portability, since code is systematically generated from a single, portable high-level representation.
+
+\bigskip
+The code generator offering true performance portability is the fourth, and final, major contribution of this thesis.
 
 
-Part II addressed second challenge:
- -
- -
- -
+\section{Towards ???}
 
-
-Imagine a world with both together
 
 \section{Future Work}
 \label{section:future-work}
