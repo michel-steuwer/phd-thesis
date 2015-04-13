@@ -132,10 +132,36 @@ The described enhancements are representative for similar possible enhancements 
 Overall these type of enhancements have only minor effects on the main features of SkelCL instead they refine the current SkelCL implementation.
 
 \paragraph{Allow Nesting of Skeletons and Container Data Types}
+Due to its current implementation the nesting of skeletons is not allowed in SkelCL, therefore, it is not possible to express nested parallelism easily.
+Similarly, it is not possible to nest container data types in each other.
+SkelCL provides a special two dimensional data type but there is no generic mechanism for building higher dimensional data types.
+
+Both drawbacks are limitations given by the current library implementation.
+A skeleton is directly translated into an OpenCL kernel preventing the nesting of skeletons.
+The container implementation assumes a flat representation of the data in memory, which is not necessary the case when nesting containers.
+
+By empowering SkelCL's implementation with our code generation technique we can overcome both drawbacks in the future.
+Nesting of computations expressed as skeletons as well as data in the form of arrays is fully supported by our current code generator.
+By integrating this implementation in SkelCL nested parallelism can be exploited where OpenCL kernels and matching appropriate data representations are generated automatically.
 
 \paragraph{Adding Support for Task-Parallel Skeletons}
+SkelCL currently focuses on data-parallel skeletons as they match the performance characteristics of modern \GPU systems.
+Nevertheless could it be useful to explore the introduction of task-parallel skeletons to SkelCL.
+The well-known pipeline skeleton could, for example, be useful for systematically optimizing the data transfer to and from \GPUs by overlapping computation and communication.
+The pipeline skeleton could also be used in a multi-\GPU setting where each \GPUs performs a different stage of the pipeline.
+Similarly, a task farm skeleton could be used to schedule different possibly data-parallel computations across multiple \GPUs.
 
-\paragraph{Adding Support for True Heterogeneous Execution}
+\paragraph{Adding Support for True Heterogeneous Execution}\hfill\\
+SkelCL uses OpenCL for its implementation, therefore, it is possible to use SkelCL not only for programming \GPUs but also other types of accelerators and multi-core \CPUs.
+As we showed in \autoref{part:codeGeneration} the performance of OpenCL is not portable across these broad range of parallel processors.
+Therefore, the current implementation of SkelCL would presumably not perform particular well on other types of parallel processors supported by OpenCL.
+Furthermore, in a system comprising multiple OpenCL devices when distribution the data across these devices SkelCL currently assumes that all devices will roughly process the data in an equal amount of time, \ie, SkelCL's block distribution divides the input data into equally sized chunks each processed by a different OpenCL device.
+This assumption works well for homogeneous multi-\GPU systems as used in this thesis, but breaks down for truly heterogeneous execution where multiple parallel processors of different types are used together.
+
+The code generation technique presented in \autoref{part:codeGeneration} will address the first drawback and generate efficient and performance portable code for each single OpenCL device.
+More research has to be conducted for performing efficient executions on heterogeneous systems.
+The structured manner in which programs are expressed with SkelCL could help to address this issue, as researchers have already build performance models for structured programming~\cite{BischofGK03,Alt2007,JavedL11,StegmeierFrJAUn2015} predicting runtime performance.
+Such models could be used for minimizing the overall runtime by most efficiently using all available hardware resources.
 
 
 \subsection{Enhancing the Pattern-Based Code Generator}
