@@ -1,13 +1,13 @@
 % Chapter 7: Patterns for a greater good
 
-\chapter{Towards ???}
+\chapter[Towards a Holistic, Structured Programming Approach]{Towards a Holistic, Structured Approach for Programming and Optimizing Programs}
 
 \label{ch:seventh} % For referencing the chapter elsewhere, use \autoref{ch:name}
 
 The previous technical chapters have addresses the two main challenges we identified at the beginning: programmability and performance portability.
 In this chapter we will summarize SkelCL the high-level programming model introduced in \autoref{part:skelcl} which addresses the programmability challenge and the novel pattern-based code generation technique introduced in \autoref{part:codeGeneration} which addresses the performance portability challenge.
 We will especially refer back to the four main contributions of this thesis as stated in \autoref{ch:introduction}.
-Furthermore, we will describe how the two presented projects relate to each other and how they can be combined in the future for creating a unified system offering SkelCL's high-level abstractions and integration in \Cpp together with the high and portable performance provided by our code generator technique.
+Furthermore, we will describe how the two presented projects relate to each other and how they can be combined in the future for creating a holistic structured approach for programming and optimizing programs offering SkelCL's high-level abstractions and integration in \Cpp together with the high and portable performance provided by our code generator technique.
 
 \section{Addressing the Programmability Challenge}
 
@@ -80,32 +80,74 @@ This novel code generation approach offers true performance portability, since h
 This code generator offering true performance portability is the fourth, and final, major contribution of this thesis.
 
 
-\section{Towards a Programming System Offering Programmability and Performance Portability}
+\section[Future Work]{Future Work:\\ Towards a Holistic, Structured Approach for Programming and Optimizing Programs}
 \label{section:future-work}
-The two separate projects described in this thesis can naturally be combined in the future to obtain a single unified system which offers the advantages of both:
-the high-level abstractions and simplified programming from SkelCL as well as the competitive and portable performance delivered by our novel code generation technique.
+The two separate projects described in this thesis can naturally be combined in the future to obtain a single holistic approach which offers the advantages of both:
+the high-level abstractions from SkelCL which structure and simplify parallel programming as well as the highly optimized and portable performance delivered systematically by our novel code generation technique.
 
-This combination makes sense as both projects use parallel patterns (or algorithmic skeletons as they are called in SkelCL) as their fundamental building block.
+This combination makes sense as both projects use structured parallel programming in the form of parallel patterns (or algorithmic skeletons as they are called in SkelCL) as their fundamental building block.
 In SkelCL the patterns are used by the programmer to describe the algorithmic structure of the program.
 In the code generator rewrite rules transform programs expressed with patterns into a low-level form from which efficient OpenCL code is generated.
 
-The SkelCL programming model provides a great programming interface successfully hiding complicated details of parallelism and the underlying hardware from the programmer.
+As shown in \autoref{part:skelcl} the SkelCL programming model provides a great programming interface successfully hiding complicated details of parallelism and the underlying hardware from the programmer.
 But the current implementation as a \Cpp library has some restrictions in certain areas, even somewhat limiting the expressiveness of the programming model.
 For example, is the nesting of patterns not supported as it is complicated to support in a library implementation.
 Furthermore, when evaluating SkelCL in \autoref{chapter:skelcl-evaluation} we identified a performance problem for two benchmarks because the current SkelCL library implementation does generate a separate OpenCL kernel for each pattern instead of generating a single fused kernel.
 The current library is optimized towards and tested on \GPUs by Nvidia and does not necessary offer the same level of performance on other hardware platforms.
 
-The code generator presented in \autoref{part:codeGeneration} addresses all these performance drawbacks of the SkelCL library implementation systematically generating highly efficient code on three hardware platforms.
+As shown in \autoref{part:codeGeneration} our code generator addresses all these performance drawbacks of the SkelCL library implementation systematically generating highly efficient code on three hardware platforms.
 But currently the high-level and low-level patterns are not well integrated in a programming language like the SkelCL library is integrated in \Cpp.
 This makes is currently restricts the expressiveness and makes it difficult to implement complex real-world applications like the LM OSEM expressed in SkelCL.
 
-A future system avoiding all of these drawbacks will use SkelCL as the \emph{frontend} offering its convenient programming interface integrated with a programming language to the user combined with the code generator as the \emph{backend} systematically compiling the pattern-based expression into hardware-specific code.
+A future holistic approach will avoid all of these drawbacks by using SkelCL as the \emph{frontend} offering its convenient programming interface integrated with a programming language to the user combined with the code generator as the \emph{backend} systematically compiling the pattern-based expression into hardware-specific code.
 
 \bigskip
-In the following we will discuss possible future enhancements to the frontent as well as the backend.
+In the following we will discuss possible future enhancements to SkelCL as well as the code generator.
 
-\subsection{Enhancing the frontend: the SkelCL Programming Model}
+\subsection{Enhancing the SkelCL Programming Model}
+\label{section:future-work:skelcl}
 
-\subsection{Enhancing the backend: the Pattern-Based Code Generator}
+In this section we are going to explore possible enhancements to the SkelCL programing model as well as discuss current limitations of the \Cpp library implementation and how those could be liftet in the future.
+We will start with the Stencil skeleton and how its implementation could be enhanced to improve its usability.
+We will then discuss possible enhancements to lift limitations regarding composing and nesting of SkelCL's skeletons and container data types.
+Next we will discuss the possibility to extend SkelCL by supporting more algorithmic skeletons especially task-parallel skeletons for enhancing its expressiveness.
+Finally, we will discuss how SkelCL could be extended for supporting truly heterogeneous execution where different types of parallel processors, \eg, \CPU and \GPU, are used efficiently together.
 
+\paragraph{Enhancing the Stencil Skeleton}
+In SkelCL we introduced a new algorithmic skeleton for Stencil computations (\autoref{section:stencil:skeleton}).
+In \autoref{sec:skelcl:stencil} we discussed two implementations \code{MapOverlap} and \code{Stencil}.
+Each implementation has its advantages and disadvantages regarding usability, expressiveness, and performance.
+
+To improve the usability, the shape of the stencil would be inferred automatically from the customizing function instead of require the user to provide this information explicitly as it is currently the case.
+
+To improve the expressiveness, more options for performing boundary handling could be added allowing additional application to be easily expressed with the skeleton.
+Furthermore, many simulations could be expressed with the stencil skeleton if application-specific functions would be allowed for checking a terminating condition when performing stencil computations iteratively.
+
+To improve the performance, the decision which implementation, \code{MapOverlap} or \code{Stencil}, to use in which situation could be taken automatically by the SkelCL implementation.
+A performance model predicting the runtime of each implementation in a certain situation could be build reflecting the performance characteristics of both implementations.
+Based on this model the runtime system could easily select the appropriate implementation for a given use of the stencil skeleton.
+
+\bigskip
+The described enhancements are representative for similar possible enhancements throughout the current SkelCL library implementation.
+Overall these type of enhancements have only minor effects on the main features of SkelCL instead they refine the current SkelCL implementation.
+
+\paragraph{Allow Nesting of Skeletons and Container Data Types}
+
+\paragraph{Adding Support for Task-Parallel Skeletons}
+
+\paragraph{Adding Support for True Heterogeneous Execution}
+
+
+\subsection{Enhancing the Pattern-Based Code Generator}
+\label{section:future-work:codeGenerator}
+
+\paragraph{Automatically Applying of the Rewrite Rules}
+
+\paragraph{Enhance the Current OpenCL Backend}
+% More advanced vectorization
+% Enhance memory management - private and constant memory, reuse memory (graph coloring)
+
+\paragraph{Adding Additional Backends}
+
+\paragraph{Adding Additional High-Level Patterns}
 
