@@ -1,6 +1,7 @@
 % Chapter 7: Patterns for a greater good
 
-\chapter[Towards a Holistic, Structured Programming Approach]{Towards a Holistic, Structured Approach for Programming and Optimizing Programs}
+\chapter[Towards a Holistic, Structured Approach for\\ Programming and Optimizing Programs]{Towards a Holistic, Structured Approach for Programming and Optimizing Programs}
+\chaptermark{Towards a Holistic, Structured Programming Approach}
 
 \label{ch:seventh} % For referencing the chapter elsewhere, use \autoref{ch:name}
 
@@ -167,7 +168,14 @@ Such models could be used for minimizing the overall runtime by most efficiently
 \subsection{Enhancing the Pattern-Based Code Generator}
 \label{section:future-work:codeGenerator}
 
+This section discusses possible enhancements to our novel pattern-based code generator. 
+Firstly, we discuss how the proposed rewrite rules can be efficiently applied automatically and how this will enable compilers to perform the advanced optimizations discussed throughout the thesis autonomously without any user interaction.
+We will then describe possible enhancements to the current OpenCL backend, before we explore the possibility to add additional backends producing efficient code in other low-level programming system, \eg, OpenMP or MPI.
+Finally, we will discuss how the current system can easily be extended with additional high-level patterns and rewrite rules.
+
 \paragraph{Automatically Applying of the Rewrite Rules}
+The formalism and implementation described in this thesis 
+We already discussed this important issue in 
 
 \paragraph{Enhance the Current OpenCL Backend}
 % More advanced vectorization
@@ -175,5 +183,5 @@ Such models could be used for minimizing the overall runtime by most efficiently
 
 \paragraph{Adding Additional Backends}
 
-\paragraph{Adding Additional High-Level Patterns}
+\paragraph{Adding Additional High-Level Patterns and Rewrite Rules}
 
