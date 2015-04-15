@@ -132,6 +132,7 @@ These results give some evidence that our systematically generated code can offe
 The performance of our generated code for the fully optimized low-level expression even matches the performance of the highly optimized CUBLAS library written by Nvidia and outperforms the Thrust library.
 
 \subsection{Automatically applying of the rewrite rules}
+\label{sec:codeGeneration-evaluation:automatic}
 
 For the parallel reduction benchmark we implemented a prototype search tool automatically applying the rewrite rules for finding low-level expressions which offer high-performance.
 Our prototype implementation starts with the high-level expression $\reduce\ (+)\ 0$ and transforms the expression using the rewrite rules and performs runtime experiments with the transformed expressions until a low-level \OpenCL expression is found which meats our performance expectations.

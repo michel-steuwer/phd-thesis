@@ -168,20 +168,78 @@ Such models could be used for minimizing the overall runtime by most efficiently
 \subsection{Enhancing the Pattern-Based Code Generator}
 \label{section:future-work:codeGenerator}
 
-This section discusses possible enhancements to our novel pattern-based code generator. 
+This section discusses possible enhancements to our novel pattern-based code generator.
 Firstly, we discuss how the proposed rewrite rules can be efficiently applied automatically and how this will enable compilers to perform the advanced optimizations discussed throughout the thesis autonomously without any user interaction.
 We will then describe possible enhancements to the current OpenCL backend, before we explore the possibility to add additional backends producing efficient code in other low-level programming system, \eg, OpenMP or MPI.
 Finally, we will discuss how the current system can easily be extended with additional high-level patterns and rewrite rules.
 
 \paragraph{Automatically Applying of the Rewrite Rules}
-The formalism and implementation described in this thesis 
-We already discussed this important issue in 
+The formalism and implementation presented in this thesis constitute the foundational work necessary to systematically rewrite pattern-based expressions with the aim to apply optimizations beneficial for a given hardware platform.
+By applying the rewrite rules a design space of possible implementations is built for a program represented with a corresponding high-level pattern-based expression.
+The formalism introduced in \autoref{chapter:codeGeneration} ensures that the rewrite rules can safely be applied, as they do not change the programs semantics.
+This makes the rewrite rules suitable for automation inside a compiler.
+
+In \autoref{sec:codeGeneration-evaluation:automatic} we discussed a preliminary search technique for determine which implementations in the large (and in fact unbound) design space offers good performance for the simple reduction benchmark.
+This technique builds and searches the tree of possible implementations by applying all possible rules at one level of the tree and then sampling their subtrees randomly applying rules until an expression is found for which OpenCL code can be executed.
+These expressions are then executed and their performance is measured.
+The performance results are used to decide which subtree should be further investigated by starting the same process again.
+We showed that even this rather simplistic and unguided technique was able to find highly efficient implementations on three different hardware architectures for the simple benchmark we investigated.
+
+In future work a more sophisticated search technique should be developed to search the implementation space more efficiently and possibly even give guarantees on the quality of the found expression.
+Two possible techniques can be used here which have already been applied in similar contexts:
+formal performance models and advanced machine learning techniques.
+
+Formal performance models~\cite{} try to model the performance of programs without executing the programs.
+Such models are usually built by experts encoding specific semantic knowledge and have shown promising results especially for structured programming approaches, like algorithmic skeletons~\cite{}, where precise observations can be made about the generic program structure instead of being limited to observations about concrete applications which cannot be easily generalized.
+In our setting, performance models could be created to estimate the performance of a given pattern-based expression and then used to guide the automatic application of rewrite rules, by estimating the benefit of applying the rule.
+If multiple rewrite rules would be valid the particular rule would be applied where the performance model estimates the larges performance benefit.
+
+Machine learning techniques~\cite{} aim to automatically derive a model by learning from experience gathered during a dedicated learning phase (offline learning) or by improving an existing model (online learning).
+Such a learned model could then be used to guide the rewrite process, similar to a manually constructed formal performance model.
+Machine learning is a broad field and many related techniques have been proposed to enable different forms of the generic idea.
+Furthermore, has machine learning been already successfully applied in the context of optimizing compilers~\cite{} and autotuning~\cite{}.
+In our context, a device-specific model could be trained using experimental evaluation on a set of training applications using a similar technique as our preliminary one presented in \autoref{sec:codeGeneration-evaluation:automatic}.
+Such a model would have to built only once for each particular parallel processor and could afterwards be used to guide the rewrite processes for arbitrary applications being executed on the same processor.
+In our structured parallel programming approach different applications are still expressed with the same foundational building blocks, such that performance characteristics learned from one application should still be applicable for other applications.
+
+\bigskip
+This topic is surely one of the most interesting, but also most challenging areas of future work.
+Once solved, the automatic application of our rewrite rules could revolutionize the design of future optimizing compilers and once for all free programmers from specializing their code with hardware-specific optimizations.
 
 \paragraph{Enhance the Current OpenCL Backend}
 % More advanced vectorization
 % Enhance memory management - private and constant memory, reuse memory (graph coloring)
+As seen in \autoref{chapter:codeGeneration-evaluation}, the current OpenCL backend implementation already offers portable high performance.
+Nevertheless, could the backend be further improved in the future.
+We discuss two enhancements to give an idea on possible future work in this area.
+
+Adding support for more advanced vectorization techniques could be one future enhancement, as current only simple arithmetic functions without any control flow can be automatically vectorized by our implementation.
+Dedicated tools vectorizing entire functions could be combined and integrated into our backend to overcome this current limitation.
+
+The current memory allocation is rather basic and not optimized for space usage.
+Therefore, currently more intermediate buffers are allocated then necessary.
+We intend to use well-known compiler techniques, like graph coloring~\cite{} usually used in register allocation, for improving the current allocation strategies.
+We also plan to add support for the private and constant memory regions defined in OpenCL, as we currently only support the global and local memory.
 
 \paragraph{Adding Additional Backends}
+In this thesis we based our formalism and implementation on the OpenCL standard.
+The same idea of high-level and low-level patterns bridged with rewrite rules could be applied to other low-level programming models as well.
+For example, is it possible following the same methodology to design a backend targeting MPI for distributed systems.
+While the high-level algorithmic patterns and the algorithmic rewrite rules are independent of the target programming model, the low-level hardware patterns and  backend-specific rules are not.
+This design was chosen deliberately to achieve a clear separation of concern between the high-level programming interface as well as algorithmic optimizations and the low-level hardware-specific programming approach with device-specific optimizations.
 
-\paragraph{Adding Additional High-Level Patterns and Rewrite Rules}
+An additional backend would, therefore, add low-level patterns describing the low-level target programming model in a structured and functional style using patterns.
+Furthermore, a set of rewrite rules have to be defined for lowering the high-level algorithmic concepts to appropriate low-level patterns and for expressing optimization choices in the low-level target programming approach.
+For MPI, patterns reflecting the distributed nature of the programming model would be added, \eg, a \emph{mapNode} pattern for assigning work to a node in the system.
+Similarly, could rewrite rules explain when it is possible to use collective operations, like \emph{broadcast}, to optimize the data transfer.
+
+One could even imaging, to combine multiple dedicated backends, like the MPI-backend and the OpenCL-backend, in the future to leverage the existing patterns and rules in a different setting, like a large scale heterogeneous cluster environment found in modern supercomputers.
+
+\paragraph{Adding Additional High-Level Patterns and Algorithmic Rewrite Rules}
+By design we started our code generation technique with a limited set of parallel patterns which cannot be used to express all applications.
+By restricting ourself to this well understood set of pattern we are able to systematically generate portabel and highly efficient code.
+
+The current set of high-level algorithmic patterns and rewrite rules is powerful enough to express the benchmarks discussed in \autoref{chapter:codeGeneration-evaluation}.
+Furthermore, the supported patterns allow already to express other higher level abstraction, like for example, the \allpairs skeleton from SkelCL, which can be expressed by nesting two \map pattern in each other.
+Nevertheless, by adding additional high-level patterns and rules, \eg, to support stencil applications, we will increase the expressiveness of our approach and make it more attractive to potential users.
 
