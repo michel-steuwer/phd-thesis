@@ -161,7 +161,7 @@ This assumption works well for homogeneous multi-\GPU systems as used in this th
 
 The code generation technique presented in \autoref{part:codeGeneration} will address the first drawback and generate efficient and performance portable code for each single OpenCL device.
 More research has to be conducted for performing efficient executions on heterogeneous systems.
-The structured manner in which programs are expressed with SkelCL could help to address this issue, as researchers have already build performance models for structured programming~\cite{BischofGK03,Alt2007,JavedL11,StegmeierFrJAUn2015} predicting runtime performance.
+The structured manner in which programs are expressed with SkelCL could help to address this issue, as researchers have already build performance models for structured programming~\cite{BischofGK03,Alt2007,DarlingtonFHKSW93,StegmeierFrJAUn2015} predicting runtime performance.
 Such models could be used for minimizing the overall runtime by most efficiently using all available hardware resources.
 
 
@@ -189,15 +189,15 @@ In future work a more sophisticated search technique should be developed to sear
 Two possible techniques can be used here which have already been applied in similar contexts:
 formal performance models and advanced machine learning techniques.
 
-Formal performance models~\cite{} try to model the performance of programs without executing the programs.
-Such models are usually built by experts encoding specific semantic knowledge and have shown promising results especially for structured programming approaches, like algorithmic skeletons~\cite{}, where precise observations can be made about the generic program structure instead of being limited to observations about concrete applications which cannot be easily generalized.
+Formal performance models try to model the performance of programs without executing the programs.
+Such models are usually built by experts encoding specific semantic knowledge and have shown promising results especially for structured programming approaches, like algorithmic skeletons~\cite{DarlingtonFHKSW93,Alt2007}, where precise observations can be made about the generic program structure instead of being limited to observations about concrete applications which cannot be easily generalized.
 In our setting, performance models could be created to estimate the performance of a given pattern-based expression and then used to guide the automatic application of rewrite rules, by estimating the benefit of applying the rule.
 If multiple rewrite rules would be valid the particular rule would be applied where the performance model estimates the larges performance benefit.
 
-Machine learning techniques~\cite{} aim to automatically derive a model by learning from experience gathered during a dedicated learning phase (offline learning) or by improving an existing model (online learning).
+Machine learning techniques~\cite{Bishop2007} aim to automatically derive models by learning from experience gathered during either a dedicated learning phase (offline learning) or by improving an existing model (online learning).
 Such a learned model could then be used to guide the rewrite process, similar to a manually constructed formal performance model.
 Machine learning is a broad field and many related techniques have been proposed to enable different forms of the generic idea.
-Furthermore, has machine learning been already successfully applied in the context of optimizing compilers~\cite{} and autotuning~\cite{}.
+Furthermore, has machine learning been already successfully applied in the context of optimizing compilers~\cite{DubachJBFO09} and autotuning~\cite{CollinsFLC13}.
 In our context, a device-specific model could be trained using experimental evaluation on a set of training applications using a similar technique as our preliminary one presented in \autoref{sec:codeGeneration-evaluation:automatic}.
 Such a model would have to built only once for each particular parallel processor and could afterwards be used to guide the rewrite processes for arbitrary applications being executed on the same processor.
 In our structured parallel programming approach different applications are still expressed with the same foundational building blocks, such that performance characteristics learned from one application should still be applicable for other applications.
@@ -218,7 +218,7 @@ Dedicated tools vectorizing entire functions could be combined and integrated in
 
 The current memory allocation is rather basic and not optimized for space usage.
 Therefore, currently more intermediate buffers are allocated then necessary.
-We intend to use well-known compiler techniques, like graph coloring~\cite{} usually used in register allocation, for improving the current allocation strategies.
+We intend to use well-known compiler techniques, like graph coloring~\cite{Muchnick1997} usually used in register allocation, for improving the current allocation strategies.
 We also plan to add support for the private and constant memory regions defined in OpenCL, as we currently only support the global and local memory.
 
 \paragraph{Adding Additional Backends}
