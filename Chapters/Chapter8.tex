@@ -4,7 +4,120 @@
 
 \label{ch:eighth} % For referencing the chapter elsewhere, use \autoref{ch:name}
 
+In this chapter we compare the approaches presented in this thesis to related work and draw final conclusions.
+
 \section{Related Work}
+Here we will discuss related projects which also aim to simplify parallel programming in general or of GPU systems in particular.
+We also include projects aiming for performance portability, as our approach does.
+We will start by looking at algorithmic skeleton libraries in general and then focus on more recent projects targeting \GPU systems, like \SkelCL does.
+Next, we will cover other structured parallel programming approaches, including the famous \emph{MapReduce} framework.
+We will then discuss the broad range of \GPU programming approaches proposed in recent years, before looking at domain specific approaches, including projects particular focus on stencil computations.
+We will end with a discussion of related projects using rewrite rules for program optimizations.
+
+For all projects discuss we will make clear how they relate to our work.
+% We will see, that no other project exist which combines a practical high-level programming approach
+
+
+\subsection{Algorithmic Skeleton Libraries}
+Numerous algorithmic skeleton libraries have been proposed since the introduction of algorithmic skeletons in the late 1980s~\cite{Cole1991}.
+A good and extensive overview reflecting the state of the art at the time when the work on this thesis was started in 2010 can be found in~\cite{Gonzalez-VelezL10}.
+We will discuss here some representative examples of algorithmic skeleton libraries targeting different types of computer architectures.
+
+Prominent algorithmic skeleton libraries targeting distributed systems are \emph{Muesli}~\cite{Kuchen02} and \emph{eSkel}~\cite{Cole04} which are both implemented using MPI~\cite{MPI}.
+There has also been work especially dedicated towards grids~\cite{AltG03a, Alt2007} leading to the development of the \emph{Higher Order Components (HOC)}~\cite{DunnweberG04,DuennweberG09} which are implemented in Java.
+
+Skeleton libraries for multicore \CPUs include \emph{Skandium}~\cite{LeytonP10} which uses Java threads, \emph{FastFlow}~\cite{AldinucciDaKiTo2011,AldinucciDKMT11} which is implemented in \Cpp and has recently be extended towards distributed systems as well~\cite{AldinucciCDKT12}, and an extended version of \emph{Muesli}~\cite{CiechanowiczK10} which uses OpenMP~\cite{OpenMP}.
+
+Of particular relevance for our comparison are the following recent skeleton libraries targeting \GPU systems.
+
+\emph{Muesli}~\cite{ErnstingK12} and \emph{FastFlow}~\cite{BuonoDLT13,AldinucciSDTP12} have been extended for \GPU systems using \CUDA.
+Both libraries implemented support for execution of their data-parallel skeletons on \GPU hardware, but not for their task-parallel skeletons.
+In Muesli data-parallel skeletons can be nested in task-parallel skeletons, but not the other way around.
+This type of nesting is also supported when the data-parallel skeleton is executed on a \GPU.
+The data management between \CPU and \GPU is performed implicitly and automatically as it is the case for \SkelCL, but different to our implementation data is transfered back to the \CPU after each skeleton execution on the \GPU.
+This makes the integration with the existing infrastructure in Muesli and FastFlow easier but obviously limits performance when multiple skeletons are executed on the \GPU.
+
+\bigskip
+
+\emph{SkePU}~\cite{EnmyrenKe10,DastgeerEnKe2011,DastgeerKe14} is a skeleton library implemented in \Cpp and specifically targeted towards \GPU systems, similar to \SkelCL.
+Both approaches have been developed independently but implement very similar concepts and even a similar set of data-parallel algorithmic skeletons.
+Nevertheless, both projects have been implemented with emphasis on different areas and are implemented in different ways.
+SkePU implements multiple backends for targeting different hardware devices.
+Currently, there exists an OpenMP backend for multicore \CPUs, OpenCL and CUDA backends for \GPUs, and separate backends written in OpenCL and CUDA for multi-\GPU execution.
+
+The approach of developing multiple backends is contradictory to the idea of code and performance portability advocated in this thesis.
+\SkelCL uses only a single \OpenCL backend which will be combined in the future with our novel compiler technique to optimize code for different platforms.
+
+Recently SkePU has implemented a similar scheme as SkelCL for managing data transfers~\cite{DastgeerKe14}, by using a similar lazy copying strategy then SkelCL does since its first implementation.
+SkePU now also supports to automatically overlap data transfer with computations, which is currently not supported in \SkelCL.
+
+A version of SkePU exists, which is integrated in the StarPU runtime system~\cite{AugonnetTNW09} and allows for hybrid \CPU and \GPU execution with an dynamic load balancing system provided by StarPU.
+Furthermore, SkePU allows to specify \emph{plans} which determine the backend to be used for a particular data size of the problem, \eg, the OpenMP backend for small data size, but the CUDA multi-\GPU backend for larger data sizes.
+While SkelCL also fully support the execution on multicore \CPUs, single \GPUs, and  multi-\GPU systems, there is currently no comparable mechanism to determine which hardware should be used for different data sizes.
+
+\SkelCL introduces data distributions to give users control over the execution in multi-\GPU systems.
+SkePU does not offer such a feature and always splits the data across \GPUs, therefore, complicated multi-\GPU applications like the LM OSEM presented and evaluated in \autoref{chapter:skelcl-evaluation} are not easily supported by SkePU.
+
+\bigskip
+
+\emph{JPAI}~\cite{FumeroStDu2014} is a recent skeleton library for seamlessly programming \GPU systems from Java.
+JPAI offers an object oriented API which makes use of the new Java lambda expressions.
+At runtime before execution on the \GPU the customizing functions of the skeletons are compiled to \OpenCL using the Graal~\cite{DuboscqStWuSiWiMo2013} compiler and virtual machine.
+
+
+\subsection{Other Structured Parallel Programming Approaches}
+
+% Delite
+
+% Map-Reduce (multiple)
+
+% TBB, book
+
+\subsection{Related GPU programming approaches}
+% We already discusses SkePU, Muesli, FastFlow, and JPAI
+
+% libraries:
+% Thrust
+% Bolt
+
+% Accelerate (or => other related GPU approaches)
+\emph{Accelerate}~\cite{} is an embedded domain specific language in the functional language Haskell~\cite{}.
+
+% Obsidian
+% Harlan
+
+% declarative:
+% OpenMP
+% OpenACC
+% OmpSs for GPU
+% hiCUDA
+% HMPP
+% PGI Accelerator
+
+% languages:
+% SAC
+% NOVA
+% Copperhead
+% Petabricks
+% HiDP
+% NESL (and current GPU compilation)
+% StreamIt
+% LiquidMetal
+% X10
+
+\subsection{Related Domain Specific Approaches}
+% For Stencil:
+% Patus
+% PARTANS
+
+% For Image processing:
+% Halide
+% Impalla ...?
+
+\subsection{Related Approaches using Rewrite Rules}
+% Playing by the rules ...
+% Sergei ...
+% Spiral
 
 \section{Conclusion}
 

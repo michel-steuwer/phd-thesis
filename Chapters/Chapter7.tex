@@ -161,7 +161,7 @@ This assumption works well for homogeneous multi-\GPU systems as used in this th
 
 The code generation technique presented in \autoref{part:codeGeneration} will address the first drawback and generate efficient and performance portable code for each single OpenCL device.
 More research has to be conducted for performing efficient executions on heterogeneous systems.
-The structured manner in which programs are expressed with SkelCL could help to address this issue, as researchers have already build performance models for structured programming~\cite{BischofGK03,Alt2007,DarlingtonFHKSW93,StegmeierFrJAUn2015} predicting runtime performance.
+The structured manner in which programs are expressed with SkelCL could help to address this issue, as researchers have already build performance models for structured programming~\cite{HayashiC02,BischofGK03,Alt2007,DarlingtonFHKSW93,StegmeierFrJAUn2015} predicting runtime performance.
 Such models could be used for minimizing the overall runtime by most efficiently using all available hardware resources.
 
 
@@ -190,7 +190,7 @@ Two possible techniques can be used here which have already been applied in simi
 formal performance models and advanced machine learning techniques.
 
 Formal performance models try to model the performance of programs without executing the programs.
-Such models are usually built by experts encoding specific semantic knowledge and have shown promising results especially for structured programming approaches, like algorithmic skeletons~\cite{DarlingtonFHKSW93,Alt2007}, where precise observations can be made about the generic program structure instead of being limited to observations about concrete applications which cannot be easily generalized.
+Such models are usually built by experts encoding specific semantic knowledge and have shown promising results especially for structured programming approaches, like algorithmic skeletons~\cite{DarlingtonFHKSW93,Alt2007,HayashiC02}, where precise observations can be made about the generic program structure instead of being limited to observations about concrete applications which cannot be easily generalized.
 In our setting, performance models could be created to estimate the performance of a given pattern-based expression and then used to guide the automatic application of rewrite rules, by estimating the benefit of applying the rule.
 If multiple rewrite rules would be valid the particular rule would be applied where the performance model estimates the larges performance benefit.
 
