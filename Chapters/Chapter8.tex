@@ -133,6 +133,8 @@ In \SkelCL multi-\GPU support is a key feature built into the programming model 
 \GPU code is generated from expressions written in a domain specific language embedded in Haskell.
 Obsidian offers low-level primitives to the programmer for achieving competitive performance with manually written \CUDA code.
 
+\bigskip
+
 \emph{Accelerate}~\cite{ChakravartyKLMG11,McDonellCKL13} is also a domain specific languages for data-parallel programming embedded in Haskell.
 Accelerate makes use of Obsidian for generating \GPU code and offers a higher level interface to the programmer than Obsidian does.
 Parallel combinators, like map, fold, or scan, are used to express programs at the algorithmic level.
@@ -140,7 +142,7 @@ This is very similar to how functional programmers usually express in ordinary H
 This is also similar to our skeleton library \SkelCL, but the use of Haskell makes Accelerate hard to use for programmers coming from more traditional imperative and object-oriented languages like C and \Cpp.
 Furthermore, \SkelCL has specific features, like the support of additional arguments, which enhance the flexibility in which it is used, allowing to efficiently implement real-world examples, \eg, the LM OSEM application discussed in \autoref{chapter:skelcl-evaluation}.
 
-Accelerate uses high-level optimizations~\cite{McDonellCKL13} to fuse multiple skeleton executions into a single one -- an optimization technique known as \emph{deforestation}~\cite{Wadler90} in the functional community.
+Accelerate uses high-level optimizations~\cite{McDonellCKL13} for fusing multiple skeleton executions into a single one -- an optimization technique known as \emph{deforestation}~\cite{Wadler90} in the functional community.
 This is different from \SkelCL which always generates an \OpenCL kernel for each skeleton.
 Therefore, Accelerate is able to generate efficient code for benchmarks where \SkelCL performs badly, including \emph{asum} and the dot product.
 As discussed in \autoref{ch:seventh} we intend to address this drawback of \SkelCL in the future by incorporating our novel compilation technique which is able to perform this type of optimization as well.
@@ -179,19 +181,44 @@ Some existing programming languages have been extended to support \GPU programmi
 Fundamental data-parallel building blocks like map are pre-defined in the language and used by programmers.
 Patterns can be nested, where this is not possible in \SkelCL but fully supported in our novel compilation technique.
 
+\bigskip
+
 \emph{LiquidMetal}~\cite{HuangHBR08} is a research project by IBM to support the programming of heterogeneous systems comprised of different hardware in a single programming language called \emph{Lime}~\cite{AuerbachBCR10}.
 Support for programming \GPU systems has recently been added~\cite{DubachCRBF12}.
 Lime supports task-parallelism with the creation of tasks which can communicate with each other.
 Data-parallelism is also supported with skeleton-like patterns, including map and reduce.
 
+\bigskip
+
 \emph{Single Assignment C (SAC)}~\cite{GrelckS06} is a functional programming language supporting \GPUs programming by compiling SAC programs to CUDA~\cite{GuoTS11}.
-The compiler automatically detects loops which can be offloaded to the \GPU, generated the necessary CUDA code and performs the data management automatically. 
+The compiler automatically detects loops which can be offloaded to the \GPU, generated the necessary CUDA code and performs the data management automatically.
 SAC has a special loop (\code{with}-loops) which are guaranteed to be free of dependencies, similar to \SkelCL's map skeleton.
 
+\bigskip
 
-\emph{Copperhead}~\cite{} and \emph{NOVA}~\cite{} are a 
+\emph{Copperhead}~\cite{CatanzaroGK11} is a \GPU language embedded in the Python programming language offering data-parallel primitives, including map, reduce, and scan.
+Nesting of patterns is supported and nested parallelism is statically mapped to the \GPU thread hierarchy by the compiler and can be controlled via compiler switches.
+Currently, no systematic mechanism exists for exploring different mapping strategies.
+Our code generation approach allows to systematically explore different implementation strategies, including different mappings of nested data parallelism to the hardware.
 
-\emph{Petabricks}~\cite{}
+\bigskip
+
+\emph{NOVA}~\cite{CollinsGGLS14} is a recent functional \GPU programming language developed at Nvidia.
+It is intended to be used as an intermediate language produces by a domain specific programming interface.
+Programs are implemented in a Lisp-style notation where function application is written using prefix notation.
+Built-in parallel operations include map, reduce, and scan.
+
+\bigskip
+
+Finally, \emph{Petabricks}~\cite{AnselCWOZEA09} allows the programmer to specify a range of valid implementations for a given problem.
+The programmer thereby specifies an implementation space the Petabricks compiler and runtime explores using autotuning strategies.
+The two main concepts are \emph{transforms} which are functions which can be transformed by the Petrabricks compiler and \emph{rules} which describe a possible way for performing the computation.
+By specifying multiple alternative rules the compiler is free to choose which one to apply at a given point in the program.
+Recent work has enabled the generation of \GPU code as well~\cite{PhothilimthanaARA13}.
+
+Different to our code generation approach for tackling performance portability, Petabricks relies on static analysis for optimizing the generated code.
+Furthermore, the responsibility for specifying algorithmic choices is on the application programmer implementing a specific algorithm, whereas in our approach the algorithmic choices are once for all defined and captured in the rewrite rules and then applied to the high-level code written by the programmer.
+Therefore, in our approach the algorithmic choices can be seen as implicit, or hidden from the user, where in Petabricks they are explicit to the programmer.
 
 \bigskip
 Obviously all these programming languages take a very different approach as \SkelCL does by requiring programmers to learn a new language and reimplement their entire application in the new language.
