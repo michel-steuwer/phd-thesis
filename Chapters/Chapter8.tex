@@ -4,7 +4,7 @@
 
 \label{ch:eighth} % For referencing the chapter elsewhere, use \autoref{ch:name}
 
-In this chapter we compare the approaches presented in this thesis to related work and draw final conclusions.
+In this chapter we compare the approaches presented in this thesis to related work and draw a short final conclusion.
 
 \section{Related Work}
 Here we will discuss related projects which also aim to simplify parallel programming in general or of GPU systems in particular.
@@ -14,8 +14,7 @@ Next, we will cover other structured parallel programming approaches, including 
 We will then discuss the broad range of \GPU programming approaches proposed in recent years, before looking at domain specific approaches, including projects particular focus on stencil computations.
 We will end with a discussion of related projects using rewrite rules for program optimizations.
 
-For all projects discuss we will make clear how they relate to our work.
-% We will see, that no other project exist which combines a practical high-level programming approach
+For all projects we make clear how they relate to our work.
 
 
 \subsection{Algorithmic Skeleton Libraries}
@@ -224,20 +223,80 @@ Therefore, in our approach the algorithmic choices can be seen as implicit, or h
 Obviously all these programming languages take a very different approach as \SkelCL does by requiring programmers to learn a new language and reimplement their entire application in the new language.
 Interfacing code written in one of these new languages with legacy code is often complicated, whereas it is straightforward and easy when using \SkelCL, because it is implemented as an ordinary \Cpp library.
 
-\subsection{Related Domain Specific Approaches}
-% For Stencil:
-% Patus
-% PARTANS
+\subsection[Related Domain Specific Approaches for\\ Stencil Computations]{Related Domain Specific Approaches for Stencil Computations}
+In this thesis we introduced two novel algorithmic skeletons, among them the \stencil skeleton.
+Here we will discuss related work on domain specific approaches focused on stencil computations and the related domain of image processing.
+All these approaches are, by design, focused on one particular domain of applications, whereas \SkelCL and our compilation technique are much more general.
 
-% For Image processing:
-% Halide
-% Impalla ...?
+\bigskip
+
+\emph{PATUS}~\cite{ChristenSB11} is a code generation and autotuning framework for stencil computations.
+The stencil computation is expressed in a domain specific language and separated from the execution strategy which is also written by the programmer in a second domain specific language but independent of the stencil executed.
+The PATUS compiler combines a stencil and a strategy to generate \OpenCL code.
+PATUS focuses on single-\GPU performance and does not support multi-\GPU systems as \SkelCL does.
+An autotuning component is used to experimentally determine and optimize implementation parameters and to choose the best execution strategy.
+
+Different execution strategies can be used on different architectures to achieve some degree of performance portability, as the application-specific stencil code does not change.
+Our novel code generation approach goes further, where different implementation strategies are systematically derived from a single high-level expression and not picked from a limited set of manually written execution strategies.
+
+\bigskip
+
+\emph{PARTANS}~\cite{LutzFC13} is a software framework for stencil computations implemented in \Cpp with a focus on autotuning of stencil applications for multi-\GPU systems.
+Stencils are expressed using a \Cpp API in a style similar to our \SkelCL \Cpp implementation of the stencil skeleton formally defined in this thesis.
+Autotuning is applied to determine the best parameters in the implementation.
+PARTANS pays particular attention on the communication in multi-\GPU systems and detects different PCIe layouts which affect the data transfer rates between different \GPUs in the system.
+
+Overall PARTANS is much more focused on optimizing the communication in a multi-\GPU system than \SkelCL is and does not consider particular optimizations on single \GPUs nor does it formally define skeleton computations as an algorithmic skeleton as this thesis does.
+
+\bigskip
+\emph{Impala}~\cite{KosterLHMS14} is a domain specific language developed at Saarland University supporting stencil applications.
+Similar to the LMS project discussed earlier code is generated at runtime and it can be precisely specified which part of the computation is executed at compile time and which part is executed in parallel by the \GPU.
+This technique allows, for example, to generate \GPU code where runtime checks for the boarder handling can be limited to the particular memory areas where boarder handling is actually required and avoided elsewhere.
+
+\bigskip
+
+\emph{Halide}~\cite{Ragan-KelleyAPLAD12,Ragan-KelleyBAPDA13} is a programming language for image processing applications.
+Halide is a purely functional language where a function producing an image is implemented by defining the computation performed to produce a single pixel.
+This function can be applied in different ways to produces the entire image, \eg, sequentially or in parallel.
+As applications are organized in a pipeline processing images in multiple stages there is also the possibility to exploit pipeline parallelism.
+The decision how the functions are executed in Halide are defined in a \emph{schedule} independent of the individual image processing operations performed.
+
+Autotuning is used for automatically searching for good schedules~\cite{Ragan-KelleyBAPDA13}.
+Different from PATUS, Halide can automatically generate schedules, but they are restricted to image processing applications, \eg, assuming that pipelining is always possible.
+Our code generation approach is more general and can applied to other types of application domains as well.
 
 \subsection{Related Approaches using Rewrite Rules}
-% Playing by the rules ...
-% Sergei ...
-Spiral~\cite{OfenbeckRSOP13}
+The has been related work on using rewrite rules for program optimizations, especially from a functional programming background.
+
+\bigskip
+
+The Bird-Meertens formalism~\cite{Bird88} used as our notation in this thesis already defines equations which allow to transform programs at an algorithmic level.
+\cite{Gorlatch96}~shows a detailed case study of this technique.
+Targeting distributed systems, formal rules have been proposed for optimizing collective operations in message passing systems~\cite{GorlatchWL99,Gorlatch00,Gorlatch04}.
+For the functional programming language Haskell \cite{JonesToHo2001}~discusses how rewriting can be used as an optimization technique and how the Glasgow Haskell Compiler (GHC)~\cite{HudakHJW07} supports the definition of rewrite rules.
+
+Our rewrite rules can be seen in the same tradition as this work.
+
+\bigskip
+
+Spiral~\cite{PuschelMSXJPVJ04,OfenbeckRSOP13,SpampinatoP14} is a project aiming at generating highly efficient code for signal processing applications and related domains.
+Rules are used to systematically describe domain specific transformations which are applied automatically by the compiler.
+Spiral specialized the generated code depending on the input problem size and achieves high performance using this technique.
+First focused on signal processing applications~\cite{PuschelMSXJPVJ04} Spiral has since been extended to generate code for linear algebra applications as well~\cite{SpampinatoP14}.
+
+In contrast, our code generation technique systematically describes hardware optimizations of the \OpenCL programming model and our approach is not domain specific as Spiral is where the framework has to be re engineered for supporting a new application domain.
+
+
+
 
 \section{Conclusion}
+This thesis has presented our work for addressing two key challenges of programming and optimizing for modern parallel processors.
+
+The \SkelCL programming model and its implementation as a \Cpp library address the programmability challenge by greatly simplifying programming without scarifying performance, as we showed in \autoref{chapter:skelcl-evaluation}.
+\SkelCL introduces two new algorithmic skeletons with their formal definitions as well as their efficient implementations on single- and multi-\GPU systems.
+
+The novel code generation technique addresses the performance portability challenge with its formal foundations enabling the rewriting of pattern-based programs and the code generator implementation generating highly efficient \OpenCL code on three different hardware architectures, as shown in \autoref{chapter:codeGeneration-evaluation}.
+
+These two projects can be combined in the future, as described in \autoref{ch:seventh}, to obtain a holistic, structured approach for programming and optimizing programs which combines their advantages.
 
 
