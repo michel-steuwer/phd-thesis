@@ -211,7 +211,7 @@ $\reduce \circ \join \circ \mapWorkgroup\ \big( \join \circ \asScalar \circ \map
 \label{fig:reduce:expr:auto}
 \end{figure*}
 
-Figure~\ref{fig:reduce:expr:auto} shows the best performing low-level expression found by applying our automatic search technique.
+The best performing low-level expression found by applying our automatic search technique are shown in \autoref{fig:reduce:expr:auto}.
 The first expression (\autoref{fig:reduce:expr:auto:1}) was found on the Nvidia platform, the second expression (\autoref{fig:reduce:expr:auto:2}) on the AMD platform, and the third expression (\autoref{fig:reduce:expr:auto:3}) on the Intel platform.
 We can make several important observations.
 The first observation is, that none of the expressions make use of the local memory (although our systems fully support it).
@@ -292,7 +292,7 @@ With our approach we achieve the same relative performance on all platforms whic
 
 \paragraph{Search Efficiency}
 We now investigate the efficiency of our simple search strategy.
-Figure~\ref{fig:search} shows how many expressions were evaluated during the search.
+The \autoref{fig:search} shows how many expressions were evaluated during the search.
 The evaluated expressions are grouped from left to right by the number of rules applied in the search tree.
 The red line connects the fastest expression found so far.
 

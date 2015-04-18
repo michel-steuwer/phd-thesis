@@ -151,7 +151,7 @@ This frees the user from providing type definitions and source code twice, which
 Code duplication should almost always be avoided as it can easily lead to hardly maintainable code and subtle bugs.
 
 \paragraph{Additional Arguments:}
-In real-world applications (\eg, the LM OSEM discussed in detail in Section~\ref{section:medical-imaging}), user-defined functions often operate not only on a skeleton's input vector, but may also take additional inputs.
+In real-world applications (\eg, the LM OSEM discussed in detail in \autoref{section:medical-imaging}), user-defined functions often operate not only on a skeleton's input vector, but may also take additional inputs.
 With only a fixed number of input arguments, traditional skeletons would not be applicable for the implementation of such applications.
 In \SkelCL, skeletons can accept an arbitrary number of additional arguments which are passed to the skeleton's customizing function.
 
@@ -674,7 +674,7 @@ It is expressed as a lambda expression that receives a pair of vectors, multipli
 
 \autoref{lst:allpairs:generic:kernel} shows the \OpenCL kernel created after adding and adapting the generic allpairs implementation.
 The customizing function (\autoref{lst:allpairs:generic:kernel:funcStart}---\autoref{lst:allpairs:generic:kernel:funcEnd}) has been transformed by the \code{skelclc} compiler.
-The vector class has been replaced by an \OpenCL representation (defined in \autoref{lst:allpairs:generic:kernel:structStart} and~\ref{lst:allpairs:generic:kernel:structEnd}) and the element access to the vectors has been replaced by computations of the matching indices.
+The vector class has been replaced by an \OpenCL representation (defined in \autoref{lst:allpairs:generic:kernel:structStart} and \autoref{lst:allpairs:generic:kernel:structEnd}) and the element access to the vectors has been replaced by computations of the matching indices.
 This implementation assumes that the rows of the first matrix are combined with the columns of the second matrix, as it is required for the matrix multiplication.
 % The implementation could easily be extended to support different behavior as well.
 
@@ -746,10 +746,10 @@ By loading data needed by multiple work-items of the same work-group into the lo
   \caption{Implementation schema of the specialized \allpairs skeleton.}
   \label{fig:memory_access}
 \end{figure}
-For the \allpairs skeleton with the \zip-\reduce customizing function, we can adopt the implementation schema for \GPUs from~\cite{SarjeAl2013}, as shown in Figure~\ref{fig:memory_access}.
-We allocate two arrays in the local memory, one of size $r\times k$ ($r=2$, $k=3$ in Figure~\ref{fig:memory_access}) for elements of $A$ and one of size $k\times c$ ($c=3$ in Figure~\ref{fig:memory_access}) for elements of $B$.
-A work-group consisting of $c\times r$ work-items computes $s$ blocks ($s=2$ in Figure~\ref{fig:memory_access}) of the result matrix $C$.
-In Figure~\ref{fig:memory_access}, the two blocks marked as \circled{7} and \circled{8} are computed by the same work-group as follows.
+For the \allpairs skeleton with the \zip-\reduce customizing function, we can adopt the implementation schema for \GPUs from~\cite{SarjeAl2013}, as shown in \autoref{fig:memory_access}.
+We allocate two arrays in the local memory, one of size $r\times k$ ($r=2$, $k=3$ in \autoref{fig:memory_access}) for elements of $A$ and one of size $k\times c$ ($c=3$ in \autoref{fig:memory_access}) for elements of $B$.
+A work-group consisting of $c\times r$ work-items computes $s$ blocks ($s=2$ in \autoref{fig:memory_access}) of the result matrix $C$.
+In \autoref{fig:memory_access}, the two blocks marked as \circled{7} and \circled{8} are computed by the same work-group as follows.
 In the first iteration, the elements of blocks \circled{1} and \circled{2} are loaded into the local memory and combined following the \zip-\reduce pattern.
 The obtained intermediate result is stored in block \circled{7}.
 Then, the elements of block \circled{3} are loaded and combined with the elements from \circled{2} which still reside in the local memory.

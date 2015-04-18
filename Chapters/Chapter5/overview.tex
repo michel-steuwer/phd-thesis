@@ -143,7 +143,7 @@ Finally, the \pat{vect-4} pattern (\autoref{fig:codeex:impl:vec}) vectorizes the
 The exact meaning of our patterns will be given in \autoref{section:patterns}.
 
 The last step consists of traversing the low-level expression and generating \OpenCL code for each low-level pattern encountered (\autoref{fig:codeex:ocl}).
-Each map patterns generates a for-loop (\autoref{fig:codeex:ocl:loop1:start}--\ref{fig:codeex:ocl:loop1:end} and~\ref{fig:codeex:ocl:loop2:start}--\ref{fig:codeex:ocl:loop2:end}) that iterate over the input array assigning work to the work-groups and local work-item.
+Each map patterns generates a for-loop (\autoref{fig:codeex:ocl:loop1:start}---\autoref{fig:codeex:ocl:loop1:end} and \autoref{fig:codeex:ocl:loop2:start}---\autoref{fig:codeex:ocl:loop2:end}) that iterate over the input array assigning work to the work-groups and local work-item.
 The information of how many chunks each work-group and work-items processes comes from the corresponding \pat{split}.
 In \autoref{fig:codeex:ocl:call} the vectorized version of the user-defined \code{mul3} function (defined in \autoref{fig:codeex:ocl:def}) is finally applied to the input array.
 

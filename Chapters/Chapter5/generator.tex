@@ -123,7 +123,7 @@ The loop variable \code{wg\_id} is based on the identifier of the work-group.
 No code is emitted for the $\splitN\ 128$ pattern, but rather its type influences the boundaries of the loop generated for the following \mapWorkgroup pattern. 
 In each iteration of the loop, a work-group processes a chunk of 128 elements of the input array.
 
-The first block nested inside the for-loop (\autoref{lst:reduce11:lc1_start}--\ref{lst:reduce11:lc1_end}) corresponds to the subexpression:
+The first block nested inside the for-loop (\autoref{lst:reduce11:lc1_start}---\autoref{lst:reduce11:lc1_end}) corresponds to the subexpression:
 $\join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1$.
 As previously, we assume a work-group size of 128 work-items, therefore, we know that after splitting the 128 elements processed by the work-group with $\splitN\ 1$ each work-item processes \emph{exactly one} element.
 Based on this knowledge, we do not emit a for-loop for the \mapLocal pattern, as we did for the \mapWorkgroup pattern, instead we emit the single \autoref{lst:reduce11:lc1}, where the local identifier of the work-item is obtained.
@@ -243,28 +243,6 @@ This information is used later when generating the \OpenCL code for performing \
 We will discuss the type system implementation in more detail in \autoref{section:typeSystem}.
 
 \paragraph{Iterate}
-%\autoref{lst:iterate:impl} shows the structure of the \OpenCL code generated for the \iterateN pattern.
-%%
-%\begin{lstlisting}[%                                                             
-%caption={Structure of the \OpenCL code emitted for the \iterateN pattern.},%
-%numbers=left,%
-%float=tb,
-%label={lst:iterate:impl}]
-%int size = 128;
-%local float* in = array0;
-%local float* out = ((7 & 1) != 0) ? array1 : array2;
-%for (int i = 0; i < 7; i +=1) {$\label{lst:iterate:impl:for}$
-%  ... // code emitted for nested pattern$\label{lst:iterate:nested}$
-%  in  = (out == array2) ? array2 : array1;$\label{lst:iterate:impl:in}$
-%  out = (out == array2) ? array2 : array1;$label{lst:iterate:impl:out}$
-%  size = size / 2;$\label{lst:iterate:impl:size}$
-%}
-%\end{lstlisting}
-%%
-%This code segment is actually taken from the parallel reduction example discussed in \autoref{eq:reduce11}.
-%A for loop is generated (line~\ref{lst:iterate:impl:for}) for performing the actual iterations.
-%Two pointers (\code{in} and \code{out}) are swapped after each iteration (lines~\ref{lst:iterate:impl:in} and~\ref{lst:iterate:impl:out}) and used in the code generated for the nested pattern which is emitted inside the body of the for loop (line~\ref{lst:iterate:nested}).
-%Because this code segment is taken from the parallel reduction example, the \code{size} variable, which represents the size of the current input array, is reduced by half after each iteration step (line~\ref{lst:iterate:impl:size}).
 For the $\iterateN\ f\ n$ pattern a for-loop is emitted by the code generator.
 As seen in the previous section, two pointers are generated and swapped after each iteration to provide input and output pointers to the nested pattern.
 A variable storing the size of the input array is generated and updated after each iteration, based on the effect the function $f$ has on the array size when processing the array.
@@ -359,53 +337,8 @@ The input and output indices: \code{in\_index} and \code{out\_index} are generat
 We saw in \autoref{lst:reduce11} that access to the global memory is based on the work-group and work-item identifier, while the local memory access is only based on the work-item identifier, because each work-item has its exclusive copy of local memory to operate on.
 The \reorderStride pattern influences the generation of the indices too, as we describe below.
 
-%The most complicated bit is the generation of the input and output indices: \code{in\_index} and \code{out\_index}.
-%To understand how this works let us investigate an example which combines the previous code segments.
-%\autoref{lst:mapTogether:impl} shows the code generated for the expression:
-%\begin{align*}
-%  &\join \circ \mapWorkgroup\ \big(\\
-%  &\qquad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\big) \circ \splitN\ 128
-%\end{align*}
-%%
-%\begin{lstlisting}[%                                                             
-%caption={Structure of the \OpenCL code emitted for the \mapLocal pattern.},%
-%numbers=left,%
-%float=tb,
-%label={lst:mapTogether:impl}]
-%for (int wg_id = get_group_id(0); wg_id < size / 128;
-%     wg_id += get_num_groups(0)) {
-%  for (int l_id_id = get_local_id(0); l_id < 128;
-%       l_id += get_local_size(0)) {
-%    for (int i = 0; i < 1; ++i) {
-%      output[wg_id * 128 + l_id + i]$\label{lst:mapTogether:impl:output}$
-%        = id(input[wg_id * 128 + l_id + i]);$\label{lst:mapTogether:impl:input}$
-%    }
-%  }
-%  barrier(CLK_LOCAL_MEM_FENCE);
-%}
-%return;
-%\end{lstlisting}
-%%
-%The input and output indices (line~\ref{lst:mapTogether:impl:output} and~\ref{lst:mapTogether:impl:input})
-%
-%\begin{lstlisting}[%                                                             
-%caption={Structure of the \OpenCL code emitted for the \mapLocal pattern.},%
-%numbers=left,%
-%float=tb,
-%label={lst:mapTogether:impl2}]
-%for (int wg_id = get_group_id(0); wg_id < size / 128;
-%     wg_id += get_num_groups(0)) {
-%  int l_id = get_local_id(0);
-%  output[wg_id * 128 + l_id + 0]
-%    = id(input[wg_id * 128 + l_id + 0]);
-%  barrier(CLK_LOCAL_MEM_FENCE);
-%}
-%return;
-%\end{lstlisting}
-
 \paragraph{Reorder-Stride}
 No code is emitted for the $\reorderStride$ pattern, rather it influences the generation of the next input index which is used to read from memory.
-% This implementation follows the observation that there is no difference between reordering an array and then reading from it in the normal oder, and reading directly from the array in an reordered order.
 
 For the implementation, when visiting the \reorderStride pattern an information about the stride used ($s$) is stored on a stack which is consumed the next time an input index is generated.
 The index generation then emits an index which ultimately controls which element is read by which thread.

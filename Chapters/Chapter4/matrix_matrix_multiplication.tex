@@ -164,7 +164,7 @@ the \CPU code includes the initialization of \OpenCL, memory allocations, explic
 In the BLAS implementations, the \CPU code contains the initialization of the corresponding BLAS library, memory allocations, as well as a library call for performing the matrix multiplication;
 no separate definition of \GPU code is necessary, as the \GPU code is defined inside the library function calls.
 
-For the implementation based on the generic \allpairs skeleton (\autoref{lst:skelcl:mm:generic}), we count \autoref{lst:skelcl:mm:generic:CPU:start}---\autoref{lst:skelcl:mm:generic:CPU:stop} and~\ref{lst:skelcl:mm:generic:CPU:call} as the \CPU code, and the definition of the customizing function in \autoref{lst:skelcl:mm:generic:GPU:start}---\autoref{lst:skelcl:mm:generic:GPU:stop} as the \GPU code.
+For the implementation based on the generic \allpairs skeleton (\autoref{lst:skelcl:mm:generic}), we count \autoref{lst:skelcl:mm:generic:CPU:start}---\autoref{lst:skelcl:mm:generic:CPU:stop} and \autoref{lst:skelcl:mm:generic:CPU:call} as the \CPU code, and the definition of the customizing function in \autoref{lst:skelcl:mm:generic:GPU:start}---\autoref{lst:skelcl:mm:generic:GPU:stop} as the \GPU code.
 For the implementation based on the specialized \allpairs skeleton (\autoref{lst:skelcl:mm:special}), \autoref{lst:skelcl:mm:special:zipGPU} and \autoref{lst:skelcl:mm:special:reduceGPU} are the \GPU code, while all other lines constitute the \CPU code.
 
 Both skeleton-based implementations are clearly the shortest, with 10 and 9 LOCs.

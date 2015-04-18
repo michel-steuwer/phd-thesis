@@ -279,7 +279,7 @@ The third option is actually the only place where parallelism is expressed in th
 This rule expressed the fact that it is valid to partition the input elements first and then reduce them independently.
 This exploits the associativity property we require from the reduction operator.
 Finally, the last option expresses the notion that it is possible to reduce the input array in multiple steps, by performing an iterative process where in each step a partial reduction is performed.
-This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\ref{lst:reduce6}.
+This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\autoref{lst:reduce6}.
 
 \begin{proof}[Proof of \autoref{eq:algo:part-red}; option 1]
   Let $xs = [x_1, \ldots, x_m]$.\\

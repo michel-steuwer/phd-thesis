@@ -156,8 +156,8 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 \end{lstlisting}
 
 \autoref{lst:lmosem:redistribution} shows an \OpenCL pseudocode for the redistribution phase.
-To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function (\ref{lst:lmosem:redistribution:operation}) and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
-For such synchronizations, \OpenCL uses \emph{events}, associated with an operation (\ref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (\autoref{lst:lmosem:redistribution:wait}).
+To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function (\autoref{lst:lmosem:redistribution:operation}) and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
+For such synchronizations, \OpenCL uses \emph{events}, associated with an operation (\autoref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (\autoref{lst:lmosem:redistribution:wait}).
 After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (\autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
 Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in any version of \OpenCL.
 

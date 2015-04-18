@@ -166,10 +166,8 @@ On modern \GPUs the fast local memory is organized in multiple \emph{banks}.
 When two, or more, work-items simultaneously access memory locations in the same bank a \emph{bank conflict} occurs which means that all memory requests are processed sequentially and not in parallel as usual.
 This is described in more detail in~\autoref{chapter:background}.
 The previous two implementations use an access pattern for the local memory which makes bank conflicts likely.
-% When reading memory from the local memory in line~\ref{lst:reduce1:read} of \autoref{lst:reduce1} each work-item reads interleaved from two locations: \lstinline!index! and \lstinline!index+s!.
 The third implementation in \autoref{lst:reduce2} avoids this problematic local memory access pattern.
 Instead an access pattern is used where bank conflicts are unlikely and, thus, performance is improved.
-% This is achieved by directly using the local id as index together with a different definition of \lstinline!s! in line~\ref{lst:reduce2:s}.
 This better access pattern requires the reduction operation to be commutative, as the order of element is not respected when reading from global memory.
 
 The performance improves by a factor of 2.01 as compared to the previous implementation and 4.68 to the initial implementation.
@@ -432,7 +430,7 @@ Turning the theoretical performance into practical performance by applying such 
 
 \subsection{Portability of the Optimized Parallel Reduction}
 After we have established how crucial but hard to achieve optimizations are, we now will investigate their portability.
-To do so, we run the code shown in \autoref{lst:reduce0}--\ref{lst:reduce6} on three different hardware architectures:
+To do so, we run the code shown in \autoref{lst:reduce0}--\autoref{lst:reduce6} on three different hardware architectures:
 Nvidia's Fermi \GPU architecture~\cite{CUDAFermi2009} which we have used in our analysis in the previous section, AMD's Graphics Core Next \GPU architecture~\cite{AMDGCN2012}, and Intel's Nehalem \CPU architecture~\cite{IntelNehalem2008}.
 \autoref{fig:reduce:overview} shows the performance numbers for each architecture.
 We use, as before, the memory bandwidth as our performance metric and show the hardware memory bandwidth limit of each respective hardware architecture.
