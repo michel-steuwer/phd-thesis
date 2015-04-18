@@ -278,9 +278,9 @@ kernel void matMultKernel(global float* a, global float* b,$\label{lst:openclExa
 The most prominent restrictions are:
 recursive functions and function pointers are not supported, as well as system calls, including \code{malloc}, \code{printf}, file I/O, etc.
 The most important extensions are:
-qualifiers for pointers reflecting the four address spaces (\eg, the \code{global} qualifier in lines~\ref{lst:openclExample:1} and~\ref{lst:openclExample:2} of \autoref{lst:openclExample}) and vector data types, like \code{float4}.
+qualifiers for pointers reflecting the four address spaces (\eg, the \code{global} qualifier in \autoref{lst:openclExample:1} and \autoref{lst:openclExample:2} of \autoref{lst:openclExample}) and vector data types, like \code{float4}.
 Moreover, \OpenCL provides a set of functions which can be used to identify the executing work-item and work-group.
-One example is the \code{get\_global\_id} function used in line~\ref{lst:openclExample:3} of \autoref{lst:openclExample}.
+One example is the \code{get\_global\_id} function used in \autoref{lst:openclExample:3} of \autoref{lst:openclExample}.
 This is usually used so that different work-items operate on different sets of the input data.
 In \autoref{lst:openclExample}, each work-item computes one item of the result matrix \code{c} by multiplying and summing up a row and column of the input matrices \code{a} and \code{b}.
 This kernel only produces the correct result if exactly one work-item per element of the result matrix is launched.

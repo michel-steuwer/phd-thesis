@@ -91,7 +91,7 @@ This results in the sequence of five phases shown in \autoref{fig:lmosem:em_dist
 
 The \SkelCL program in \autoref{lst:em_skelcl} reflects the described five phases in a concise, high-level manner, as shown by the corresponding comments.
 The subset \code{s}, the error image \code{cl}, and the reconstruction image \code{f} are declared as \SkelCL vectors which enables an easy and automatic data transfer between \GPUs.
-As data transfers are performed implicitly by \SkelCL, the upload phase is implemented by simply setting vector distributions (lines~\ref{lst:em:skelcl:upload:start}--\ref{lst:em:skelcl:upload:end}), while the download phase is performed implicitly when the \SkelCL containers are accessed or redistributed.
+As data transfers are performed implicitly by \SkelCL, the upload phase is implemented by simply setting vector distributions (\autoref{lst:em:skelcl:upload:start}---\autoref{lst:em:skelcl:upload:end}), while the download phase is performed implicitly when the \SkelCL containers are accessed or redistributed.
 \begin{lstlisting}[%
   caption={SkelCL code of the LM OSEM algorithm},%
   numbers=left,%
@@ -129,16 +129,16 @@ for (l = 0; l < subsets; l++) {
 
   /* Download (implicit) */}
 \end{lstlisting}
-The redistribution phase is implemented by changing the distributions of the corresponding \SkelCL containers (lines~\ref{lst:em:skelcl:redistribute:start} and~\ref{lst:em:skelcl:redistribute:end}).
+The redistribution phase is implemented by changing the distributions of the corresponding \SkelCL containers (\autoref{lst:em:skelcl:redistribute:start} and \autoref{lst:em:skelcl:redistribute:end}).
 
 The two computational steps are implemented using the \map and \zip skeleton from \SkelCL, correspondingly, as follows.
 
 The first step -- the computation of the error image $c_l$ -- is implemented using the \map skeleton.
-For each event \code{e} of the currently processed subset, the row $A_i$ is computed (line~\ref{lst:em:skelcl:computeAi}).
+For each event \code{e} of the currently processed subset, the row $A_i$ is computed (\autoref{lst:em:skelcl:computeAi}).
 As $A_i$ is sparsely populated it is stored as a special data structure, called \code{Path}, to reduce its memory footprint.
 Next, the local error is computed using $A_i$ together with the current reconstruction image $f$ which is passed to the \map skeleton as an additional argument.
 Finally, the error image \code{cl} is updated with the local error.
-The error image is also provided as an additional argument, but when executing the \map skeleton \code{cl} is wrapped using the \code{out} helper function (line~\ref{lst:em:skelcl:execute}).
+The error image is also provided as an additional argument, but when executing the \map skeleton \code{cl} is wrapped using the \code{out} helper function (\autoref{lst:em:skelcl:execute}).
 This marks the additional argument as output parameter, \ie, the \SkelCL implementation is notified that this argument will be modified by the customizing function.
 It is interesting to point out that the \map skeleton does not return a value, \ie, its return type is \code{void}.
 The skeleton is only executed for its side effects on \code{cl}.
@@ -178,7 +178,7 @@ For a single \GPU, the \OpenCL-based implementation requires 206 LOCs, \ie, more
 Using multiple \GPUs in \OpenCL requires explicit code for additional data transfers between \GPUs.
 This accounts for additional 37 LOCs for the \OpenCL-based implementation.
 In \SkelCL, only 8 additional LOCs are necessary to describe the changes of data distribution.
-These lines are easily recognizable in the \SkelCL program (lines~\ref{lst:em:skelcl:upload:start}--\ref{lst:em:skelcl:upload:end}, \ref{lst:em:skelcl:redistribute:start}--\ref{lst:em:skelcl:redistribute:end} in \autoref{lst:em_skelcl}, plus 3 lines during the initialization) and make this high-level code arguably better understandable and maintainable than the \OpenCL version.
+These lines are easily recognizable in the \SkelCL program (\autoref{lst:em:skelcl:upload:start}---\autoref{lst:em:skelcl:upload:end} and \autoref{lst:em:skelcl:redistribute:start}---\autoref{lst:em:skelcl:redistribute:end} in \autoref{lst:em_skelcl}, plus 3 lines during the initialization) and make this high-level code arguably better understandable and maintainable than the \OpenCL version.
 
 
 

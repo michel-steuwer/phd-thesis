@@ -72,16 +72,16 @@ void reduce0(global float* g_idata, global float* g_odata,
   if (tid == 0) g_odata[get_group_id(0)] = l_data[0]; }$\label{lst:reduce0:writeBack}$
 \end{lstlisting}
 % This will be our starting point for the following optimizations.
-First each work-item loads an element into the local memory (line~\ref{lst:reduce0:load}).
-After a synchronization (line~\ref{lst:reduce0:firstBarrier}) all work-items of a work-group execute a for loop (lines~\ref{lst:reduce0:for:start}--\ref{lst:reduce0:for:end}) to perform a collective tree-based reduction.
-In every iteration the if statement (line~\ref{lst:reduce0:if}) ensures that a declining number of work-items remain active performing partial reductions in the shrinking reduction tree.
-The second barrier in line~\ref{lst:reduce0:for:end} ensures that no race conditions occur when accessing the shared local memory.
-Finally, the work-item in the work-group with id$=0$ writes back the computed result to the global memory in line~\ref{lst:reduce0:writeBack}.
+First each work-item loads an element into the local memory (\autoref{lst:reduce0:load}).
+After a synchronization (\autoref{lst:reduce0:firstBarrier}) all work-items of a work-group execute a for loop (\autoref{lst:reduce0:for:start}---\autoref{lst:reduce0:for:end}) to perform a collective tree-based reduction.
+In every iteration the if statement (\autoref{lst:reduce0:if}) ensures that a declining number of work-items remain active performing partial reductions in the shrinking reduction tree.
+The second barrier in \autoref{lst:reduce0:for:end} ensures that no race conditions occur when accessing the shared local memory.
+Finally, the work-item in the work-group with id$=0$ writes back the computed result to the global memory in \autoref{lst:reduce0:writeBack}.
 
 
 The implementation presented in \autoref{lst:reduce0} is not straightforward to develop.
 The application developer has to be familiar with the parallel execution model of \OpenCL to avoid race conditions and deadlocks.
-For example, it is important that the second barrier in line~\ref{lst:reduce0:for:end} is placed \emph{after} and not \emph{inside} the if statement.
+For example, it is important that the second barrier in \autoref{lst:reduce0:for:end} is placed \emph{after} and not \emph{inside} the if statement.
 This is true, even though work-items not entering the if statement will never read from or write to memory and, therefore, can never be influenced by a race condition.
 Nevertheless, \OpenCL requires all work-items of a work-group to execute all barrier statements in a kernel exactly the same number of times.
 The application developer is responsible to ensure that this condition is met, otherwise a deadlock will occur.
@@ -120,12 +120,12 @@ void reduce1(global float* g_idata, global float* g_odata,
 The differences from the previous implementation are highlighted in the code.
 
 When performing the collective tree-based reduction in a work-group, a shrinking number of work-items remain active until the last remaining work-item computes the result of the entire work-group.
-In the previous version the modulo operator was used to determine which work-item remains active (see line~\ref{lst:reduce0:if} in \autoref{lst:reduce0}).
+In the previous version the modulo operator was used to determine which work-item remains active (see \autoref{lst:reduce0:if} in \autoref{lst:reduce0}).
 This leads to a situation were not the consecutive work-items remain active, but rather work-items which id is divisible by 2, then by 4, then by 8, and so on.
 In Nvidia's \GPU architectures, 32 work-items are grouped into a \emph{warp} and executed together, as described in \autoref{chapter:background}.
 It is highly beneficial to program in a style where all 32 work-items grouped into a warp perform the same instructions, especially, to avoid divergent branching between work-items of a warp.
 Using the modulo operator to determine the active work-items leads to highly divergent branching.
-The second implementation in \autoref{lst:reduce1}, therefore, uses a different formula (line~\ref{lst:reduce1:index}) for determining the active work-items, which avoids divergent branching.
+The second implementation in \autoref{lst:reduce1}, therefore, uses a different formula (\autoref{lst:reduce1:index}) for determining the active work-items, which avoids divergent branching.
 
 The performance improves by a factor of 2.33 as compared to the first implementation.
 However, still only 9.73\% of the theoretically available memory bandwidth are used by this version.
@@ -214,7 +214,7 @@ void reduce3(global float* g_idata, global float* g_odata,
 
 In the previous versions, each work-item loads one element from the global into local memory before the work-items of the work-group collectively performa tree-based reduction.
 That means that half of the work-items are idle after performing a single copy operation, which is highly wasteful.
-The fourth implementation in \autoref{lst:reduce3} avoids this by letting each work-item load two elements from global memory, perform an addition, and store the computed result in local memory (line~\ref{lst:reduce3:comp}).
+The fourth implementation in \autoref{lst:reduce3} avoids this by letting each work-item load two elements from global memory, perform an addition, and store the computed result in local memory (\autoref{lst:reduce3:comp}).
 Assuming the same input size this reduces the number of work-items to start by half and, therefore, increases the computational intensity for every work-item.
 
 The performance improves by a factor of 1.78 as compared to the previous implementation and 8.34 to the initial implementation.
@@ -234,9 +234,9 @@ Wraps are the fundamental execution unit in Nvidia's \GPU architectures, as expl
 All work-items grouped in a warp are guaranteed to be executed together in a lock-step manner, \ie, all work-items in the same warp execute the same instruction simultaneously.
 Because of this hardware behaviour, no barrier synchronization is required between instructions inside a single warp.
 The fifth implementation in \autoref{lst:reduce4} takes advantage of this.
-The for loop performing the tree-based reduction is exited early at the stage when only 32 work-items remain active (see line~\ref{lst:reduce4:for}).
-Lines~\ref{lst:reduce4:warp:start}--\ref{lst:reduce4:warp:end} shows the special code which performs the rest of the tree-base reduction without any barrier synchronization.
-The code shown here effectively unrolled the last six iterations of the for loop in line~\ref{lst:reduce4:for}.
+The for loop performing the tree-based reduction is exited early at the stage when only 32 work-items remain active (see \autoref{lst:reduce4:for}).
+The \autoref{lst:reduce4:warp:start} up \autoref{lst:reduce4:warp:end} shows the special code which performs the rest of the tree-base reduction without any barrier synchronization.
+The code shown here effectively unrolled the last six iterations of the for loop in \autoref{lst:reduce4:for}.
 As warps are specific to Nvidia's \GPU architectures, this implementation is not a portable \OpenCL code and might produce incorrect results on other \OpenCL devices.
 
 The performance improves by a factor of 1.8 as compared to the previous implementation and 15.01 to the initial implementation.
@@ -292,7 +292,7 @@ The differences from the previous implementation are highlighted in the code.
 In the previous implementation we made a special case for the last six iterations of the for loop and provided special code handling for each iteration separately.
 This is a general optimization strategy known as \emph{loop unrolling}.
 Loop unrolling can be beneficial because variables and branches required by a loop can be avoided.
-In the sixth implementation, shown in \autoref{lst:reduce5}, the for loop has been removed entirely and replaced by three if statement (line~\ref{lst:reduce5:if:1},~\ref{lst:reduce5:if:2}, and~\ref{lst:reduce5:if:3}).
+In the sixth implementation, shown in \autoref{lst:reduce5}, the for loop has been removed entirely and replaced by three if statement (\autoref{lst:reduce5:if:1}, \autoref{lst:reduce5:if:2}, and \autoref{lst:reduce5:if:3}).
 Each if statement replaces one iteration of the loop.
 This code assumes that \code{WG\_SIZE} is a compile-time constant and, therefore, the if statements will be evaluated at compile time, avoiding costly branches at runtime.
 Different to the previous optimization, we still have to provide a barrier to ensure correct synchronization, as multiple warps are involved here.
@@ -352,7 +352,7 @@ This has indeed two advantages:
 first, the algorithmic intensity is increased, \ie, each work-item is doing more work,
 and, second, performing the summation sequentially by a single work-item does not require costly synchronizations.
 The fully optimized implementation is shown in \autoref{lst:reduce6} with the changes highlighted.
-A while loop has been introduced (see line~\ref{lst:reduce6:while}) which, in every iteration, loads two elements from the global memory and adds them to the local memory.
+A while loop has been introduced (see \autoref{lst:reduce6:while}) which, in every iteration, loads two elements from the global memory and adds them to the local memory.
 No synchronization is required here as each work-item operates independently on different memory locations.
 The way the memory is accessed ensures that memory accesses will be coalesced (see \autoref{chapter:background}) when reading from global memory.
 

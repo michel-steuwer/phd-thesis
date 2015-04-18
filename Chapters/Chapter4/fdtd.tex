@@ -70,12 +70,12 @@ We implemented a two-dimensional version using \SkelCL as well as a manually tun
 To solve the PDEs in \autoref{eq:rot_h} and \autoref{eq:rot_d}, two separated three-point stencil computations are performed and one map computation for the gain-model is necessary.
 \autoref{eq:div_e} and \autoref{eq:div_h} are implicitly solved by the \FDTD method~\cite{Yee1966}.
 \autoref{lst:fdtd} shows the SkelCL code of the application:
-in every iteration first the energy distribution is updated (line~\ref{lst:fdtd:energy}) using a map skeleton (defined in line~\ref{lst:fdtd:map});
-then the first stencil (defined in line~\ref{lst:fdtd:stencil1}) updates the electric field $\vec{E}$ by combining a single element of $\vec{E}$ with three elements of the magnetic field $\vec{H}$ (line~\ref{lst:fdtd:efield});
-and finally the second stencil (defined in line~\ref{lst:fdtd@stencil2}) updates $\vec{H}$ by combining a single element of $\vec{H}$ with three elements of $\vec{E}$ (line~\ref{lst:fdtd:hfield}).
+in every iteration first the energy distribution is updated (\autoref{lst:fdtd:energy}) using a map skeleton (defined in \autoref{lst:fdtd:map});
+then the first stencil (defined in \autoref{lst:fdtd:stencil1}) updates the electric field $\vec{E}$ by combining a single element of $\vec{E}$ with three elements of the magnetic field $\vec{H}$ (\autoref{lst:fdtd:efield});
+and finally the second stencil (defined in \autoref{lst:fdtd@stencil2}) updates $\vec{H}$ by combining a single element of $\vec{H}$ with three elements of $\vec{E}$ (\autoref{lst:fdtd:hfield}).
 
 Please note that the two stencil computations require both fields ($\vec{E}$ and $\vec{H}$) as input.
-To implement this, we use the \emph{additional argument} feature of SkelCL which allows the additional field to be passed to skeletons on execution (see lines~\ref{lst:fdtd:efield} and~\ref{lst:fdtd:hfield}).
+To implement this, we use the \emph{additional argument} feature of SkelCL which allows the additional field to be passed to skeletons on execution (see \autoref{lst:fdtd:efield} and \autoref{lst:fdtd:hfield}).
 The additional arguments are passed unchanged to the customizing function of the skeleton, therefore, the function customizing the stencil in line 4 now accepts $\vec{H}$ as a second parameter.
 This feature greatly increases the flexibility of applications written in SkelCL.
 

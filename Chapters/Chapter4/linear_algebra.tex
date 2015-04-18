@@ -38,14 +38,14 @@ In the \SkelCL programming model we can express \emph{asum} using the \map and \
 The \map skeleton applies the $(|\, .\, |)$ function to each element of the input vector before the \reduce skeleton is used to sum up the elements.
 
 The implementation of $asum$ using the \SkelCL library is shown in \autoref{lst:skelcl:asum}.
-In lines~\ref{lst:skelcl:asum:skeletons:start}--\ref{lst:skelcl:asum:skeletons:end} the customized skeletons are defined.
-The \map skeleton in \autoref{eq:asum:skelcl} corresponds directly to lines~\ref{lst:skelcl:asum:skeletons:start} and~\ref{lst:skelcl:asum:abs} in \autoref{lst:skelcl:asum} where the $|\, .\, |$ function is represented using a \Cpp lambda expression.
-Lines~\ref{lst:skelcl:asum:skeletons:sumUp} and~\ref{lst:skelcl:asum:skeletons:end} correspond directly to the \reduce skeleton in \autoref{eq:asum:skelcl}.
-By applying the skeletons to the input vector (line~\ref{lst:skelcl:asum:call}) the result is computed and accessed in line~\ref{lst:skelcl:asum:return}.
+In \autoref{lst:skelcl:asum:skeletons:start}---\autoref{lst:skelcl:asum:skeletons:end} the customized skeletons are defined.
+The \map skeleton in \autoref{eq:asum:skelcl} corresponds directly to \autoref{lst:skelcl:asum:skeletons:start} and \autoref{lst:skelcl:asum:abs} in \autoref{lst:skelcl:asum} where the $|\, .\, |$ function is represented using a \Cpp lambda expression.
+The \autoref{lst:skelcl:asum:skeletons:sumUp} and \autoref{lst:skelcl:asum:skeletons:end} correspond directly to the \reduce skeleton in \autoref{eq:asum:skelcl}.
+By applying the skeletons to the input vector (\autoref{lst:skelcl:asum:call}) the result is computed and accessed in \autoref{lst:skelcl:asum:return}.
 In the \SkelCL library implementation the \reduce skeleton returns a vector containing a single element, called \code{result} in this particular case.
 The containers in the \SkelCL library are implemented as \emph{futures}~\cite{HewittBa1977,FriedmanWi1978}.
 This allows the computation of all skeletons to be performed asynchronously, \ie, when executing a skeleton the computation is launched and the called function returns immediately.
-When accessing values of the returned container, \eg, via the array subscript operator as shown in line~\ref{lst:skelcl:asum:return}, the call will block until the accessed value has been computed.
+When accessing values of the returned container, \eg, via the array subscript operator as shown in \autoref{lst:skelcl:asum:return}, the call will block until the accessed value has been computed.
 Here we could have also used the equivalent \code{front} member function for accessing the first element of the result vector.
 
 \begin{lstlisting}[%                                                             

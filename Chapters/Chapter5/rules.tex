@@ -1094,12 +1094,12 @@ $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce11:1}$
 \end{lstlisting}
 %
 This expression closely resembles the structure of the first two implementations presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.
-First the input array is split into chunks of size 128 (line~\ref{eq:reduce11:5}) and each work-group processes such a chunk of data.
+First the input array is split into chunks of size 128 (\autoref{eq:reduce11:5}) and each work-group processes such a chunk of data.
 128 corresponds to the work-group size we assumed for our implementations in \autoref{section:reduce:case-study}.
-Inside of a work-group in line~\ref{eq:reduce11:4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function to perform a copy nested inside the $\toLocal$ pattern.
-Afterwards, in line~\ref{eq:reduce11:3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into pairs of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
+Inside of a work-group in \autoref{eq:reduce11:4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function to perform a copy nested inside the $\toLocal$ pattern.
+Afterwards, in \autoref{eq:reduce11:3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into pairs of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
 This iterative process resembles the for-loops from \autoref{lst:reduce0} and \autoref{lst:reduce1} where in every iteration two elements are reduced.
-Finally, in line~\ref{eq:reduce11:2} the computed result is copied back to the global memory.
+Finally, in \autoref{eq:reduce11:2} the computed result is copied back to the global memory.
 
 The first two implementations discussed in \autoref{section:reduce:case-study} are very similar and the only difference is which work-item remains active in the parallel reduction tree.
 Currently, we do not model this subtle difference in our patterns, therefore, we cannot create an expression which distinguishes between these two implementations.

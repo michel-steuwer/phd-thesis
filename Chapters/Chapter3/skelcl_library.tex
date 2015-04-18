@@ -22,15 +22,15 @@ We then shift the focus to the implementations of the memory management, algorit
 \subsection{Programming with the \SkelCL Library}
 
 \autoref{lst:skelcl:dotproduct} shows the implementation of the dot product computation, discussed in the previous section, in \SkelCL.
-After including the appropriate \SkelCL headers (lines~\autoref{lst:skelcl:dotproduct:inc:start}--\autoref{lst:skelcl:dotproduct:inc:end}) the \SkelCL library can be initialized as shown in line~\autoref{lst:skelcl:dotproduct:init}.
+After including the appropriate \SkelCL headers (\autoref{lst:skelcl:dotproduct:inc:start}---\autoref{lst:skelcl:dotproduct:inc:end}) the \SkelCL library can be initialized as shown in \autoref{lst:skelcl:dotproduct:init}.
 This will perform the initializations required by \OpenCL.
 The argument provided to the \code{init} function specifies how many and which \OpenCL devices should be used by \SkelCL.
 Here a single device should be used which can be of any type, \ie, it can be either a \CPU or a \GPU.
 The dot product is specified using the \zip and \reduce skeletons.
-The skeletons are created using \code{zip} (line~\autoref{lst:skelcl:dotproduct:zip}) and \code{reduce} (line~\autoref{lst:skelcl:dotproduct:reduce}) functions which expect the customizing functions of the skeletons as arguments.
-In this example we use \Cpp lambda expressions (lines~\autoref{lst:skelcl:dotproduct:zip:lambda} and \autoref{lst:skelcl:dotproduct:reduce:lambda}) to specify the customizing functions of the skeletons.
-We create the two input \code{Vector}s from C style pointers (line~\autoref{lst:skelcl:dotproduct:vecAB}).
-In line~\autoref{lst:skelcl:dotproduct:apply} we perform the computation by applying the customized skeletons to the data, before we finally return the computed result in line~\autoref{lst:skelcl:dotproduct:return}.
+The skeletons are created using \code{zip} (\autoref{lst:skelcl:dotproduct:zip}) and \code{reduce} (\autoref{lst:skelcl:dotproduct:reduce}) functions which expect the customizing functions of the skeletons as arguments.
+In this example we use \Cpp lambda expressions (\autoref{lst:skelcl:dotproduct:zip:lambda} and \autoref{lst:skelcl:dotproduct:reduce:lambda}) to specify the customizing functions of the skeletons.
+We create the two input \code{Vector}s from C style pointers (\autoref{lst:skelcl:dotproduct:vecAB}).
+In \autoref{lst:skelcl:dotproduct:apply} we perform the computation by applying the customized skeletons to the data, before we finally return the computed result in \autoref{lst:skelcl:dotproduct:return}.
 
 \begin{lstlisting}[%
 caption={Implementation of the dot product computation in \SkelCL.},%
@@ -173,8 +173,8 @@ Y = saxpy( X, Y, a );      /* execute skeleton */ $\label{lst:saxpy:addArgs:exec
 \end{lstlisting}
 The $saxpy$ computation is a combination of scalar multiplication of $a$ with vector $\vec{x}$ followed by vector addition with $\vec{y}$.
 In \autoref{lst:saxpy:addArgs}, the computation is implemented using the \zip skeleton:
-vectors $\vec{x}$ and $\vec{y}$ are passed as input, while factor $a$ is passed to the customizing function as an additional argument (line~\ref{lst:saxpy:addArgs:arg}).
-The additional argument is simply appended to the argument list when the skeleton is executed (line~\ref{lst:saxpy:addArgs:execution}).
+vectors $\vec{x}$ and $\vec{y}$ are passed as input, while factor $a$ is passed to the customizing function as an additional argument (\autoref{lst:saxpy:addArgs:arg}).
+The additional argument is simply appended to the argument list when the skeleton is executed (\autoref{lst:saxpy:addArgs:execution}).
 Besides scalar values, like shown in the example, vectors and matrices can also be passed as additional arguments to a skeleton.
 When vectors or matrices are used as additional arguments, the user is responsible to ensure that no race conditions occur when writing to or reading from the container.
 If the container is only used for reading, it is guaranteed that no race conditions will occur.
@@ -212,14 +212,14 @@ Vector<float> Y(SIZE); initVector(Y);
 Y = saxpy( X, Y );      /* execute skeleton */ $\label{lst:saxpy:capture:execute}$
 \end{lstlisting}
 
-The variable $a$ is now captured by the lambda expression in line~\ref{lst:saxpy:capture:capture}.
-Note that $a$ is no longer passed as an argument when executing the skeleton in line~\ref{lst:saxpy:capture:execute}.
+The variable $a$ is now captured by the lambda expression in \autoref{lst:saxpy:capture:capture}.
+Note that $a$ is no longer passed as an argument when executing the skeleton in \autoref{lst:saxpy:capture:execute}.
 
 \vspace{1em}
 
 Additional arguments and lambda captures are related techniques which both can be used to make additional data available inside of the user function.
 There is one main technical differences between both:
-for using lambda captures the variable to be captured has to be declared and available when \emph{declaring} the user function (in line~\ref{lst:saxpy:capture:capture} in \autoref{lst:saxpy:capture}) which is not the case for the additional argument feature where the variable has to available when \emph{executing} the skeleton (in line~\ref{lst:saxpy:addArgs:execution} in \autoref{lst:saxpy:addArgs}).
+for using lambda captures the variable to be captured has to be declared and available when \emph{declaring} the user function (in \autoref{lst:saxpy:capture:capture} in \autoref{lst:saxpy:capture}) which is not the case for the additional argument feature where the variable has to available when \emph{executing} the skeleton (in \autoref{lst:saxpy:addArgs:execution} in \autoref{lst:saxpy:addArgs}).
 By supporting the capturing feature of lambda expressions \SkelCL source code becomes more \Cpp idiomatic, but ultimately the user has the choice of using either feature as it fits his or her needs or personal taste.
 
 
@@ -267,7 +267,7 @@ Vector<float> Y(SIZE); initVector(Y);
 Y = saxpy( X, Y, a );      /* execute skeleton */
 \end{lstlisting}
 
-To create the corresponding \OpenCL kernel, the source code of the customizing function in lines~\ref{lst:saxpy:transformed:funcStart} and \ref{lst:saxpy:transformed:funcEnd} is combined with the prototype implementation of the \zip skeleton which is shown in \autoref{lst:zip:impl}.
+To create the corresponding \OpenCL kernel, the source code of the customizing function in \autoref{lst:saxpy:transformed:funcStart} and \autoref{lst:saxpy:transformed:funcEnd} is combined with the prototype implementation of the \zip skeleton which is shown in \autoref{lst:zip:impl}.
 %
 \begin{lstlisting}[%
   caption={Prototype implementation of the \zip skeleton in \OpenCL.},%
@@ -285,7 +285,7 @@ kernel void ZIP(const global T0* left,
 \end{lstlisting}
 %
 The prototype implementation created the \OpenCL kernel \code{ZIP} receiving three pointers to global memory and one integer as arguments.
-A boundary check is performed in line~\ref{lst:zip:impl:boundaryCheck} before a function with the name \code{USER\_FUNC} is called (line~\ref{lst:zip:impl:call}) with a pair of elements read from the two input arrays \code{left} and \code{right}.
+A boundary check is performed in \autoref{lst:zip:impl:boundaryCheck} before a function with the name \code{USER\_FUNC} is called (\autoref{lst:zip:impl:call}) with a pair of elements read from the two input arrays \code{left} and \code{right}.
 The result of the function call is stored in the output array \code{out}.
 
 The combined source codes clearly do not yet form a valid \OpenCL kernel as there exists no function called \code{USER\_FUNC}.
@@ -293,7 +293,7 @@ This \emph{prototype} implementation has to be adapted to become a valid \OpenCL
 To make this adaption, the \SkelCL library implementation makes use of the same LLVM and Clang infrastructure used to build the \code{skelclc} compiler.
 Three steps are performed to create a valid \OpenCL kernel:
 1)~the customizing function is renamed into \code{USER\_FUNC};
-2)~the types of the customizing functions are used to change the \code{typedef}s in line~\ref{lst:zip:impl:typedef} so that the types of the kernel function \code{ZIP} match;
+2)~the types of the customizing functions are used to change the \code{typedef}s in \autoref{lst:zip:impl:typedef} so that the types of the kernel function \code{ZIP} match;
 3)~the additional arguments of the customizing function are appended to the parameter list of the kernel function \code{ZIP} and the call to the customizing function is adapted to forward the arguments.
 
 After these steps the source code has been transformed into a valid \OpenCL kernel as shown in \autoref{lst:zip:mergedImpl}.
@@ -458,8 +458,8 @@ The color of every pixel of an image is modified by computing a weighted average
 The application will be discussed in more detail in \autoref{sec:gauss}.
 
 \autoref{lst:mapoverlap} shows how the \code{MapOverlap} skeleton implementation is used to express the Gaussian blur.
-The \code{mapOverlap} function in line~\ref{lst:mapoverlap:factory} is customized with a lambda expression which uses its argument, a \code{Neighborhood} object (line~\ref{lst:mapoverlap:neighborhood}), to access the neighboring elements with relative indices (lines~\ref{lst:mapoverlap:indices1} and~\ref{lst:mapoverlap:indices2}).
-The second and third argument of the factory function define the range of the stencil shape and the border handling method (line~\ref{lst:mapoverlap:borderHandling}).
+The \code{mapOverlap} function in \autoref{lst:mapoverlap:factory} is customized with a lambda expression which uses its argument, a \code{Neighborhood} object (\autoref{lst:mapoverlap:neighborhood}), to access the neighboring elements with relative indices (\autoref{lst:mapoverlap:indices1} and \autoref{lst:mapoverlap:indices2}).
+The second and third argument of the factory function define the range of the stencil shape and the border handling method (\autoref{lst:mapoverlap:borderHandling}).
 The actual computation of the Gaussian blur is omitted from \autoref{lst:mapoverlap} for brevity reasons.
 
 \begin{lstlisting}[%
@@ -505,11 +505,11 @@ kernel void mapoverlap(global char* in, global char* out,$\label{lst:mapoverlap:
 \end{lstlisting}
 
 \autoref{lst:mapoverlap:impl} shows a sketch of the \OpenCL kernel created by the \code{MapOverlap} implementation.
-To represent the \code{Neighborhood} object in \OpenCL, a C \code{struct} is created (lines~\ref{lst:mapoverlap:impl:struct:start}--\ref{lst:mapoverlap:impl:struct:end}).
-A helper function \code{get} (lines~\ref{lst:mapoverlap:impl:get:start}--\ref{lst:mapoverlap:impl:get:end}) is created which handles the read access to the data hold by the neighborhood object.
-The kernel function \code{mapoverlap}, defined in line~\ref{lst:mapoverlap:impl:kernel:start}, first loads the data required by a work-group into a local buffer stored in the fast local \GPU memory (line~\ref{lst:mapoverlap:impl:copy}).
+To represent the \code{Neighborhood} object in \OpenCL, a C \code{struct} is created (\autoref{lst:mapoverlap:impl:struct:start}---\autoref{lst:mapoverlap:impl:struct:end}).
+A helper function \code{get} (\autoref{lst:mapoverlap:impl:get:start}---\autoref{lst:mapoverlap:impl:get:end}) is created which handles the read access to the data hold by the neighborhood object.
+The kernel function \code{mapoverlap}, defined in \autoref{lst:mapoverlap:impl:kernel:start}, first loads the data required by a work-group into a local buffer stored in the fast local \GPU memory (\autoref{lst:mapoverlap:impl:copy}).
 It then prepares a neighborhood object and passes it to the customizing function after a boundary check was performed.
-A barrier (line~\ref{lst:mapoverlap:impl:barrier}) ensures that the loading into the fast local memory has been completed before any work-item executes the customizing function.
+A barrier (\autoref{lst:mapoverlap:impl:barrier}) ensures that the loading into the fast local memory has been completed before any work-item executes the customizing function.
 
 Loading of the data into the fast local memory is lengthy and involves performing the boundary checks, therefore, it is not shown in \autoref{lst:mapoverlap:impl}.
 %
@@ -563,10 +563,10 @@ heatSim(100_iterations,$\label{lst:stencil:first:iterations}$
 \end{figure}
 
 \autoref{lst:stencil:first} shows the implementation of an iterative stencil application simulating heat transfer in \SkelCL.
-The application developer specifies the customizing function (line~\ref{lst:stencil:first:func:start}--\ref{lst:stencil:first:func:end}), as well as the extents of the stencil shape (line~\ref{lst:stencil:first:shape}) and the out-of-bound handling (line~\ref{lst:stencil:first:border}).
+The application developer specifies the customizing function (\autoref{lst:stencil:first:func:start}---\autoref{lst:stencil:first:func:end}), as well as the extents of the stencil shape (\autoref{lst:stencil:first:shape}) and the out-of-bound handling (\autoref{lst:stencil:first:border}).
 The \code{Stencil} implementation allows the stencil shape's extents to be specified using four values for each of the directions:
 up, right, down, and left.
-In the example in \autoref{lst:stencil:first}, the heat flows from left to right, therefore, no accesses to the elements to the right are necessary and the stencil space's extents are specified accordingly (note the $0$ in line~\ref{lst:stencil:first:shape} representing the extent to the right).
+In the example in \autoref{lst:stencil:first}, the heat flows from left to right, therefore, no accesses to the elements to the right are necessary and the stencil space's extents are specified accordingly (note the $0$ in \autoref{lst:stencil:first:shape} representing the extent to the right).
 \autoref{fig:stencil:first:shape} illustrates this situation: the dark gray element is updated by using the values from the left.
 The specified stencil shape's extent is highlighted in light gray.
 In our current implementation, the user has to explicitly specify the stencil shape's extents, which is necessary for performing the out-of-bound handling on the GPU.
@@ -575,7 +575,7 @@ This would help to avoid inconsistencies and free the user from specifying this 
 
 Stencil applications often perform stencil computations iteratively, like the heat transfer example which performs multiple iteration steps in order to simulate the transfer of heat over time.
 The \code{Stencil} implementation supports iterative execution, which is especially challenging to implement on multi-device systems as we will see later.
-On execution of the skeleton, the number of iterations to be performed is specified by the user as the first argument (line~\ref{lst:stencil:first:iterations}).
+On execution of the skeleton, the number of iterations to be performed is specified by the user as the first argument (\autoref{lst:stencil:first:iterations}).
 This could be extended in the future, so that the user specifies a function to check if a application specific condition is met and stop the iteration.
 
 The \OpenCL kernel created by the \code{Stencil} implementation looks similar to the \code{MapOverlap} implementation presented in \autoref{lst:mapoverlap:impl}.
@@ -673,13 +673,13 @@ The implementation of the customizing function is straightforward.
 It is expressed as a lambda expression that receives a pair of vectors, multiplies their elements and sums them up.
 
 \autoref{lst:allpairs:generic:kernel} shows the \OpenCL kernel created after adding and adapting the generic allpairs implementation.
-The customizing function (lines~\ref{lst:allpairs:generic:kernel:funcStart}--\ref{lst:allpairs:generic:kernel:funcEnd}) has been transformed by the \code{skelclc} compiler.
-The vector class has been replaced by an \OpenCL representation (defined in line~\ref{lst:allpairs:generic:kernel:structStart} and~\ref{lst:allpairs:generic:kernel:structEnd}) and the element access to the vectors has been replaced by computations of the matching indices.
+The customizing function (\autoref{lst:allpairs:generic:kernel:funcStart}---\autoref{lst:allpairs:generic:kernel:funcEnd}) has been transformed by the \code{skelclc} compiler.
+The vector class has been replaced by an \OpenCL representation (defined in \autoref{lst:allpairs:generic:kernel:structStart} and~\ref{lst:allpairs:generic:kernel:structEnd}) and the element access to the vectors has been replaced by computations of the matching indices.
 This implementation assumes that the rows of the first matrix are combined with the columns of the second matrix, as it is required for the matrix multiplication.
 % The implementation could easily be extended to support different behavior as well.
 
-The \code{allpairs} kernel function prepares instances of the \code{struct} replacing the vector class in lines~\ref{lst:allpairs:generic:kernel:prepareStart}--\ref{lst:allpairs:generic:kernel:prepareEnd}.
-After performing a boundary check, the customizing function is called in line~\ref{lst:allpairs:generic:kernel:call}.
+The \code{allpairs} kernel function prepares instances of the \code{struct} replacing the vector class in \autoref{lst:allpairs:generic:kernel:prepareStart}---\autoref{lst:allpairs:generic:kernel:prepareEnd}.
+After performing a boundary check, the customizing function is called in \autoref{lst:allpairs:generic:kernel:call}.
 This \OpenCL kernel is executed once for every element of the output matrix $C$.
 
 \begin{lstlisting}[%

@@ -73,7 +73,7 @@ The values obtained by applying $G$ can be precomputed, as $G$ is only evaluated
 
 
 \autoref{lst:skelcl:gauss} shows the \SkelCL-based implementation of the Gaussian blur using the \code{MapOverlap} implementation of the \stencil skeleton.
-Here the immediate neighboring pixels are accessed (lines~\ref{lst:skelcl:gauss:start}--\ref{lst:skelcl:gauss:end}) and used to compute a weighted value for each pixel.
+Here the immediate neighboring pixels are accessed (\autoref{lst:skelcl:gauss:start}---\autoref{lst:skelcl:gauss:end}) and used to compute a weighted value for each pixel.
 The function computing the weighted sum is omitted here.
 It is also possible to extend the \emph{range} of the Gaussian blur and include more neighboring pixel values in the computation.
 

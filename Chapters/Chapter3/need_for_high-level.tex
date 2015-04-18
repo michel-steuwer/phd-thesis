@@ -38,10 +38,10 @@ Each subset's computation takes its predecessor's output image as input and prod
 
 The structure of a sequential LM OSEM implementation is shown in \autoref{lst:lmosem:seq_code}.
 The outermost loop iterates over the subsets.
-The first inner loop (step 1, lines~\autoref{lst:lmosem:seq_code:step1:begin}--\autoref{lst:lmosem:seq_code:step1:end}) iterates over subset's events to compute $c_l$, which requires three sub-steps:
+The first inner loop (step 1, \autoref{lst:lmosem:seq_code:step1:begin}---\autoref{lst:lmosem:seq_code:step1:end}) iterates over subset's events to compute $c_l$, which requires three sub-steps:
 row $A_i$ is computed from the current event using Siddon's algorithm;
 the local error for row $A_i$ is computed and, finally, added to $c_l$.
-The second inner loop (step 2, lines~\autoref{lst:lmosem:seq_code:step2:begin}--\autoref{lst:lmosem:seq_code:step2:end}) iterates over all elements of $f_l$ and $c_l$ to compute $f_{l+1}$.
+The second inner loop (step 2, \autoref{lst:lmosem:seq_code:step2:begin}---\autoref{lst:lmosem:seq_code:step2:end}) iterates over all elements of $f_l$ and $c_l$ to compute $f_{l+1}$.
 \begin{figure}
 \begin{lstlisting}[
   caption={[Sequential code for LM OSEM.]Sequential code for LM OSEM comprises one outer loop with two nested inner loops.},
@@ -92,10 +92,10 @@ In the following, we describe how the phases in the parallelization schema in \a
 
 \paragraph{Upload}
 \autoref{lst:lmosem:upload} shows a simplified \OpenCL implementation of the upload phase.
-Uploading of the event vector $S$ is performed in lines \autoref{lst:lmosem:upload:1:start}--\autoref{lst:lmosem:upload:1:end}, while lines \autoref{lst:lmosem:upload:2:start}--\autoref{lst:lmosem:upload:2:end} upload the image estimate $f_l$.
-In \OpenCL, we have to manage each GPU explicitly, therefore, for each GPU, we manage an array of buffers (\texttt{s\_gpu} in line~\autoref{lst:lmosem:upload:1:cl_false} and \texttt{f\_gpu} in line~\autoref{lst:lmosem:upload:2:cl_false}) and we use a loop (line \autoref{lst:lmosem:upload:loop}) to repeat all memory operations for each GPU.
-For performance reasons, we use asynchronous copy operations, specified using the \texttt{CL\_FALSE} flag (lines \autoref{lst:lmosem:upload:1:cl_false} and \autoref{lst:lmosem:upload:2:cl_false}): this allows data transfers to multiple GPUs to overlap.
-We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (copy to each GPU), therefore, there are differences when specifying the amount of bytes to copy (lines \autoref{lst:lmosem:upload:1:amount} and \autoref{lst:lmosem:upload:2:amount}) and the offsets in the CPU memory (lines \autoref{lst:lmosem:upload:1:offset} and \autoref{lst:lmosem:upload:2:offset}).
+Uploading of the event vector $S$ is performed in \autoref{lst:lmosem:upload:1:start}---\autoref{lst:lmosem:upload:1:end}, while \autoref{lst:lmosem:upload:2:start}---\autoref{lst:lmosem:upload:2:end} upload the image estimate $f_l$.
+In \OpenCL, we have to manage each GPU explicitly, therefore, for each GPU, we manage an array of buffers (\texttt{s\_gpu} in \autoref{lst:lmosem:upload:1:cl_false} and \texttt{f\_gpu} in \autoref{lst:lmosem:upload:2:cl_false}) and we use a loop (\autoref{lst:lmosem:upload:loop}) to repeat all memory operations for each GPU.
+For performance reasons, we use asynchronous copy operations, specified using the \texttt{CL\_FALSE} flag (\autoref{lst:lmosem:upload:1:cl_false} and \autoref{lst:lmosem:upload:2:cl_false}): this allows data transfers to multiple GPUs to overlap.
+We perform different operations with $S$ (distribute among all GPUs) and $f_l$ (copy to each GPU), therefore, there are differences when specifying the amount of bytes to copy (\autoref{lst:lmosem:upload:1:amount} and \autoref{lst:lmosem:upload:2:amount}) and the offsets in the CPU memory (\autoref{lst:lmosem:upload:1:offset} and \autoref{lst:lmosem:upload:2:offset}).
 Altogether eleven such memory operations -- each with different amounts of bytes and offsets -- appear in the \OpenCL source code.
 
 \begin{lstlisting}[float,
@@ -156,24 +156,24 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 \end{lstlisting}
 
 \autoref{lst:lmosem:redistribution} shows an \OpenCL pseudocode for the redistribution phase.
-To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function (line~\ref{lst:lmosem:redistribution:operation}) and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
-For such synchronizations, \OpenCL uses \emph{events}, associated with an operation (line~\ref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (line \autoref{lst:lmosem:redistribution:wait}).
-After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (line \autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
+To download the data from all GPUs, we use the \texttt{clEnqueueReadBuffer} function (\ref{lst:lmosem:redistribution:operation}) and perform the operations asynchronously, but this time, we have to wait for the operations to finish.
+For such synchronizations, \OpenCL uses \emph{events}, associated with an operation (\ref{lst:lmosem:redistribution:operation}) for waiting for the operation to finish (\autoref{lst:lmosem:redistribution:wait}).
+After all downloads have finished, we combine the different values of $c_l$ to a new value of $c_l$ on the CPU (\autoref{lst:lmosem:redistribution:combine}), and upload the blocks of $c_l$ to the GPUs.
 Even if we only copied data between GPUs, without processing them on the CPU, we still would have to download them to the CPU because direct GPU-to-GPU transfers are currently not possible in any version of \OpenCL.
 
 \paragraph{Step 2}
 \autoref{lst:lmosem:step_2} shows the implementation of step 2.
 Computations are specified as \emph{kernels} in \OpenCL which are created from the source code specifying the computation.
-The computation in step 2 is, therefore, described as a string in lines \autoref{lst:lmosem:step_2:string:start}--\autoref{lst:lmosem:step_2:string:stop}.
+The computation in step 2 is, therefore, described as a string in \autoref{lst:lmosem:step_2:string:start}---\autoref{lst:lmosem:step_2:string:stop}.
 The operations used here are the same as in the sequential code.
 
 For executing the computations of step 2, we have to perform the following steps for each GPU:
 \begin{itemize}
   \item create an \OpenCL kernel from the source code (requires 50 lines of code in \OpenCL);
   \item compile the kernel specifically for the GPU (requires 13 lines of code in \OpenCL);
-  \item specify kernel arguments one-by-one using the \texttt{clSetKernelArg} function (line \autoref{lst:lmosem:step_2:args:start} -- \autoref{lst:lmosem:step_2:args:stop});
-  \item specify execution environment, i.\,e., how many instances of the kernel to start (line \autoref{lst:lmosem:step_2:env:start} -- \autoref{lst:lmosem:step_2:env:stop});
-  \item launch the kernel (line \autoref{lst:lmosem:step_2:kernel:start} -- \autoref{lst:lmosem:step_2:kernel:stop}).
+  \item specify kernel arguments one-by-one using the \texttt{clSetKernelArg} function (\autoref{lst:lmosem:step_2:args:start}---\autoref{lst:lmosem:step_2:args:stop});
+  \item specify execution environment, i.\,e., how many instances of the kernel to start (\autoref{lst:lmosem:step_2:env:start}---\autoref{lst:lmosem:step_2:env:stop});
+  \item launch the kernel (\autoref{lst:lmosem:step_2:kernel:start}---\autoref{lst:lmosem:step_2:kernel:stop}).
 \end{itemize}
 \begin{lstlisting}[float,
   caption={[Implementation of step 2 of the LM OSEM in \OpenCL.]Implementation of step 2 in \OpenCL (omitting error checks for brevity).},
@@ -234,7 +234,7 @@ A high-level programming model should be able to make collections of data automa
 \paragraph{Recurring patterns of parallelism}
 While each application performs (of course) different concrete operations, the general structure of parallelization often resembles parallel patterns that are commonly used in many applications.
 In step~1, for computing the error image~$c_l$, the same sequence of operations is performed for every event from the input subset, which is the well-known \map pattern of data-parallel programming~\cite{GorlatchCo2011}.
-In step~2, two images (the current image estimate~$f_l$ and the error image~$c_l$) are combined element-wise into the output image~($f_{l+1}$), see line~\autoref{lst:lmosem:step_2:zip} of \autoref{lst:lmosem:step_2}, which is again a well-known pattern of parallelism commonly called \zip.
+In step~2, two images (the current image estimate~$f_l$ and the error image~$c_l$) are combined element-wise into the output image~($f_{l+1}$), see \autoref{lst:lmosem:step_2:zip} of \autoref{lst:lmosem:step_2}, which is again a well-known pattern of parallelism commonly called \zip.
 
 It would be, therefore, desirable to express the high-level structure of an application using pre-defined common patterns, rather than describing the parallelism manually in much detail.
 

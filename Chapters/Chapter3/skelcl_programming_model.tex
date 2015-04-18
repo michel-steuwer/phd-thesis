@@ -34,7 +34,7 @@ The second advantage is that the necessary data transfers between the host and d
 Before performing a computation on container types, the \SkelCL system ensures that all input containers' data is available on all participating devices.
 This may result in implicit data transfers from the host to device memory, which in \OpenCL requires explicit programming, as we saw in~\autoref{lst:lmosem:upload} in~\autoref{section:opencl-example}.
 Similarly, before any data is accessed on the host, the implementation of \SkelCL implicitly ensures that this data on the host is up-to-date by performing necessary data transfers automatically.
-Using the \code{clEnqueueWriteBuffer} (see lines~\ref{lst:lmosem:upload:1:start}--\ref{lst:lmosem:upload:1:end} in \autoref{lst:lmosem:upload}) and \code{clEnqueueReadBuffer} (see \autoref{lst:lmosem:redistribution}) functions nine arguments have to be specified to perform a single data transfer in \OpenCL.
+Using the \code{clEnqueueWriteBuffer} (see \autoref{lst:lmosem:upload:1:start}---\autoref{lst:lmosem:upload:1:end} in \autoref{lst:lmosem:upload}) and \code{clEnqueueReadBuffer} (see \autoref{lst:lmosem:redistribution}) functions nine arguments have to be specified to perform a single data transfer in \OpenCL.
 The \SkelCL container classes shield the programmer from these low-level operations like memory allocation (on the devices) and data transfers between host and device.
 
 Developing applications working with two-dimensional data for modern parallel architectures is cumbersome and challenging, since efficient memory handling is essential for high performance.
@@ -49,7 +49,7 @@ We will see later in \autoref{sec:opt_allpairs_skeleton} and \autoref{section:sk
 \label{section:skelcl-programming-model:skeletons}
 In original \OpenCL, computations are expressed as compute \emph{kernels} which are executed in a parallel manner on an \OpenCL device, \eg, a \GPU.
 As seen earlier in \autoref{section:opencl-example} the application developer must explicitly specify the parallelism by indicating how many instances of a kernel (called \emph{work-items}) should be launched in parallel.
-We saw in \autoref{lst:lmosem:step_2} that the \code{local\_work\_size} (line~\ref{lst:lmosem:step_2:env:start}) and \code{global\_work\_size} (line~\ref{lst:lmosem:step_2:env:global}) specify the number of work-items and how they are organized into groups.
+We saw in \autoref{lst:lmosem:step_2} that the \code{local\_work\_size} (\autoref{lst:lmosem:step_2:env:start}) and \code{global\_work\_size} (\autoref{lst:lmosem:step_2:env:global}) specify the number of work-items and how they are organized into groups.
 The programmer must ensure that these numbers match, \ie, that the global size is evenly divisible by the local size.
 Communications between work-items are limited in \OpenCL and have to be implemented carefully to avoid race conditions and deadlocks.
 In addition, kernels take pointers to device memory as input and contain program code for reading/writing single data items from/to it.

@@ -76,7 +76,7 @@ Matrix<float> mm(const Matrix<float>& A,
   auto mm    = allpairs(sumUp, mult);
   return mm(A, B); }
 \end{lstlisting}
-Here the \allpairs skeleton is customized with \zip and \reduce skeletons defined in lines~\ref{lst:skelcl:mm:special:zip} and~\ref{lst:skelcl:mm:special:reduce}.
+Here the \allpairs skeleton is customized with \zip and \reduce skeletons defined in \autoref{lst:skelcl:mm:special:zip} and \autoref{lst:skelcl:mm:special:reduce}.
 This implementation corresponds more closely to \autoref{eq:skelcl:mm:dot}:
 as we express the dot product using these two skeletons (as shown in \autoref{eq:skelcl:dot_product}).
 Therefore, we reuse the definitions of \code{mult} and \code{sumUp} as used in \autoref{lst:skelcl:dot}.
@@ -136,10 +136,10 @@ kernel void mm(global float* A, global float* B,        global float* C, int m, 
     barrier(CLK_LOCAL_MEM_FENCE); }$\label{lst:local_mem_opencl:barrier2}$
   C[row * n + col] = sum; }
 \end{lstlisting}
-Two fixed-sized arrays of local memory are allocated in lines~\ref{lst:local_mem_opencl:allocA} and~\ref{lst:local_mem_opencl:allocB}.
-Matrix multiplication is carried out in the loop starting in line~\ref{lst:local_mem_opencl:loop}.
-In each iteration, data is loaded into the local memory (lines~\ref{lst:local_mem_opencl:loadA} and~\ref{lst:local_mem_opencl:loadB}) before it is used in the computation in line~\ref{lst:local_mem_opencl:comp}.
-Note that two synchronization barriers are required (lines~\ref{lst:local_mem_opencl:barrier1} and~\ref{lst:local_mem_opencl:barrier2}) to ensure that the data is fully loaded into the local memory and that the data is not overwritten while other work-items are still using it.
+Two fixed-sized arrays of local memory are allocated in \autoref{lst:local_mem_opencl:allocA} and \autoref{lst:local_mem_opencl:allocB}.
+Matrix multiplication is carried out in the loop starting in \autoref{lst:local_mem_opencl:loop}.
+In each iteration, data is loaded into the local memory (\autoref{lst:local_mem_opencl:loadA} and \autoref{lst:local_mem_opencl:loadB}) before it is used in the computation in \autoref{lst:local_mem_opencl:comp}.
+Note that two synchronization barriers are required (\autoref{lst:local_mem_opencl:barrier1} and \autoref{lst:local_mem_opencl:barrier2}) to ensure that the data is fully loaded into the local memory and that the data is not overwritten while other work-items are still using it.
 
 Both OpenCL implementations 1. and 2. from~\cite{KirkHw2010} are restrictive:
 they are only capable of performing matrix multiplication for square matrices.
@@ -164,8 +164,8 @@ the \CPU code includes the initialization of \OpenCL, memory allocations, explic
 In the BLAS implementations, the \CPU code contains the initialization of the corresponding BLAS library, memory allocations, as well as a library call for performing the matrix multiplication;
 no separate definition of \GPU code is necessary, as the \GPU code is defined inside the library function calls.
 
-For the implementation based on the generic \allpairs skeleton (\autoref{lst:skelcl:mm:generic}), we count lines~\ref{lst:skelcl:mm:generic:CPU:start}--\ref{lst:skelcl:mm:generic:CPU:stop} and~\ref{lst:skelcl:mm:generic:CPU:call} as the \CPU code, and the definition of the customizing function in lines~\ref{lst:skelcl:mm:generic:GPU:start}--\ref{lst:skelcl:mm:generic:GPU:stop} as the \GPU code.
-For the implementation based on the specialized \allpairs skeleton (\autoref{lst:skelcl:mm:special}), lines~\ref{lst:skelcl:mm:special:zipGPU} and~\ref{lst:skelcl:mm:special:reduceGPU} are the \GPU code, while all other lines constitute the \CPU code.
+For the implementation based on the generic \allpairs skeleton (\autoref{lst:skelcl:mm:generic}), we count \autoref{lst:skelcl:mm:generic:CPU:start}---\autoref{lst:skelcl:mm:generic:CPU:stop} and~\ref{lst:skelcl:mm:generic:CPU:call} as the \CPU code, and the definition of the customizing function in \autoref{lst:skelcl:mm:generic:GPU:start}---\autoref{lst:skelcl:mm:generic:GPU:stop} as the \GPU code.
+For the implementation based on the specialized \allpairs skeleton (\autoref{lst:skelcl:mm:special}), \autoref{lst:skelcl:mm:special:zipGPU} and \autoref{lst:skelcl:mm:special:reduceGPU} are the \GPU code, while all other lines constitute the \CPU code.
 
 Both skeleton-based implementations are clearly the shortest, with 10 and 9 LOCs.
 The next shortest implementation is the CUBLAS implementation with 65 LOCs -- 7 times longer than the \SkelCL-based implementations.

@@ -118,50 +118,50 @@ The overall structure of the expression can also be found in the \OpenCL code, a
 For each pattern visited, \OpenCL code is generated.
 For some patterns, no code is generated, instead they change the array type and, therefore, have an effect on how the code for following patterns is generated.
 
-The outermost for-loop (line~\ref{lst:reduce11:for_wg} in \autoref{lst:reduce11}) is generated for the \mapWorkgroup pattern.
+The outermost for-loop (\autoref{lst:reduce11:for_wg} in \autoref{lst:reduce11}) is generated for the \mapWorkgroup pattern.
 The loop variable \code{wg\_id} is based on the identifier of the work-group.
 No code is emitted for the $\splitN\ 128$ pattern, but rather its type influences the boundaries of the loop generated for the following \mapWorkgroup pattern. 
 In each iteration of the loop, a work-group processes a chunk of 128 elements of the input array.
 
-The first block nested inside the for-loop (line~\ref{lst:reduce11:lc1_start}--\ref{lst:reduce11:lc1_end}) corresponds to the subexpression:
+The first block nested inside the for-loop (\autoref{lst:reduce11:lc1_start}--\ref{lst:reduce11:lc1_end}) corresponds to the subexpression:
 $\join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1$.
 As previously, we assume a work-group size of 128 work-items, therefore, we know that after splitting the 128 elements processed by the work-group with $\splitN\ 1$ each work-item processes \emph{exactly one} element.
-Based on this knowledge, we do not emit a for-loop for the \mapLocal pattern, as we did for the \mapWorkgroup pattern, instead we emit the single line~\ref{lst:reduce11:lc1}, where the local identifier of the work-item is obtained.
-In the following line~\ref{lst:reduce11:lc1:copy}, the \code{id} function is invoked (defined in line~\ref{lst:reduce11:id}) to copy data from the input array to a local array \code{sdata1}.
+Based on this knowledge, we do not emit a for-loop for the \mapLocal pattern, as we did for the \mapWorkgroup pattern, instead we emit the single \autoref{lst:reduce11:lc1}, where the local identifier of the work-item is obtained.
+In the following \autoref{lst:reduce11:lc1:copy}, the \code{id} function is invoked (defined in \autoref{lst:reduce11:id}) to copy data from the input array to a local array \code{sdata1}.
 This implementation follows the subexpression, where the \toLocal pattern dictates that we write to an array in the local memory and the $\mapSeq\ \id$ pattern performs the copy operation.
 Again there is no for-loop generated for the $\mapSeq$ pattern.
 This time, the for-loop would only iterate over a single element, therefore, the loop can be avoided.
 The index used to read from the global memory is derived from \code{wg\_id} and \code{l\_id}, which ensures that each work-item in each work-group reads a separate element.
 In contrast, the index for writing only uses \code{l\_id}, because the result is stored in the local memory and, therefore, each work-group operates on a separate copy of \code{sdata1}.
-This section of the code is finished by the \code{barrier} in line~\ref{lst:reduce11:lc1:barrier}, which is emitted for the \mapLocal pattern to ensure proper synchronization between the work-items in the work-group.
+This section of the code is finished by the \code{barrier} in \autoref{lst:reduce11:lc1:barrier}, which is emitted for the \mapLocal pattern to ensure proper synchronization between the work-items in the work-group.
 There is no synchronization statement necessary for the \mapSeq pattern, as this pattern is only used sequentially in the context of a single work-item.
 
-The second block (lines~\ref{lst:reduce11:iter_start}--\ref{lst:reduce11:iter_end}) corresponds to the subexpression performing the iteration:
+The second block (\autoref{lst:reduce11:iter_start}---\autoref{lst:reduce11:iter_end}) corresponds to the subexpression performing the iteration:
 $\iterateN\ 7\ (\ldots)$.
-For the \iterateN pattern, a for-loop is emitted (line~\ref{lst:reduce11:iter:for}) performing the actual iteration.
+For the \iterateN pattern, a for-loop is emitted (\autoref{lst:reduce11:iter:for}) performing the actual iteration.
 The loop is annotated with a \code{\#pragma unroll 1} statement, which prevents the \OpenCL compiler from unrolling the loop.
 The reason for this implementation is, that we want to control the unrolling of this loop explicitly with the iteration rewrite rule introduced in \autoref{section:rules}.
 Additional code is generated before and after the for-loop.
-Before, a variable (\code{size}) capturing the current size of the input array is created (line~\ref{lst:reduce11:iter:size}).
+Before, a variable (\code{size}) capturing the current size of the input array is created (\autoref{lst:reduce11:iter:size}).
 The size of this variable is updated after the loop, based on the effect of the nested pattern on the size of the array.
 In this case, a partial reduction is performed reducing the array by half.
-Therefore, the \code{size} variable is halved in line~\ref{lst:reduce11:iter:size:update} after every iteration.
-A pair of pointers is created (lines~\ref{lst:reduce11:iter:inCreate} and~\ref{lst:reduce11:iter:outCreate}) and swapped after each iteration (lines~\ref{lst:reduce11:iter:inSwap} and~\ref{lst:reduce11:iter:outSwap}), so that the nested pattern has fixed input and output pointers to operate on.
+Therefore, the \code{size} variable is halved in \autoref{lst:reduce11:iter:size:update} after every iteration.
+A pair of pointers is created (\autoref{lst:reduce11:iter:inCreate} and \autoref{lst:reduce11:iter:outCreate}) and swapped after each iteration (\autoref{lst:reduce11:iter:inSwap} and \autoref{lst:reduce11:iter:outSwap}), so that the nested pattern has fixed input and output pointers to operate on.
 
-The nested block (lines~\ref{lst:reduce11:lc2_start}--\ref{lst:reduce11:lc2_end}) corresponds to the pattern composition nested inside the \iterateN pattern:
+The nested block (\autoref{lst:reduce11:lc2_start}---\autoref{lst:reduce11:lc2_end}) corresponds to the pattern composition nested inside the \iterateN pattern:
 $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2$.
-For the \mapLocal pattern, the local work-group identifier is obtained and an if statement is emitted (line~\ref{lst:reduce11:lc2:if}).
-No for-loop is emitted, as it is clear that the size of the array is maximal 128 (from the definition of \code{size} in line~\ref{lst:reduce11:iter:size}), as the variable is halved after each iteration (line~\ref{lst:reduce11:iter:size:update}).
+For the \mapLocal pattern, the local work-group identifier is obtained and an if statement is emitted (\autoref{lst:reduce11:lc2:if}).
+No for-loop is emitted, as it is clear that the size of the array is maximal 128 (from the definition of \code{size} in \autoref{lst:reduce11:iter:size}), as the variable is halved after each iteration (\autoref{lst:reduce11:iter:size:update}).
 The size information of the array is available in the array's type and, therefore, available when code is generated for the \mapLocal pattern.
 Inside the if statement the code for the \reduceSeq pattern is emitted.
-A for-loop is generated (line~\ref{lst:reduce11:lc2:reduce}) which iterates over the input chunk, which is in this case of size 2, due, to the $\splitN\ 2$ pattern.
-An accumulation variable (\code{acc}, line~\ref{lst:reduce11:lc2:acc}) is initialized with the neutral value of the reduction and then used to store the temporary reduction results.
-In line~\ref{lst:reduce11:lc2:reduceStore}, the result is stored to the memory using the \code{out} pointer prepared by the \iterateN pattern.
+A for-loop is generated (\autoref{lst:reduce11:lc2:reduce}) which iterates over the input chunk, which is in this case of size 2, due, to the $\splitN\ 2$ pattern.
+An accumulation variable (\code{acc}, \autoref{lst:reduce11:lc2:acc}) is initialized with the neutral value of the reduction and then used to store the temporary reduction results.
+In \autoref{lst:reduce11:lc2:reduceStore}, the result is stored to the memory using the \code{out} pointer prepared by the \iterateN pattern.
 Finally, for the \mapLocal pattern a \code{barrier} for synchronization is emitted.
 
-The final block (lines~\ref{lst:reduce11:lc3_start}--\ref{lst:reduce11:lc3_end}) corresponds to the last subexpression:
+The final block (\autoref{lst:reduce11:lc3_start}---\autoref{lst:reduce11:lc3_end}) corresponds to the last subexpression:
 $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1$.
-Similar to before, an if-statement is emitted for the \mapLocal pattern and the copy from the local to the global memory is performed in line~\ref{lst:reduce11:lc3:copy} by the code emitted for the $\mapSeq\ \id$ pattern.
+Similar to before, an if-statement is emitted for the \mapLocal pattern and the copy from the local to the global memory is performed in \autoref{lst:reduce11:lc3:copy} by the code emitted for the $\mapSeq\ \id$ pattern.
 No synchronization statement has to be emitted for the \mapLocal pattern, as there is no following pattern to synchronize with.
 
 \bigskip
@@ -413,7 +413,7 @@ The index generation then emits an index which ultimately controls which element
 The second expression implementing parallel reduction shown in \autoref{eq:reduce12} added a $\reorderStride\ size/2$ pattern, where $size$ is denoting the size of the input array.
 In \autoref{definition:pattern:reorderStride} the formula for $\reorderStride\ s$ was defines as: $j / n + s \times (j \bmod{n})$, where $j$ is the index to be changed and $n = size / s$.
 
-When we look back at \OpenCL code generated for the first expression in \autoref{lst:reduce11}, we can see that the index generated for the for-loop in line~\ref{lst:reduce11:lc2:reduce} was:
+When we look back at \OpenCL code generated for the first expression in \autoref{lst:reduce11}, we can see that the index generated for the for-loop in \autoref{lst:reduce11:lc2:reduce} was:
 \lstinline!l_id * 2 + i!.
 Which gives us:
 \begin{lstlisting}[numbers=none, frame=none]

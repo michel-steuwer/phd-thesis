@@ -328,11 +328,11 @@ We choose linear algebra kernels as benchmarks, because they are well known, eas
 \autoref{lst:linear-algebra-expr} shows how we express vector scaling, sum of absolute values, dot product and matrix vector multiplication using our high-level patterns.
 While the first three benchmarks perform computations on vectors, matrix vector multiplication illustrates a computation using a 2D data structures.
 
-For scaling (line~\ref{lst:linear-algebra-expr:scal}), the \map pattern applies a function to each element which multiplies it with a constant $\alpha$.
-The sum of absolute values (line~\ref{lst:linear-algebra-expr:asum}) and the dot product (line~\ref{lst:linear-algebra-expr:dot}) applications both produce scalar results by performing a summation, which we express using the \reduce pattern customized with the addition.
+For scaling (\autoref{lst:linear-algebra-expr:scal}), the \map pattern applies a function to each element which multiplies it with a constant $\alpha$.
+The sum of absolute values (\autoref{lst:linear-algebra-expr:asum}) and the dot product (\autoref{lst:linear-algebra-expr:dot}) applications both produce scalar results by performing a summation, which we express using the \reduce pattern customized with the addition.
 For dot product, a pair-wise multiplication of its two input vectors is performed before applying the reduction expressed using the \zip and \map patterns.
 
-Line~\ref{lst:linear-algebra-expr:gemv} shows matrix vector multiplication as defined in BLAS: $\vec{y} = \alpha A \vec{x} + \beta \vec{y}$.
+The \autoref{lst:linear-algebra-expr:gemv} shows matrix vector multiplication as defined in BLAS: $\vec{y} = \alpha A \vec{x} + \beta \vec{y}$.
 To multiply the matrix $mat$ with the vector $xs$, the \map pattern maps the computation of the dot-product with the input vector $xs$ to each row of the matrix $mat$.
 Afterwards the resulting vector is added to the scaled vector $ys$ using the \zip and \map patterns.
 Notice how we are reusing the high-level expressions for dot-product and scaling as building blocks for the more complex matrix-vector multiplication.
@@ -429,13 +429,13 @@ The molecular dynamics (MD) application is a physics simulation taken from the S
 It calculates the sum of all forces acting on a particle from its neighbors.
 \autoref{lst:md} shows the implementation using our high-level patterns.
 
-The function $updateF$ (line~\ref{lst:md:updateF}) updates the force $f$ influencing particle $p$ by computing and adding the force between a single particle and one of its neighbors.
-Using the neighbor's index $nId$ and the vector storing all particles $ps$ the neighboring particle is accessed (line~\ref{lst:md:access}) and the distance between the particle $p$ and its neighbor $n$ is computed (line~\ref{lst:md:distance}).
-If the distance is below threshold $t$ the force between the two particles is calculated and added to the overall force $f$ (line~\ref{lst:md:update}).
-If the distance is above the threshold the force is not updated (line~\ref{lst:md:noUpdate}).
+The function $updateF$ (\autoref{lst:md:updateF}) updates the force $f$ influencing particle $p$ by computing and adding the force between a single particle and one of its neighbors.
+Using the neighbor's index $nId$ and the vector storing all particles $ps$ the neighboring particle is accessed (\autoref{lst:md:access}) and the distance between the particle $p$ and its neighbor $n$ is computed (\autoref{lst:md:distance}).
+If the distance is below threshold $t$ the force between the two particles is calculated and added to the overall force $f$ (\autoref{lst:md:update}).
+If the distance is above the threshold the force is not updated (\autoref{lst:md:noUpdate}).
 
-For computing the force for all particles $ps$, we use the \zip pattern~(line~\ref{lst:md:zip}) to build a vector of pairs, where each pair combines a single particle with the indices of all of its neighboring particles ($p$ and $ns$ in line~\ref{lst:md:md}).
-The function which is applied to each pair by the \map pattern in line~\ref{lst:md:md} is expressed as an lambda expression.
+For computing the force for all particles $ps$, we use the \zip pattern~(\autoref{lst:md:zip}) to build a vector of pairs, where each pair combines a single particle with the indices of all of its neighboring particles ($p$ and $ns$ in \autoref{lst:md:md}).
+The function which is applied to each pair by the \map pattern in \autoref{lst:md:md} is expressed as an lambda expression.
 Computing the resulting force exerted by all the neighbors on one particle is done by applying the \reduce pattern on the vector $ns$ storing the neighboring indices.
 We use function $updateF$ inside the reduction to compute the force for each particle with index $nId$ and add it to the overall force on $p$.
 
@@ -498,10 +498,10 @@ $blackScholes\ stockPrices = \map\ BSComputation\ stockPrices\label{lst:blackSch
 \end{lstlisting}
 
 The \emph{BlackScholes} application uses a Monte-Carlo method for option pricing and computes for each stock price $s$ a pair of call and put options.
-\autoref{lst:blackScholes} shows the BlackScholes implementation, where the function defined in line~\ref{lst:blackScholes:bscomp} computes the call and put option for a single stock price $s$.
-Two intermediate results $d1$ (line~\ref{lst:blackScholes:d1}) and $d2$ (line~\ref{lst:blackScholes:d2}) are computed and used to compute the two options, which are returned as a single pair (line~\ref{lst:blackScholes:return}).
+\autoref{lst:blackScholes} shows the BlackScholes implementation, where the function defined in \autoref{lst:blackScholes:bscomp} computes the call and put option for a single stock price $s$.
+Two intermediate results $d1$ (\autoref{lst:blackScholes:d1}) and $d2$ (\autoref{lst:blackScholes:d2}) are computed and used to compute the two options, which are returned as a single pair (\autoref{lst:blackScholes:return}).
 %The computational functions $compD1$, $compD2$, $compCallOption$, and $compPutOption$ are not shown here since they only contain purely sequential code.
-In line~\ref{lst:blackScholes:map} the $BSComputation$ function is applied to all stock prices, stored in a vector $stockPrices$, using the \map pattern.
+In \autoref{lst:blackScholes:map} the $BSComputation$ function is applied to all stock prices, stored in a vector $stockPrices$, using the \map pattern.
 
 
 \autoref{fig:blackScholes:results} show the result compared to an \OpenCL implementation of the BlackScholes model provided by Nvidia as part of their software development kit.
