@@ -119,7 +119,7 @@ The code is not just shorter but each single line is clear and straightforward t
 \begin{figure}
   \centering
   \includegraphics[width=.9\textwidth]{Plots/Asum/la_loc.pdf}
-  \caption{Lines of code for both basic linear algebra applications.}
+  \caption[Lines of code for two basic linear algebra applications]{Lines of code for both basic linear algebra applications}
   \label{fig:skelcl:sum:dot:loc}
 \end{figure}
 
@@ -141,7 +141,7 @@ This explains the rather small difference in runtime between the na{\"i}ve \Open
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{Plots/Asum/asum.pdf}
-  \caption{Runtime for both basic linear algebra applications.}
+  \caption[Runtime for two basic linear algebra applications]{Runtime for both basic linear algebra applications}
   \label{fig:skelcl:asum:dot}
 \end{figure}
 
@@ -150,7 +150,7 @@ This explains the rather small difference in runtime between the na{\"i}ve \Open
 \begin{figure}[tb]
   \centering
   \includegraphics[width=.9\textwidth]{Plots/Reduce/reduce.pdf}
-  \caption{Relative runtime compared to CUBLAS of the na{\"i}ve \OpenCL and \SkelCL versions of \emph{asum} and \emph{sum}.}
+  \caption{Runtime of the na{\"i}ve \OpenCL and \SkelCL versions of \emph{asum} and \emph{sum} compared to CUBLAS.}
   \label{fig:skelcl:reduce}
 \end{figure}
 As discussed in \autoref{chapter:skelcl} the \SkelCL library implementation generates one \OpenCL kernel for each skeleton (and two for the \reduce skeleton).

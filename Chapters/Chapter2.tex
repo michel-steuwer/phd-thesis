@@ -31,7 +31,7 @@ We will discuss both architectures in the following two sections.
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{CPU}
-  \caption{Multi-core \CPU architecture.}
+  \caption{Overview of a multi-core \CPU architecture}
   \label{fig:multicore}
 \end{figure}
 % describe caches
@@ -68,13 +68,13 @@ The caches help to keep the threads running in parallel on the multi-core \CPU b
 Among the most important optimizations to achieve high performance on modern multi-core \CPUs are:
 exploiting the SIMD vector extensions and optimizing the cache usage~\cite{IntelCPUOptimizingGuide}.
 
-\subsection{Graphics Processing Units}
+\subsection[Graphics Processing Units (GPUs)]{Graphics Processing Units}
   % GPUs
 \autoref{fig:gpu} shows an abstract representation of a typical \GPU architecture, like Nvidia's latest \GPU architecture for the high-performance computing market: Kepler.
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{GPU}
-  \caption{GPU architecture}
+  \caption{Overview of a \GPU architecture}
   \label{fig:gpu}
 \end{figure}
 % describe cores and execution
@@ -208,7 +208,7 @@ a streaming multiprocessor corresponds to a compute unit and the lightweight \GP
 \begin{figure}
   \centering
   \includegraphics[width=.95\textwidth]{OpenCL}
-  \caption{The \OpenCL Platform and Memory Model}
+  \caption{The \OpenCL platform and memory model}
   \label{fig:opencl}
 \end{figure}
 

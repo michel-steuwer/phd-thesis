@@ -1490,7 +1490,7 @@ By using our pattern-based approach presented in this chapter together with the 
       \end{aligned}
   \end{aligned}
 \end{align*}
-\caption{Derivation for \emph{asum} to a fused parallel version.
+\caption[Derivation of \emph{asum} to a fused parallel version]{Derivation for \emph{asum} to a fused parallel version.
   The numbers above the equality sign refer to the rules from \autoref{fig:algoRules}.
 }
 \label{fig:derivation}
@@ -1513,7 +1513,7 @@ Nevertheless, the final expression implements a parallel reduction, as the \map 
 
 \FloatBarrier
 
-\subsection{Towards automatically applying our rewrite rules}
+\subsection{Towards Automatically Applying our Rewrite Rules}
 The rewrite rules presented in this section define a design space of possible implementations for a given program represented as an algorithmic expression.
 The rules can safely be applied automatically by a compiler as they -- provably -- do not change the semantics of the input program.
 
@@ -1530,7 +1530,7 @@ We will discuss this topic in more detail in \autoref{section:future-work}.
 
 
 
-\subsection{Summary}
+\subsection{Conclusion}
 In this section, we have introduced a set of rewrite rules which allow to systematically rewrite expressions written using the patterns introduced earlier in \autoref{section:patterns}.
 The power of our approach lies in the composition of the rules that produce complex low-level expressions from simple high-level expressions.
 

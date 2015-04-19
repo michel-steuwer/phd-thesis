@@ -346,7 +346,7 @@ Finally, the \OpenCL kernel is enqueued with a global size corresponding to the 
 
 
 
-\subsection{Algorithmic Skeletons Implementation}
+\subsection{Algorithmic Skeleton Implementations}
 \label{section:skelcl-library:skeletons}
 The \SkelCL library implements each skeleton of the \SkelCL programming model using one or more \OpenCL kernels.
 In this subsection, we discuss the implementation of each skeleton targeting single- and multi-device systems.
@@ -516,7 +516,7 @@ Loading of the data into the fast local memory is lengthy and involves performin
 \begin{figure}
   \begin{centering}
     \includegraphics[width=.29\textwidth]{HiStencils/map_overlap}
-    \caption{The \code{MapOverlap} implementation of the \stencil skeleton prepares a matrix by copying data on the top and bottom.}
+    \caption[The \code{MapOverlap} implementation of the \stencil skeleton]{The \code{MapOverlap} implementation of the \stencil skeleton prepares a matrix by copying data on the top and bottom}
     \label{fig:mapoverlap:preparation}
     \vspace{-.5em}
   \end{centering}
@@ -602,7 +602,7 @@ The single steps are combined into a single object of type \code{StencilSequence
 On execution, it passes its input data to the first stencil defined in the sequence, its output to the next stencil, and so forth.
 
 \begin{lstlisting}[%
-  caption={Structure of the Canny algorithm implemented by a sequence of skeletons.\vspace{1em}},%
+  caption={Structure of the Canny algorithm implemented by a sequence of skeletons.},%
   float={tb},
   label={lst:stencil:canny}]
 auto gauss     = stencil(...);

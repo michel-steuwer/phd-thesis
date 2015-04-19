@@ -131,7 +131,7 @@ The performance of the generated \OpenCL code from our three expressions matches
 These results give some evidence that our systematically generated code can offer high performance, once the right set of optimizations -- encoded in our rewrite rules -- are applied.
 The performance of our generated code for the fully optimized low-level expression even matches the performance of the highly optimized CUBLAS library written by Nvidia and outperforms the Thrust library.
 
-\subsection{Automatically applying of the rewrite rules}
+\subsection{Automatically Applying of the Rewrite Rules}
 \label{sec:codeGeneration-evaluation:automatic}
 
 For the parallel reduction benchmark we implemented a prototype search tool automatically applying the rewrite rules for finding low-level expressions which offer high-performance.
@@ -207,7 +207,7 @@ $\reduce \circ \join \circ \mapWorkgroup\ \big( \join \circ \asScalar \circ \map
 \end{minipage}
 \end{subfigure}
 
-\caption{Low-level expressions performing parallel reduction. These expressions are automatically derived by our prototype search tool from the  high-level expression $\reduce\ (+)\ 0$.}
+\caption[Low-level expressions performing parallel reduction. These expressions are automatically derived by our prototype search tool from a high-level expression]{Low-level expressions performing parallel reduction. These expressions are automatically derived by our prototype search tool from the  high-level expression $\reduce\ (+)\ 0$.}
 \label{fig:reduce:expr:auto}
 \end{figure*}
 
@@ -281,7 +281,7 @@ With our approach we achieve the same relative performance on all platforms whic
 \label{fig:search:intel}
 \end{subfigure}
 
-\caption{
+\caption[Search efficiency of our prototype search tool]{
    Search efficiency.
    The vertical partitioning represents the number of fixed derivations in the search tree.
    The red line connects the fastest expressions found so far.
@@ -360,7 +360,8 @@ $gemv\ mat\ xs\ ys\ \alpha\ \beta =\label{lst:linear-algebra-expr:gemv}$        
 \begin{figure}[t]
   \centering
   \includegraphics[width=.8\linewidth]{Plots/LA/LA_vs_clBLAS.pdf}
-  \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
+  \caption[Performance of our approach relative to a portable \OpenCL reference implementation]%
+          {Performance of our approach relative to a portable \OpenCL reference implementation (clBLAS).
            We outperform it on most benchmarks and platforms.}
   \label{fig:linear-algebra-expr:clblas}
 \end{figure}
@@ -392,7 +393,8 @@ Our systematically derived expression for this benchmark is specifically tuned f
     \caption{Intel CPU}
     \label{fig:linear-algebra-expr:results:intel}
   \end{subfigure}
-  \caption{Performance comparison with state of the art platform-specific libraries; CUBLAS for Nvidia, clBLAS for AMD, MKL for Intel.
+  \caption[Performance comparison with state of the art platform-specific libraries]%
+          {Performance comparison with state of the art platform-specific libraries; CUBLAS for Nvidia, clBLAS for AMD, MKL for Intel.
            Our approach matches the performance on all three platforms and outperforms clBLAS in some cases.
          }
    \label{fig:linear-algebra-expr:results}
@@ -472,7 +474,8 @@ $md\ ps\ nbhs\ t = \map\ \big(\lambda\ p,ns.\label{lst:md:md}$
     \caption{BlackScholes}
     \label{fig:blackScholes:results}
   \end{subfigure}
-  \caption{Performance of our approach relative to portable \OpenCL implementation of the MD and BlackScholes benchmarks.}
+  \caption[Performance of our approach relative to native \OpenCL implementations of the MD and BlackScholes benchmarks]%
+          {Performance of our approach relative to portable \OpenCL implementations of the MD and BlackScholes benchmarks.}
    \label{fig:bs:ms:results}
 \end{figure}
 
@@ -482,7 +485,7 @@ We can see, that the automatically generated \OpenCL code performs very close to
 
 
 
-\section{Mathematical Finance}
+\section{Mathematical Finance Application}
 
 \begin{lstlisting}[%
   float,%
@@ -515,7 +518,7 @@ On the \CPU, we actually achieve a 2.2$\times$ speedup due to the fact that the 
 
 
 
-\section{Summary}
+\section{Conclusion}
 
 These results have shown that our approach generates \emph{performance portable} code which is competitive with highly-tuned platform specific implementations.
 

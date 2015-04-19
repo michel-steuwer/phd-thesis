@@ -199,7 +199,7 @@ Furthermore, the skeleton-based implementations are more general, as they can be
     skeleton\\
     \bottomrule
   \end{tabular}
-  \caption[Lines of Code of matrix multiplication of all compared implementaitons.]%
+  \caption[Lines of Code for matrix multiplication implementaitons.]%
           {Lines of Code of all compared implementations.}
   \label{tab:mat_mult_loc}
 \end{table}
@@ -309,7 +309,7 @@ Similar to the CUBLAS implementation on the Nvidia hardware, it is not surprisin
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_devices}
-  \caption[Runtime of the \allpairs based matrix multiplication implementations using multiple \GPUs.]%
+  \caption[Runtime of the \allpairs based matrix multiplication implementations using multiple \GPUs]%
           {Runtime of the \allpairs based implementations using multiple \GPUs.}
   \label{fig:mat_mult_devices}
 \end{figure}
@@ -336,7 +336,8 @@ Similar to the CUBLAS implementation on the Nvidia hardware, it is not surprisin
      & 4 \GPUs & 0.368 &  2.602 &  19.198 && 523.91\\
     \bottomrule
   \end{tabular}
-  \caption{Runtime of the allpairs based implementations of matrix multiplication using multiple \GPUs.
+  \caption[Runtime of the \allpairs based implementations of matrix multiplication using multiple \GPUs]%
+   {Runtime of the \allpairs based implementations of matrix multiplication using multiple \GPUs.
     For the matrices of size $16384\times 16384$ the results are also shown in GFlops.}
   \label{tab:mat_mult_devices}
 \end{table}
