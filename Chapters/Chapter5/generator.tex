@@ -148,7 +148,7 @@ In this case, a partial reduction is performed reducing the array by half.
 Therefore, the \code{size} variable is halved in \autoref{lst:reduce11:iter:size:update} after every iteration.
 A pair of pointers is created (\autoref{lst:reduce11:iter:inCreate} and \autoref{lst:reduce11:iter:outCreate}) and swapped after each iteration (\autoref{lst:reduce11:iter:inSwap} and \autoref{lst:reduce11:iter:outSwap}), so that the nested pattern has fixed input and output pointers to operate on.
 
-The nested block (\autoref{lst:reduce11:lc2_start}---\autoref{lst:reduce11:lc2_end}) corresponds to the pattern composition nested inside the \iterateN pattern:
+The nested block ranging from \autoref{lst:reduce11:lc2_start} to \autoref{lst:reduce11:lc2_end} corresponds to the pattern composition nested inside the \iterateN pattern:
 $\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2$.
 For the \mapLocal pattern, the local work-group identifier is obtained and an if statement is emitted (\autoref{lst:reduce11:lc2:if}).
 No for-loop is emitted, as it is clear that the size of the array is maximal 128 (from the definition of \code{size} in \autoref{lst:reduce11:iter:size}), as the variable is halved after each iteration (\autoref{lst:reduce11:iter:size:update}).
