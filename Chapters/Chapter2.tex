@@ -6,8 +6,7 @@
 \label{chapter:background}
 \label{chapter:state-of-the-art}
 
-In this chapter we will introduce and discuss the technical background of this thesis.
-
+\lettrine[lines=3, loversize=0.1]{I}{n this chapter} we will introduce and discuss the technical background of this thesis.
 We will start by discussing the structure and functionality of multi-core \CPUs and \GPUs.
 We will focus on \GPUs as their architecture is quite different to traditional \CPUs, and because \GPUs will be the main hardware target of our \SkelCL programming model presented later.
 Then we will discuss the most common programming approaches for multi-core \CPUs and \GPUs, with a particular focus on \OpenCL.
@@ -28,7 +27,7 @@ We will discuss both architectures in the following two sections.
 
 \subsection{Multi-Core \CPUs}
 % multi-core CPUs
-\autoref{fig:multicore} shows an abstract representation of a typical multi-core \CPU architecture, like Intel's latest \CPU architecture: Haswell.
+\autoref{fig:multicore} shows an abstract representation of a typical multi-core \CPU architecture, like Intel's latest \CPU architecture: Haswell~\cite{IntelHaswell}.
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{CPU}
@@ -49,17 +48,17 @@ The \CPU core exploits \emph{instruction level parallelism} (ILP) by performing 
 \eg, if two or more instructions have no dependencies then they can be executed in parallel.
 In the Intel Haswell architecture, 4 arithmetic operations and 4 memory operations can be performed in parallel in one clock cycle on every core.
 Furthermore, most modern \CPU architectures support SIMD vector extensions like the \emph{Advanced Vector Extensions} (AVX) or the older \emph{Streaming SIMD Extensions} (SSE).
-These extensions add additional instructions to the instruction set architecture, allowing the compiler to generate code which explicitly groups data into vectors of a small fixed size on which operations can be executed in parallel.
+These extensions add additional instructions to the instruction set architecture, allowing the compiler to generate code explicitly grouping data into vectors of small fixed sizes which can be processed in parallel.
 The current AVX extension allows vectors of up to 256 bits, \eg, a grouping of 8 single precision floating point numbers, to be processed in parallel.
-Most modern optimizing compilers perform some form of automatic vectorization, but often programmers vectorize programs manually when the compiler fails to generate sufficient by optimized code.
+Most modern optimizing compilers perform some form of automatic vectorization, but often programmers vectorize programs manually when the compiler fails to generate sufficiently optimized code.
 
 % make conclusions: latency oriented => caches important, good performance for single and multiple threads, comparably low core count and hyper threading -> limited thread-level parallelism
 The design of multi-core \CPUs is motivated by the overall goal to provide high performance when executing multi-threaded programs and still have a high single-core performance when executing sequential programs~\cite{GarlandK10}.
 This is why the individual cores have a quite sophisticated design to achieve executing a series of instructions as fast as possible, by applying out-of-order execution and exploiting architectural features like a deep pipeline for decoding and executing instructions combined with advanced branch prediction.
 Unfortunately, the design of these complex cores makes switching between the threads running on the same core relatively expensive, as the execution pipeline has to be flushed and the register content for the first thread has to be saved before resuming the execution on the second thread.
-To address this issue, some multi-core architectures feature \emph{Simultaneous Multi-Threading} (SMT), \aka \emph{hyper threading}:
+To address this issue, some multi-core architectures feature \emph{Simultaneous Multi-Threading} (SMT), \aka, \emph{hyper threading}:
 a single \CPU core can execute multiple (usually 2 or 4) threads in parallel and switching between the threads is cheap.
-Tis technique is used to mitigate the effect which memory latency can have on the execution:
+This technique is used to mitigate the effect which memory latency can have on the execution:
 if a thread is waiting for a memory request then another thread can continue executing.
 The other central component used to prevent waiting times for memory requests is the cache hierarchy.
 As we will see, multi-core \CPUs feature considerably larger caches than \GPUs.
@@ -71,7 +70,7 @@ exploiting the SIMD vector extensions and optimizing the cache usage~\cite{Intel
 
 \subsection[Graphics Processing Units (GPUs)]{Graphics Processing Units}
   % GPUs
-\autoref{fig:gpu} shows an abstract representation of a typical \GPU architecture, like Nvidia's latest \GPU architecture for the high-performance computing market: Kepler.
+\autoref{fig:gpu} shows an abstract representation of a typical \GPU architecture, like Nvidia's latest high-performance computing \GPU architecture: Kepler~\cite{CUDAKepler2012}.
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{GPU}
@@ -97,7 +96,7 @@ It is important to notice that these caches are shared by a vast amount of threa
 the 48 kilobyte L1 caches are shared among up to 2048 threads being executed on a particular SM and the L2 cache is shared among up to about 30,\,000 threads.
 
 Besides caches, each SM on a \GPU features also a scratchpad memory, called \emph{shared memory} in Nvidia's \GPU architectures.
-This memory is small (16 or 48 kilobytes) but very fast as compared to the L1 cache.
+This memory is small (16 or 48 kilobytes) but very fast (comparably to the L1 cache).
 While the L1 cache is automatically managed by a cache controller, the shared memory is explicitly managed by the programmer.
 
 % make conclusions: throughput oriented => cores and threads important, different trade off: poor performance for single thread very good performance for data parallel applications => bad when: a lot of branching, less caches => memory accesses are expensive (coalescing ...)
@@ -118,7 +117,7 @@ All threads grouped into a warp perform the same instructions in a lockstep mann
 Is is possible that two or more threads follow different execution paths.
 In this case, all threads sharing a common execution path execute together while the other threads pause their execution.
 It is beneficial to avoid warps with divergent execution paths, as this reduces or eliminates the amount of threads pausing their execution.
-Nvidia calls this execution model: single-instruction, multiple-thread (SIMT).
+Nvidia calls this execution model: \emph{single-instruction, multiple-thread} (SIMT).
 
 Programmers are advised to manually optimize their code, so that all threads in a warp follow the same execution path.
 Threads in the same warp taking different branches in the code can substantially hurt the performance and should, therefore, be avoided.
@@ -149,6 +148,7 @@ Summarizing, current \GPU architectures are more sensitive to optimizations than
 The most important optimizations on \GPUs are:
 exploit the available parallelism by launching the right amount of threads, ensure that accesses to the global memory are coalesced, use the shared memory to minimize accesses to the global memory, and avoid divergent branches for threads organized in a warp~\cite{CUDATuningKepler2015}.
 
+\noindent
 In addition to these optimizations, it is important for the programmer to keep in mind that the application exploiting the \GPU is still executed on the \CPU and typically only offloads computation-intensive tasks to the \GPU.
 An often crucial optimization is to minimize the data transfer between the \CPU and the \GPU or overlap this transfer with computations on the \GPU.
 
@@ -160,7 +160,7 @@ We now discuss the current approaches to program multi-core \CPUs and \GPUs in d
 
 
 \section{Programming of Multi-Core CPUs and GPUs}
-Arguably the most popular concept of parallel software for multi-core \CPUs is \emph{multithreading}.
+Arguably the most popular programming approach for multi-core \CPUs is \emph{multithreading}.
 Threading libraries exist for almost all popular programming languages, including C~\cite{Cstandard,Pthreads} and \Cpp~\cite{Cppstandard}.
 Threads are conceptionally similar to processes in an operating system, with the major difference that threads share the same address space in memory while processes usually do not.
 This enables threads to communicate and cooperate efficiently with each other by directly using the same memory.
@@ -180,7 +180,6 @@ Performance is often not optimal as current compilers are not powerful enough to
 \CUDA~\cite{CUDAProgrammingGuide} and \OpenCL~\cite{OpenCL} are the most popular approaches to program \GPU systems.
 While \CUDA can only be used for programming \GPUs manufactured by Nvidia, \OpenCL is a standard for programming \GPUs, multi-core \CPUs, and other types of parallel processors regardless of their hardware vendor.
 All major processor manufactures support the \OpenCL standard, including AMD, ARM, IBM, Intel, and Nvidia.
-\CUDA and \OpenCL are similar programming approaches.
 We will study the \OpenCL programming approach in more detail, as it is the technical foundation of the work presented later in \autoref{part:skelcl} and \autoref{part:codeGeneration} of this thesis.
 
 
@@ -306,7 +305,7 @@ This programming model is not well suited for exploiting the capabilities of mod
 \emph{Structured programming} emerged in the 1960s and 1970s as a reaction to the ``software crises''.
 Back then (and still today) programs were often poorly designed, hard to maintain, and complicated to reason about.
 Dijkstra identified the low-level \code{goto} statement as a major reason for programmers writing ``spaghetti code''.
-In the famous letter~\cite{Dijkstra68a}, he argued that programs should organize code more structurally in procedures and using higher-level control structures like \code{if} and \code{while}.
+In his famous letter~\cite{Dijkstra68a}, he argued that programs should organize code more structurally in procedures and using higher-level control structures like \code{if} and \code{while}.
 Dijkstra's letter helped to eventually overcome unstructured sequentiell programming and to establish structured programming~\cite{DahlDiHo1972}.
 The new structures proposed to replace \code{goto} where suggested based on observations of common use cases -- or \emph{patterns} of use -- of the \code{goto} statement in sequential programming.
 By capturing an entire pattern of usage, these patterns raise the abstraction level and make it easier to reason about them.
@@ -322,7 +321,7 @@ In~\cite{McCoolRoRe2012}, the authors argue that \emph{structured parallel patte
 The book discusses a set of parallel patterns and their implementation in different recent programming approaches.
 The underlying ideas go far back to the 1980s when Cole was the first to introduced \emph{algorithmic skeletons} to structure and, therefore, simplify parallel programs~\cite{Cole1991}.
 As with sequential structured programming, structured parallel programming raises the abstraction level by providing high-level constructs: collective operations, parallel patterns, or algorithmic skeletons.
-The higher level of abstraction both simplifies the reasoning about the code for the programmer and enables higher-level optimizations performed by the compiler.
+The higher level of abstraction both simplifies the reasoning about the code for the programmer and enables higher-level compiler optimizations.
 
 As our work directly extends the ideas of Cole, we will discuss algorithmic skeletons in more detail next.
 

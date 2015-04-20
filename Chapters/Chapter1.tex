@@ -4,10 +4,12 @@
 
 \label{ch:introduction} % For referencing the chapter elsewhere, use \autoref{ch:name}
 
-Computer architectures have radically changed in the last 20 years with the introduction of multi- and many-core designs in almost all areas of computing:
-from mobile devices and desktop computers to data centers and high-performance computing systems.
+\lettrine[lines=3, loversize=0.1]{C}{omputer} architectures have radically changed in the last 20 years with the introduction of multi- and many-core designs in almost all areas of computing:
+from mobile devices and desktop computers to high-performance computing systems.
+% data centers and 
 Furthermore, recently novel types of specialized architectures, especially \emph{Graphics Processing Units} (\GPUs), have been developed featuring large amounts of processing units for accelerating computational intensive applications.
-Parallelism and specialization are seen by many computer architects as two crucial answers to the challenge of increasing performance and at the same time improving the energy efficiency~\cite{}.
+Parallelism and specialization are seen by many as two crucial answers to the challenge of increasing performance and at the same time improving the energy efficiency~\cite{OlukotunH05,GarlandK10}.
+% computer architects 
 
 % The development of mainstream programming languages and models have not kept pace with the hardware development.
 The modern multi- and many-core processors are often still programmed with programming languages developed in the 1980s and 1990s, like \Cpp or Java, or even older languages like C (from the 1970s) or Fortran (from the 1950s).
@@ -23,7 +25,7 @@ In the second part, we discuss a system which generates portable high-performanc
 In the final part of the thesis, we outline how these two systems can be combined in the future to obtain a programming system which simplifies programming and achieves high performance on different hardware architectures.
 
 \noindent
-We will start our discussion with an introduction on programming modern parallel processors.
+We will start the thesis with an introduction on programming modern parallel processors.
 From this we will identify the two main challenges we address in this thesis:
 the \emph{programmability} challenge and the \emph{performance portability} challenge.
 We will then list our contributions before presenting the outline for the rest of the thesis.
@@ -36,8 +38,8 @@ Processor development drastically changed around 10 years ago, as shown in \auto
 While the number of transistors continues to grow according to Moore's Law~\cite{Moore1998}, the clock frequency and power consumption hit a plateau around 2005.
 \begin{figure}
   \centering
-  \includegraphics[width=.9\linewidth]{Figures/intelCPUTrend}
-  \caption[Development of Intel Desktop \CPUs over time]{Development of Intel Desktop \CPUs over time. Inspired by~\cite{Sutter2005}}
+  \includegraphics[height=.30\paperheight]{Figures/intelCPUTrend}
+  \caption[Development of Intel Desktop \CPUs over time]{Development of Intel Desktop \CPUs over time. While transistor count continues to grow, around 2005 clock frequency and power consumption have reached a plateau. As an answer multi-core processors emerged. Inspired by~\cite{Sutter2005}.}
   \label{fig:cpuTrend}
 \end{figure}
 The reason for this lies in multiple physical effects, especially the physical limit of signal speed and increased heat development,  mainly due to the increased power consumption, both of which limit further increasing of the clock frequency.
@@ -49,7 +51,7 @@ This has profound effects on the design and development of software running on m
 Most programming languages allow programmers to exploit multiple cores by the means of \emph{threads}.
 A thread is a sequence of instructions defined by the programmer which can be scheduled by the runtime system to be executed on a particular core.
 Multiple threads can be executed concurrently and the programmer is responsible to use synchronization primitives, like locks or semaphores, for coordinating the execution of multiple threads.
-Programming with threads is widely regarded as extremely difficult~\cite{Lee06} mainly because multiple threads operate on a shared memory region.
+Programming with threads is widely regarded as extremely difficult~\cite{Lee06} mainly because multiple threads can simultaneously modify a shared memory region.
 Even when programs are constructed carefully subtle problems can arise which are hard to detect but can have severe consequences.
 Nevertheless, threads are still the de-facto standard for programming multi-core \CPUs.
 
@@ -80,15 +82,16 @@ The current approach for programming multi-core \CPUs is using multithreading, \
 Threads communicate via a shared memory, where all threads have the possibility to modify any data item.
 This fundamental principle gives the programmer full control over the interaction of the threads, but greatly complicates the reasoning about the programs behavior.
 The extensive and explicit control implies a low level of abstraction, where the programmer deals with many details of the execution explicitly.
-This makes the development of programs using threads complex and certain types of bugs likely, like deadlocks and race conditions, where the computed result depends on the order the threads are executed in.
+This makes the development of programs using threads complex and certain types of bugs likely, including deadlocks and race conditions, where the computed result depends on the order the threads are executed in.
 This ultimately leads to extensive problems during the development cycle as well as possible non-deterministic and undesirable behavior at runtime.
 
 % not better on the GPU
-Programming \GPUs requires a different programming approach, as it is obviously infeasible to manage thousands of threads explicitly.
+Programming \GPUs requires a different programming approach, as it is obviously infeasible to manage thousands of threads individually.
 \CUDA~\cite{CUDAProgrammingGuide} and \OpenCL~\cite{OpenCL} are the two most popular approaches for programming \GPUs.
 Both approaches are quite similar and require the programmer to write a function, called \emph{kernel}, which will be executed in parallel on the \GPU.
-The kernel usually contains source code for identifying the thread executing the particular kernel instance which is used to coordinate on which data each thread operate on.
-While this \emph{Single Program, Multiple Data} (SPMD) programming model makes the management of threads feasible, it does not address most problems associated with the low-level programming using threads.
+The kernel usually contains source code for identifying the thread executing the particular kernel instance.
+This information is used to coordinate on which data each thread operates on.
+While this \emph{Single Program, Multiple Data} (SPMD) programming model makes the management of many threads feasible, it does not address most problems associated with the low-level programming using threads.
 For example, explicit synchronization of threads is still required and problems like deadlocks and race conditions can still easily occur.
 Furthermore, \GPU programming currently involves extensive boilerplate code to manage the execution on the \GPU, including the compilation of the kernel (in \OpenCL), transferring data to and from the \GPU, and launching the kernel by explicit specifying the number of threads to be started in parallel.
 
@@ -139,7 +142,7 @@ This thesis makes the following four major contributions:
 \begin{description}
   \item[A High-level programming model for mutli-\GPU systems]\hfill\\[-1em]
     We present the design and implementation of our high-level programming model \SkelCL for programming multi-\GPU systems.
-    \SkelCL offers three high-level features for simplifying programming of \GPUs: container data types, algorithmic skeletons, and distributions.
+    \SkelCL offers three high-level features for simplifying the programming of \GPUs: container data types, algorithmic skeletons, and data distributions.
     We discuss our \Cpp library implementation of the \SkelCL programming model which is deeply integrated with modern \Cpp features.
     Finally, we evaluate the level of abstraction and runtime performance of \SkelCL using a set of application studies.
 
@@ -170,11 +173,11 @@ The remainder of this thesis is structured as follows.
 \subsection*{Part I -- Introduction}
 
 \paragraph{\autoref{chapter:background}} provides an introduction into the main aspects of programming modern multi-core \CPUs and \GPUs.
-We will start with the hardware where we mainly focus on \GPUs, discuss in detail their architectures, the state-of-the-art programming approaches, and optimization opportunities.
+We will start with a discussion of the hardware where we mainly focus on \GPUs, discuss in detail their architectures, the state-of-the-art programming approaches, and optimization opportunities.
 We will then shift our focus and introduce the algorithmic skeleton parallel programming model including its origins in functional programming.
 
 
-\subsection*{Part II -- \SkelCL}
+\subsection*{Part II -- The \SkelCL High-Level Programming Model}
 
 \paragraph{\autoref{chapter:skelcl}} addresses the programmability challenge identified in this chapter by introducing our novel \SkelCL high-level programming model targeted towards multi-\GPU systems and its implementation as a \Cpp library.
 We will start by further motivating the need for high-level abstractions to simplify the software development process.
@@ -189,7 +192,7 @@ We then continue with discussing more advanced applications from different areas
 We evaluate the improvement of programmability and the performance of \SkelCL as compared with implementations written using the state-of-the-art \OpenCL programming approach.
 
 
-\subsection*{Part III -- Code Generation using Patterns}
+\subsection*{Part III -- A Novel Code Generation Approach using Patterns}
 
 \paragraph{\autoref{ch:fifth}} addresses the performance portability challenge identified in this chapter by introducing a novel approach for generating highly optimized hardware-specific code for different target architectures from a single portable, high-level program representation.
 We will start the chapter with a study showing that optimizations in \OpenCL are not portable across different hardware architectures.
@@ -205,6 +208,7 @@ We evaluate the performance of the code generated using our approach and compare
 
 \paragraph{\autoref{ch:seventh}} summarizes Part I and Part II and describes their relation.
 We will discuss how \SkelCL, presented in Part II, could be combined in the future with the code generator, presented in Part III, to obtain a system offering both high-level abstractions to simplify programming and portable, high performance on different hardware architectures.
+We will then discuss possible future extensions of our research.
 
-\paragraph{\autoref{ch:eighth}} concludes the thesis with a comparison against related work and discussing possible future extensions of our research.
+\paragraph{\autoref{ch:eighth}} concludes with a comparison against related work.
 

@@ -107,7 +107,7 @@ Matrix<char> gaussianBlur(const Matrix<char>& image) {
 The application developer needs $57$ lines of OpenCL host code and 13 LOCs for performing a Gaussian blur only using global memory. 
 When using local memory, some more arguments are passed to the kernel, thus, increasing the host-LOCs to $65$, while the LOCs for the kernel function, which copies all necessary elements for a work-group's calculation into local memory, requires $88$ LOCs including explicit out-of-bounds handling and complex index calculations.
 The \code{MapOverlap} and \code{Stencil} versions are similar and both require only $15$ LOCs host code and $9$ LOCs kernel code to perform a Gaussian blur. 
-The support for multi-\GPU systems is implicitly provided when using \SkelCL's skeletons, such that the kernel remains the same as for one-\GPU systems.
+The support for multi-\GPU systems is implicitly provided when using \SkelCL's skeletons, such that the kernel remains the same as for single-\GPU systems.
 This is an important advantage of \SkelCL over the \OpenCL implementations of the Gaussian blur which are single-\GPU only and require additional LOCs when adapting them for multi-\GPU environments.
 
 \subsubsection*{Performance experiments}
@@ -124,7 +124,7 @@ This is an important advantage of \SkelCL over the \OpenCL implementations of th
 \begin{itemize}
   \item[1)] a na{\"i}ve OpenCL implementation using global memory,
   \item[2)] an optimized OpenCL version using local memory,
-  \item[3)] \code{MapOverlap}-based implementation, and
+  \item[3)] the \code{MapOverlap}-based implementation, and
   \item[4)] the \code{Stencil}-based implementation, correspondingly.
 \end{itemize}
 We can observe that for larger stencil shape sizes, the \code{MapOverlap} and \code{Stencil}-based versions outperform the na{\"i}ve OpenCL implementation by $65\%$ and $62\%$, respectively.
@@ -141,7 +141,7 @@ While both features are not used in this application example, they incur some ov
 
 
 \autoref{fig:GaussMult} shows the speedup achieved on the Gaussian blur using the \code{Stencil} implementation on up to four devices.
-The higher the computational complexity for increasing size of stencil shape, the better the overhead is hidden, leading to a maximum speedup of $1.90$ for two devices, $2.66$ for three devices, and $3.34$ for four devices, for a size of the stencil shape of 20.
+The higher the computational complexity for increasing size of stencil shape, the better the overhead is hidden, leading to a maximum speedup of $1.90$ for two devices, $2.66$ for three devices, and $3.34$ for four devices, for a large size of the stencil shape of 20.
 \begin{figure}
 	\centering
 	\includegraphics[width=.85\columnwidth]{Plots/gauss/gauss_speedup.pdf}
@@ -221,7 +221,7 @@ The \stencil skeleton is a perfect fit for implementing the Sobel edge detection
       0&0&0\\
       +1&+2&+1
     \end{array}\right] \nonumber\\
-  \text{and } \overline{0} \text{ is th}&\text{e constant function always returning 0.}\nonumber
+  \text{and } \overline{0} \text{ is th}&\text{e constant function always returning $0$.}\nonumber
 \end{align}
 The formula resembles the sequential implementation shown in \autoref{lst:sobel:seq} where the final result is computed as the square root of the sum of two squared terms $h$ and $v$.
 These are computed as weighted sums of the neighboring values $M_{i,j}$.
@@ -264,14 +264,12 @@ kernel void sobel_kernel( global const uchar* img,
   char ul = img[((j-1)*w)+(i-1)];
   char um = img[((j-1)*w)+(i+0)];
   char ur = img[((j-1)*w)+(i+1)];
-  // ... 5 more
-  char lr = img[((j+1)*w)+(i+1)];
-
-  out_img[j * w + i] = computeSobel(ul, um, ur, ..., lr); }}
+  // ... 6 more
+  out_img[j * w + i] = computeSobel(ul, um, ur, ...); }}
 \end{lstlisting}
 
 \autoref{lst:sobel:opencl} shows a part of the rather simple \OpenCL implementation for Sobel edge detection provided by AMD as an example application in their software development kit~\cite{AMDSDK}.
-The actual computation is performed inside the \texttt{computeSobel} function, which is omitted in the listing, since it is quite similar to the sequential version in \autoref{lst:sobel:seq}.
+The actual computation is omitted in the listing, since it is quite similar to the sequential version in \autoref{lst:sobel:seq}.
 The listing shows that extra low-level code is necessary to deal with technical details, like boundary checks and index calculations, which are arguably quite complex and error-prone.
 
 We also compare against a more optimized \OpenCL implementation by Nvidia which makes use of the fast local \GPU memory.
@@ -321,8 +319,7 @@ This results in detecting some weaker edges, but even without this additional st
 
 \subsubsection*{\SkelCL Implementation}
 In \SkelCL, each single step of the Canny algorithm can be expressed using the \stencil skeleton.
-The last step, the threshold operation, does not need access to neighboring elements, as the user threshold function only checks the value of the current pixel.
-Therefore, this step can be expressed using \SkelCL's simpler \map skeleton.
+The last step, the threshold operation, can be expressed using \SkelCL's simpler \map skeleton, as the user threshold function only checks the value of the current pixel.
 In the \SkelCL library the \code{Stencil} skeleton's implementation automatically uses the simpler \map skeleton's implementation when the user specifies a stencil shape which extents are $0$ in all directions.
 
 \begin{lstlisting}[%

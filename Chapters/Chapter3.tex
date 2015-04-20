@@ -6,7 +6,7 @@
 
 \label{chapter:skelcl}
 
-In this chapter we address the first main challenge identified in \autoref{ch:introduction}: \emph{Programmability} of modern parallel systems.
+\lettrine[lines=3, loversize=0.1]{I}{n this chapter} we address the first main challenge identified in \autoref{ch:introduction}: \emph{Programmability} of modern parallel systems.
 We will see how structured parallel programming significantly simplifies the task of programming for parallel systems.
 As throughout the thesis, we will focus on programming of single- and multi-\GPU systems.
 But many observations made here are also valid when programming other parallel systems.
@@ -30,5 +30,17 @@ The following \autoref{chapter:skelcl-evaluation} will provide several applicati
 \input{Chapters/Chapter3/skelcl_library.tex}
 
 \section{Conclusion}
-\todo{List contributions and benefits of using \SkelCL}
+In this chapter we introduced the \SkelCL programming model and its implementation as a \Cpp library.
+We started the chapter with a case study showing the drawbacks of the low-level \OpenCL programming approach.
+Then, we introduced the \SkelCL programming model with its three high-level features:
+1) container data types which simplify the memory management as data is automatically allocated and transfered to and from \GPUs;
+2) algorithmic skeletons which capture common programming patterns and hide the complexities of parallel programming from the user; and
+3) data distributions which allow the user to specify how data should be distributed across \GPUs and, thus, simplifies the programming of multi-\GPU systems.
+
+In this chapter we also introduced two novel algorithmic skeletons targeted towards stencil and allpairs computations.
+For both skeletons we provided a formal definition, as well as implementations for single- and multi-\GPU systems.
+For the allpairs skeleton we identified a specialization rule, which enables an optimized implementation on \GPUs as it reduces the amount of global memory accesses.
+
+The \SkelCL programming model and library address the programmability challenge.
+In the next chapter we will evaluate the raised level of programmability and the performance of \SkelCL by implementing a set of benchmark applications and performing runtime experiments with them.
 

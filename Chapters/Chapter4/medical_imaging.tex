@@ -62,12 +62,20 @@ While both steps are easy to implement, \emph{Step~2} does not efficiently use t
 In ISD, the reconstruction image $f$ is partitioned, such that each processing unit processes the whole subset $S_l$ with respect to a single part of the reconstruction image $f$.
 Thus we are able to parallelize both steps of LM OSEM, but each processing unit still accesses the whole reconstruction image $f$ in order to compute the error value for each path before merging it with the error image $c$.
 On a multi-\GPU system, the whole subset $S_l$ has to be copied to each \GPU in \emph{Step~1}.
-ISD requires large amounts of memory (up to several GB in practically relevant cases) to save all paths computed in \emph{Step~1}.
+ISD requires large amounts of memory (up to several GB in practically relevant cases) to store all paths computed in \emph{Step~1}.
 Summarizing, it is hard to implement \emph{Step~1} on the \GPU, while \emph{Step~2} can be parallelized easily.
 
 Therefore, we use a hybrid strategy for implementing LM OSEM:
 \emph{Step~1} is parallelized using the PSD approach, while we use ISD for \emph{Step~2}.
 This results in the sequence of five phases shown in \autoref{fig:lmosem:em_distribution2}:
+
+\begin{figure}[b]
+  \centering
+  \includegraphics[width=0.6\textwidth]{ICCS/em_distribution}
+  \caption{Parallelization schema of the LM OSEM algorithm.}
+  \label{fig:lmosem:em_distribution2}
+\end{figure}
+
 \begin{enumerate}
 \item \emph{Upload:} the subset ($S$) is divided into sub-subsets (one per \GPU).
       One sub-subset and the reconstruction image ($f$) are uploaded to each \GPU;
@@ -78,13 +86,6 @@ This results in the sequence of five phases shown in \autoref{fig:lmosem:em_dist
 \item \emph{Step 2:} each \GPU updates its part of the reconstruction image;
 \item \emph{Download:} finally, all parts of the reconstruction image are downloaded from the \GPUs to the host and merged into a single reconstruction image.
 \end{enumerate}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=0.6\textwidth]{ICCS/em_distribution}
-  \caption{Parallelization schema of the LM OSEM algorithm.}
-  \label{fig:lmosem:em_distribution2}
-\end{figure}
 
 
 \subsubsection*{\SkelCL Implementation}

@@ -25,7 +25,7 @@ Computing a Mandelbrot fractal is easily parallelizable, as all pixels of the fr
 
 \subsubsection*{\SkelCL Implementation}
 \label{sec:mandelbrot:implementation}
-The Mandelbrot set computations expressed in the \SkelCL programming model uses the \map skeleton as shown in \autoref{eq:skelcl:mandelbrot}.
+The Mandelbrot set computation expressed in the \SkelCL programming model uses the \map skeleton as shown in \autoref{eq:skelcl:mandelbrot}.
 \begin{align}
   mandelbrot\ w\ h =&  \nonumber\\
          map\ compute&ColorOfPixel\ (generateIndex\ w\ h)

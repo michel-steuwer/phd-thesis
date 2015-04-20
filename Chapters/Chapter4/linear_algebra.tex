@@ -65,7 +65,7 @@ float asum(const Vector<float>& x) {
 
 \subsection*{Dot Product}
 \label{sec:dot}
-The computation of the dot product, \aka scalar product, is a common mathematical operation performed on two input vectors $\vec{x}$ and $\vec{y}$ of identical length $n$ as defined in \autoref{eq:dot_product}:
+The computation of the dot product, \aka, scalar product, is a common mathematical operation performed on two input vectors $\vec{x}$ and $\vec{y}$ of identical length $n$ as defined in \autoref{eq:dot_product}:
 \begin{equation}
   dotProduct\ \vec{x}\ \vec{y} = \sum_{i=0}^{n} x_i \times y_i
   \label{eq:dot_product}
@@ -81,7 +81,7 @@ The \zip skeleton performs pairwise multiplication of the input vectors before t
 
 \autoref{lst:skelcl:dot} shows the implementation using the \SkelCL library.
 The structure of the implementation is very similar to the \emph{asum} application.
-Here we use the \code{front} member function to access the first (and only) element of the computed result vector.
+Here we use the \code{front} member function to access the first (and only) element of the computed result vector (\autoref{lst:skelcl:dot:call}).
 
 \begin{lstlisting}[%                                                             
 postbreak=\space\space, breakautoindent=true, breakindent=84pt, breaklines,
@@ -104,7 +104,7 @@ float dotProduct(const Vector<float>& x,                  const Vector<float>& y
 
 \bigskip
 
-We now compare the \SkelCL implementations shown in \autoref{lst:skelcl:asum} and \autoref{lst:skelcl:dot} against a na{\"i}ve OpenCL implementation and an implementation using the CUBLAS library respectively.
+We now compare the \SkelCL implementations shown in \autoref{lst:skelcl:asum} and \autoref{lst:skelcl:dot} against na{\"i}ve OpenCL implementations and implementations using the CUBLAS library respectively.
 
 
 \subsection*{Programming effort}
@@ -114,7 +114,7 @@ The code contains a lengthy setup, memory allocations, memory transfers and laun
 The na{\"i}ve \OpenCL implementations require over 90 lines each (\emph{asum}: 91, dot product: 96) for managing the \GPU execution and 20 lines of \GPU code.
 By far the shortest implementations are the \SkelCL implementations with 7 lines each, as shown in \autoref{lst:skelcl:asum} and \autoref{lst:skelcl:dot}.
 Here we count the lambda expressions customizing the algorithmic skeletons as \GPU code and all other lines as \CPU code.
-The code is not just shorter but each single line is clear and straightforward to understand, where, \eg,  the CUBLAS API call for launching the dot product computation alone expects 7 arguments requiring to look up the documentation for using it correctly.
+The code is not just shorter but each single line is clear and straightforward to understand, where, \eg,  the CUBLAS API call for launching the dot product computation alone expects 7 arguments requiring the programmer to look up the documentation for using it correctly.
 
 \begin{figure}
   \centering
@@ -166,7 +166,7 @@ For comparison we also modified the na{\"i}ve \OpenCL implementation of \emph{as
 \autoref{fig:skelcl:reduce} shows the performance results of the na{\"i}ve \OpenCL version and the \SkelCL version for \emph{asum} on the left and \emph{sum} on the right.
 The plots show the performance relative to the performance of the CUBLAS implementation of \emph{asum}.
 We can see, that the performance difference for \emph{asum} and \emph{sum} it is very small (only up to $4$\%) for the na{\"i}ve \OpenCL version.
-This makes sense, as the most part of the computation is spend for reducing the elements and not for applying a simple function to each element.
+This makes sense, as the most part of the computation is spend for reducing the elements and not for applying a simple function to each element in parallel.
 For the \SkelCL implementations the difference between the two benchmarks is very large.
 This is due to the fact that for \emph{asum} a separate \OpenCL kernel is launched which reads each value from the global memory, applies the absolute value function to it, and stores the result back to global memory.
 The reduction kernel then starts by reading each element back from global memory.

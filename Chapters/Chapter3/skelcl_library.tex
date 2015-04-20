@@ -1,9 +1,9 @@
 \section{The SkelCL Library}
 \label{section:skelcl-library}
-In this section we discuss the \SkelCL Library -- our implementation of the \SkelCL programming model.
+In this section we discuss the \SkelCL library -- our implementation of the \SkelCL programming model.
 It provides a \Cpp~\API that implements the features of the \SkelCL programming model, and thus liberates the application developer from writing low-level code.
 In addition, the library provides some commonly used utility functions, \eg, for program initialization.
-The \SkelCL Library is open source software and available at: \url{http://skelcl.uni-muenster.de}.
+The \SkelCL library is open source software and available at: \url{http://skelcl.uni-muenster.de}.
 
 We start our discussion with an example showing how to use the \SkelCL library.
 We describe the syntax used to represent the \SkelCL programming model introduced in the previous section.
@@ -142,7 +142,7 @@ Type safety is guaranteed, as the templated skeleton classes can only be execute
 Therefore, applying the user function to the input data is always a type-safe operation.
 
 Because skeletons are strongly typed, the composition of skeletons is type-safe as well, \ie, in \autoref{lst:skelcl:dotproduct} type safety between the two skeletons is guaranteed.
-If the result type of \code{zip} did not match the input type of \code{reduce}, a compile time error would occur.
+If the result type of \code{zip} does not match the input type of \code{reduce}, a compile time error would occur.
 
 \paragraph{Integration with \Cpp}
 To allow a deep integration with \Cpp, a customizing function is allowed to make use of user-defined types and make calls to other functions.
@@ -220,7 +220,7 @@ Note that $a$ is no longer passed as an argument when executing the skeleton in 
 Additional arguments and lambda captures are related techniques which both can be used to make additional data available inside of the user function.
 There is one main technical differences between both:
 for using lambda captures the variable to be captured has to be declared and available when \emph{declaring} the user function (in \autoref{lst:saxpy:capture:capture} in \autoref{lst:saxpy:capture}) which is not the case for the additional argument feature where the variable has to available when \emph{executing} the skeleton (in \autoref{lst:saxpy:addArgs:execution} in \autoref{lst:saxpy:addArgs}).
-By supporting the capturing feature of lambda expressions \SkelCL source code becomes more \Cpp idiomatic, but ultimately the user has the choice of using either feature as it fits his or her needs or personal taste.
+By supporting the capturing feature of lambda expressions \SkelCL source code becomes more \Cpp idiomatic, but ultimately the user has the choice of using either feature as it fits his or her needs and personal taste.
 
 
 
@@ -537,9 +537,16 @@ The heat value of a cell is updated based on its (left) neighboring cells.
 Multiple iteration steps are required to simulate the flow of heat over a longer distance.
 
 \begin{figure}[t]
+  \begin{minipage}[b]{.38\textwidth}
+    \centering
+    \includegraphics[width=.65\textwidth]{Figures/HiStencils/heat_transfer}
+    \caption{Stencil shape for heat simulation}
+    \label{fig:stencil:first:shape}
+  \end{minipage}
+  \hfill %\hspace{.05\textwidth}
   \begin{minipage}[b]{.55\textwidth}
     \begin{lstlisting}[%
-      caption={Heat simulation implemented using the \stencil skeleton},%
+      caption={[Heat simulation with the \stencil skeleton]Heat simulation with the \stencil skeleton\vspace{-.9em}},%
       label={lst:stencil:first}]
 auto heatSim = skelcl::stencil(
  [](Neighborhood<char>& in) {$\label{lst:stencil:first:func:start}$
@@ -553,13 +560,6 @@ heatSim(100_iterations,$\label{lst:stencil:first:iterations}$
         simulationSpace);
     \end{lstlisting}
   \end{minipage}%
-  \hfill%\hspace{.05\textwidth}
-  \begin{minipage}[b]{.38\textwidth}
-    \centering
-    \includegraphics[width=.65\textwidth]{Figures/HiStencils/heat_transfer}
-    \caption{Stencil shape for heat simulation}
-    \label{fig:stencil:first:shape}
-  \end{minipage}
 \end{figure}
 
 \autoref{lst:stencil:first} shows the implementation of an iterative stencil application simulating heat transfer in \SkelCL.
@@ -599,7 +599,7 @@ Using the \SkelCL library, each single step of the Canny algorithm can be expres
 The threshold operation performed as the last step, does not need access to, neighboring elements, because the user function only checks the value of a single pixel.
 The \code{Stencil} implementation automatically uses the implementation of the simpler (and thus faster) \map skeleton when the user specifies a stencil shape whose extents are $0$ in all directions.
 The single steps are combined into a single object of type \code{StencilSequence} which can be executed like a \stencil skeleton.
-On execution, it passes its input data to the first stencil defined in the sequence, its output to the next stencil, and so forth.
+On execution, it passes its input data to the first stencil defined in the sequence, which passes its output to the next stencil, and so forth.
 
 \begin{lstlisting}[%
   caption={Structure of the Canny algorithm implemented by a sequence of skeletons.},%
@@ -641,7 +641,7 @@ Within the outer vector, the inner vectors are swapped pair-wise on the host, so
 By enlarging the number of elements in the border regions, multiple iteration steps can be performed on each device before exchanging data.
 However, this introduces redundant computations, such that a trade-off between data exchange and redundant computations has to be found.
 For the \code{Stencil} implementation, the user can specify the number of iterations between device synchronizations.
-\cite{Breuer2014} discusses the effects of exploring this parameter space.
+In \cite{Breuer2014} the effects of exploring this parameter space is discussed.
 For the investigated applications, the effect of choosing different numbers of iterations between device synchronization was not very large.
 
 
@@ -678,7 +678,7 @@ The vector class has been replaced by an \OpenCL representation (defined in \aut
 This implementation assumes that the rows of the first matrix are combined with the columns of the second matrix, as it is required for the matrix multiplication.
 % The implementation could easily be extended to support different behavior as well.
 
-The \code{allpairs} kernel function prepares instances of the \code{struct} replacing the vector class in \autoref{lst:allpairs:generic:kernel:prepareStart}---\autoref{lst:allpairs:generic:kernel:prepareEnd}.
+The \code{allpairs} kernel function prepares instances of the \code{struct} replacing the vector class in \autoref{lst:allpairs:generic:kernel:prepareStart} and \autoref{lst:allpairs:generic:kernel:prepareEnd}.
 After performing a boundary check, the customizing function is called in \autoref{lst:allpairs:generic:kernel:call}.
 This \OpenCL kernel is executed once for every element of the output matrix $C$.
 
@@ -728,7 +728,7 @@ Using the local memory for matrix multiplication is a well-known optimization wh
 \autoref{lst:allpairs:special:impl} shows matrix multiplication expressed using the specialized \allpairs skeleton.
 \begin{lstlisting}[%
 caption={Matrix multiplication expressed using the specialized \allpairs skeleton.},%
-float=b,%
+float=t,%
 numbers=left,%
 label={lst:allpairs:special:impl}]
 auto mult  = zip([](float x, float y){return x*y;});
@@ -737,7 +737,7 @@ auto mm    = allpairs(sumUp, mult);
 \end{lstlisting}
 %
 By expressing the customizing function of the \allpairs skeleton as a \zip-\reduce composition, we provide to the skeleton implementation additional semantic information about the memory access pattern of the customizing function, thus allowing for improving the performance.
-Our idea of optimization is based on the \OpenCL programming model that organizes \emph{work-items} (i.\,e., threads executing a kernel) in \emph{work-groups} which share the same \GPU local memory.
+Our idea of optimization is based on the \OpenCL programming model that organizes \emph{work-items} in \emph{work-groups} which share the same \GPU local memory.
 By loading data needed by multiple work-items of the same work-group into the local memory, we can avoid repetitive accesses to the global memory.
 
 \begin{figure}[b]
@@ -806,7 +806,7 @@ The \allpairs skeleton automatically selects these distributions, therefore, the
 
 \subsection{Memory Management Implementation}
 \label{section:skelcl-library:memory-management}
-In the \SkelCL programming model, the user managed memory using \emph{container data types}.
+In the \SkelCL programming model, the user manages memory using \emph{container data types}.
 In the \SkelCL library, the two container data types -- vector and matrix -- are implemented as template classes.
 This generic implementation allows for storing data items of any primitive C/\Cpp data type (\eg, \code{int}), as well as user-defined data structures (\code{struct}s).
 The implementations follow the \emph{resource acquisition is initialization} (RAII) idiom, which means that they automatically allocate needed resources and free them automatically when the lifetime of the container ends.
@@ -826,7 +826,7 @@ Before every data transfer, the vector implementation checks whether the data tr
 only then the data is actually transferred.
 Hence, if an output vector is used as the input to another skeleton, no further data transfer is performed.
 This \emph{lazy copying} in \SkelCL defers data transfers as long as possible or avoids them completely and, thus, minimizes the costly data transfers between host and device.
-While all data transfers are performed implicitly by \SkelCL, we understand that advanced application developers may want to have a fine-grained control over the data transfers between host and devices.
+While all data transfers are performed implicitly by \SkelCL, we understand that experienced application developers may want to have a fine-grained control over the data transfers between host and devices.
 For that purpose, \SkelCL offers a set of \APIs which developers can use to explicitly initiate and control the data transfer to and from the devices.
 
 % Implementing such data transfers in \OpenCL manually is a cumbersome task:

@@ -91,7 +91,7 @@ The Stencil skeleton in \SkelCL provides sufficient functionality to allow for s
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=.65\textwidth]{Plots/FDTD/fdtd_runtime.pdf}
+    \includegraphics[width=.75\textwidth]{Plots/FDTD/fdtd_runtime.pdf}
     \caption{Runtime for one iteration of the \FDTD application.}
     \label{fig:fdtd_eval}
 \end{figure}
@@ -100,7 +100,7 @@ We compared our SkelCL based implementation to a handwritten, fine-tuned OpenCL 
 The OpenCL version is specifically designed for modern Nvidia GPUs.
 In particular, it exploits the L1 and L2 caches of the Nvidia Fermi and Kepler architecture and does not explicitly make use of the local memory.
 We performed the experiments on a system with a modern Nvidia K20c Kepler GPU with 5GB memory and 2496 compute cores.
-\autoref{fig:fdtd_eval} shows the median times of a simulation time of $1\,ps$ equal to $60\, 000$ iterations.
+\autoref{fig:fdtd_eval} shows the median runtimes of a simulation time of $1\,ps$ equal to $60\, 000$ iterations.
 The \SkelCL version slightly outperforms the \OpenCL version by $2\%$.
 The two stencil skeletons achieve ${\sim}10\%$ faster runtimes than the corresponding \OpenCL kernels but the map skeleton is ${\sim}20\%$ slower, because it reads and writes all elements exactly once, while the customized \OpenCL kernel does not write back all elements.
 For this application it seems beneficial to make explicit usage of the local memory as our implementation of the Stencil skeleton does, instead of relying on the caches of the hardware, as the \OpenCL implementation does.
