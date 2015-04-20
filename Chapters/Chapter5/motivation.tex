@@ -3,10 +3,11 @@
 \label{section:reduce:case-study}
 To understand the problems of performance and portability in the context of modern parallel processors, we will study a simple application example: parallel reduction.
 This discussion is based on the presentation \emph{``Optimizing Parallel Reduction in CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing the parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
-Optimization guidelines like this exist from almost every hardware vendor giving developers advice on how to most efficiently exploit their hardware~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide}.
+Optimization guidelines like this exist from almost every hardware vendor, including AMD~\cite{AMDProgrammingGuide}, Intel~\cite{IntelGPUProgrammingGuide, IntelXeonProgrammingGuide}, and Nvidia~\cite{CUDAProgrammingGuide}, giving developers advice on how to most efficiently exploit their hardware.
 
 In \autoref{chapter:skelcl} we saw that we can express a parallel reduction using a single algorithmic skeleton: \reduce.
-Here we look at how efficient \OpenCL implementations of this algorithm or, more precisely, the parallel summation of an array, look like.
+Here we look at how efficient \OpenCL implementations of this algorithm look like.
+More precisely we will investigate the parallel summation of an array rather then the generic \reduce algorithm.
 We are especially interested in gradually optimizing this application to see how beneficial the single optimization steps are and how they change the source code.
 
 We will first start by looking at the implementation and optimizations on one particular hardware architecture, using a Nvidia \GPU as our example.
@@ -15,28 +16,27 @@ Finally, we will use our observations to motivate the need for a pattern-based c
 
 \subsection{Optimizing Parallel Reduction for Nvidia \GPUs}
 For implementing the parallel summation of an array, we study an approach using two \OpenCL kernels.
-We start with the elements to be reduced in the leafs of the reduction tree shown in \autoref{fig:reduce:tree}.
+We start with the elements to be reduced in the leafs at the top of the reduction tree shown in \autoref{fig:reduce:tree}.
 The first \OpenCL kernel is executed in parallel by multiple \OpenCL work-groups, four work-groups in the example shown in \autoref{fig:reduce:tree}.
 Each work-group produces a temporary result, then the second \OpenCL kernel is executed by a single \OpenCL work-group producing the final result.
-This strategy is applied as synchronization across work-groups is prohibited inside a single \OpenCL kernel, but the parallel tree-based reduction requires synchronization at each level of the reduction tree.
+This strategy is applied as synchronization across work-groups is prohibited inside a single \OpenCL kernel, but the parallel tree-based reduction requires synchronization at each level of the reduction tree (indicated by the bold lines in \autoref{fig:reduce:tree}).
 An implementation with a single \OpenCL kernel would, therefore, be restricted to launch a single \OpenCL work-group and, thus, limit the exploited parallelism.
 
 By using the two-kernel approach, massive parallelism can be exploited in the first phase as multiple work-groups operate concurrently on independent parts of the input array.
 The second kernel is launched with a single work-group using synchronization inside the work-group to compute the final result.
 The vast majority of the work is done in the first phase and the input size to the second phase is comparable small, therefore, the limited exploitation of parallelism in the second phase does not effect overall performance much.
 
-  \todo{Mare bigger. Include (+), synchronization points, ...}
 \begin{figure}[t]
   \centering
   \includegraphics[width=.95\linewidth]{ReduceTree}
   \caption[Parallel Reduction in \OpenCL.]%
     {The first \OpenCL kernel is executed by four work-groups in parallel:
     \ \protect\firstBox{}\,\,work-group $0$,\ \protect\secondBox{}\,\,work-group $1$,\ \protect\thirdBox{}\,\,work-group $2$, \protect\fourthBox{}\,\,work-group $3$.
-           The second \OpenCL kernel is only executed by the first work-group.}
+           The second \OpenCL kernel is only executed by the first work-group. The bold lines indicate synchronization points in the algorithm.}
   \label{fig:reduce:tree}
 \end{figure}
 
-We will follow the methodology in~\cite{Harris2007} and evaluate the performance of the different versions using the measured \GPU memory bandwidth as our metric.
+We will follow the methodology established in~\cite{Harris2007} and evaluate the performance of the different versions using the measured \GPU memory bandwidth as our metric.
 This is reasonable as the reduction has a very low arithmetic intensity and its performance is, therefore, bound by the available \GPU memory bandwidth.
 By investigating the memory bandwidth of the \GPU memory, we can see which fraction of the maximum memory bandwidth available has been utilized.
 
@@ -76,7 +76,7 @@ First each work-item loads an element into the local memory (\autoref{lst:reduce
 After a synchronization (\autoref{lst:reduce0:firstBarrier}) all work-items of a work-group execute a for loop (\autoref{lst:reduce0:for:start}---\autoref{lst:reduce0:for:end}) to perform a collective tree-based reduction.
 In every iteration the if statement (\autoref{lst:reduce0:if}) ensures that a declining number of work-items remain active performing partial reductions in the shrinking reduction tree.
 The second barrier in \autoref{lst:reduce0:for:end} ensures that no race conditions occur when accessing the shared local memory.
-Finally, the work-item in the work-group with id$=0$ writes back the computed result to the global memory in \autoref{lst:reduce0:writeBack}.
+Finally, the work-item in the work-group with id $=0$ writes back the computed result to the global memory in \autoref{lst:reduce0:writeBack}.
 
 
 The implementation presented in \autoref{lst:reduce0} is not straightforward to develop.
