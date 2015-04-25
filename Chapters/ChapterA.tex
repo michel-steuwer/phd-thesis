@@ -1,13 +1,634 @@
 % Appendix A
 
-\chapter{Appendix Test}
-\label{chapter:AppendixA}
+\chapter{Correctness of Rewrite Rules}
+\label{chapter:proofs}
 \addtocontents{lof}{\protect\vspace{\beforebibskip}}%
+
+\section{Algorithmic Rules}
+
+This section shows the proofs for the algorithmic rules defined in \autoref{section:rules:algo}.
+
+\paragraph{Identity}
+
+We repeat \autoref{eq:algo:identity} here:
+\begin{rerule*}{lclcl}
+  f & \rightarrow & f \circ \map\ \textit{id} & | & \map\ \textit{id} \circ f
+\end{rerule*}
+
+\begin{proof}[Proof of option 1]
+  Let $xs = [x_1, \ldots, x_n]$.
+  \begin{align*}
+    (f \circ \map\ \textit{id})\ xs
+      &= f\ (\map\ \textit{id}\ xs)\\
+      &\begin{aligned}[t]
+        & \comment{definition of \map}                                         && \comment{definition of \textit{id}}\\
+        &= f\ ([\textit{id}\ x_1, \textit{id}\ x_2, \ldots, \textit{id}\ x_n]) &&= f\ xs
+      \end{aligned}
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of option 2]
+  Let $xs = [x_1, \ldots, x_n]$.
+  \begin{align*}
+    (\map\ \textit{id} \circ\ f)\ xs
+      &= \map\ \textit{id}\ (f\ xs)\\
+      & \comment{definition of \map}\\
+      &= [\textit{id}\ (f\ xs)_1, \textit{id}\ (f\ xs)_2, \ldots, \textit{id}\ (f\ xs)_n]\\
+      & \comment{definition of \textit{id}}\\
+      &= f\ xs
+  \end{align*}
+\end{proof}
+
+\paragraph{Iterate decomposition}
+
+We repeat \autoref{eq:algo:iterate} here:
+\begin{rerule*}{lcl}
+  \iterateN\ 1\ f & \rightarrow & f\\
+  \iterateN\ (m+n)\ f
+    & \rightarrow &
+      \iterateN\ m\ f
+        \circ \iterateN\ n\ f
+\end{rerule*}
+
+\begin{proof}[Proof of option 1]
+  \begin{align*}
+      & \comment{definition of \iterateN} && \comment{definition of \iterateN}\\
+    \iterateN\ 1\ f\ xs
+      &= \iterateN\ (1-1)\ f\ (f\ xs) \hspace{-5em}&& = f\ xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of option 2]
+  Proof by induction over the natural number $n$.
+  We start with the base case, let $n=0$:
+  \begin{align*}
+      & \comment{definition of \iterateN}\\
+    \iterateN\ (m+0)\ f\ xs
+      &= \iterateN\ m\ f\ (\iterateN\ 0\ f\ xs)\\
+      & \comment{definition of \iterateN}\\
+      &= (\iterateN\ m\ f \circ \iterateN\ 0\ f)\ xs
+  \end{align*}
+  We finish with the induction step $n-1 \rightarrow n$:
+  \begin{align*}
+      & \comment{definition of \iterateN}\\
+    \iterateN\ (m+n)\ f\ xs
+      &= \iterateN\ (m+n-1)\ f\ (f\ xs)\\
+      & \comment{induction hypothesis}\\
+      &= (\iterateN\ m\ f\ \circ \iterateN\ (n-1)\ f) (f\ xs)\\
+      & \comment{definition of $\circ$}\\
+      &= \iterateN\ m\ f\ (\iterateN\ (n-1)\ f\ (f\ xs))\\
+      & \comment{definition of \iterateN}\\
+      &= \iterateN\ m\ f\ (\iterateN\ n\ f\ xs)\\
+      & \comment{definition of $\circ$}\\
+      &= (\iterateN\ m\ f \circ \iterateN\ n\ f)\ xs
+  \end{align*}
+\end{proof}
+
+
+\paragraph{Reorder commutativity}
+We repeat \autoref{eq:algo:reorder} here:
+\begin{rerule*}{lcl}
+  \map\ f \circ \reorder
+    & \rightarrow & \reorder \circ \map\ f\\
+  \reorder \circ \map\ f
+    & \rightarrow & \map\ f \circ \reorder
+\end{rerule*}
+
+\begin{proof}[Proof]
+  We start with the expression $\map\ f \circ \reorder$.
+  Let $xs = [x_1, \ldots, x_n]$.
+  \begin{align*}
+    (\map\ f \circ \reorder)\ xs
+      &= \map\ f\ (\reorder\ xs)\\
+      & \comment{definition of \reorder}\\
+      &= \map\ f\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
+      & \comment{definition of \map}\\
+      &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
+  \end{align*}
+  Now we investigate the expression $\reorder \circ \map\ f$:
+  \begin{align*}
+    (\reorder \circ \map\ f)\ xs
+      &= \reorder\ (\map\ f\ xs)\\
+      & \comment{definition of \map}\\
+      &= \reorder\ [f\ x_1, \ldots, f\ x_n]\\
+      &= \reorder\ [y_1, \ldots, y_n]\qquad \text{with } y_i = f\ x_i\\
+      & \comment{definition of \reorder}\\
+      &= [y_{\sigma(1)}, \dots, y_{\sigma(n)}]\\
+      & \comment{definition of $y_i$}\\
+      &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
+  \end{align*}
+  As both expression we started with can be simplified to the same expression they are equal and, therefore, both options of the rule are correct.
+\end{proof}
+
+\paragraph{Split-join}
+
+We repeat \autoref{eq:algo:splitjoin} here:
+\begin{rerule*}{lcl}
+  \map\ f
+    & \rightarrow &
+      \join \circ \map\ (\map\ f) \circ \splitN\ n
+\end{rerule*}
+
+\begin{proof}[Proof]
+  We start from the right-hand side and show the equality of both sides.
+  Let $xs = [x_1, \ldots, x_m]$.
+  \begin{align*}
+    &(\join \circ \map\ (\map\ f) \circ \splitN\ n)\ xs = \join\ (\map\ (\map\ f)\ (\splitN\ n\ xs))\\
+    &\qquad \comment{definition of \splitN}\\
+    &\qquad = \join\ (\map\ (\map\ f)\ [[x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]])\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \join\ [\map\ f\ [x_1, \ldots, x_n], \ldots, \map\ f\ [x_{m-n+1}, \ldots, x_m]]\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \join\ [[f\ x_1, \ldots, f\ x_n], \ldots, [f\ x_{m-n+1}, \ldots, f\ x_m]]\\
+    &\qquad \comment{definition of \join}\\
+    &\qquad = [f\ x_1, \ldots, \ldots, f\ x_m]\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \map\ f\ xs
+  \end{align*}
+\end{proof}
+
+\paragraph{Reduction}
+
+We repeat \autoref{eq:algo:red} here:
+\begin{rerule*}{lcl}
+  \reduce\ (\oplus)\ \id_\oplus
+    & \rightarrow &
+      \reduce\ (\oplus)\ \id_\oplus \circ \partRed\ (\oplus)\ \id_\oplus
+\end{rerule*}
+
+\begin{proof}[Proof]
+  We start from the right-hand side and show the equality of both sides:
+  \begin{align*}
+    &(\reduce\ (\oplus)\ \id_\oplus \circ \partRed\ (\oplus)\ id_\oplus\ n)\ xs\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ (\partRed\ (\oplus)\ id_\oplus\ n\ xs)\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\\
+    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)},\ \dots ,\ x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
+    &\qquad \comment{definition of \reduce}\\
+    &\qquad = [(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)})]\\
+    &\qquad \comment{commutativity \& accociativity of $\oplus$}\\
+    &\qquad = [x_1 \oplus \dots \oplus x_m]\\
+    &\qquad \comment{definition of \reduce}\\
+    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
+  \end{align*}
+\end{proof}
+
+
+\paragraph{Partial Reduction}
+
+We repeat \autoref{eq:algo:part-red} here:
+\begin{rerule*}{lcl}
+  \partRed\ (\oplus)\!\!\!\! &\id_\oplus&\!\!\!\! n\\
+    & \rightarrow &
+      \reduce\ (\oplus)\ \id_\oplus\\
+    & | &
+      \partRed\ (\oplus)\ \id_\oplus\ n \circ \reorder\\
+    & | &
+      \join \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m\\
+    & | &
+      \iterateN\ \log_m(n)\ (\partRed\ (\oplus)\ \id_\oplus\ m)
+\end{rerule*}
+
+\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 1]
+  Let $xs = [x_1, \ldots, x_m]$.\\
+  Choose $n=m$ $\Rightarrow$
+  \begin{align*}
+    &\qquad\qquad\qquad\qquad\qquad\qquad\qquad \comment{definition of \partRed}\\
+    &(\partRed\ (\oplus)\ \id_\oplus\ m)\ [x_1, \ldots, x_m] = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(m)}]\\
+    &\qquad \comment{commutativity of $\oplus$} \qquad \comment{definition of \reduce}\\
+    &\qquad = [x_1 \oplus \dots \oplus x_m]\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 2]
+  Let $xs = [x_1, \ldots, x_m]$
+  \begin{align*}
+    &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
+    &\qquad \comment{represent $\sigma$ with appropiate $\sigma'$ and $\sigma''$}\\
+    &\qquad =
+      \begin{aligned}[t]
+        \big[&x_{\sigma'(\sigma''(1))} \oplus \dots \oplus x_{\sigma'(\sigma''(n))}, \ldots,\\
+         &x_{\sigma'(\sigma''(m-n+1))} \oplus \dots \oplus x_{\sigma'(\sigma''(m))}\big]
+       \end{aligned}\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n\ [x_{\sigma''(1)}, \ldots, x_{\sigma''(m)}]\\
+    &\qquad \comment{definition of \reorder}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n\ (\reorder\ xs)\\
+    &\qquad = (\partRed\ (\oplus)\ \id_\oplus\ n \circ \reorder)\ xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 3]
+  Let $xs = [x_1, \ldots, x_l]$.
+  \begin{align*}
+    &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
+    &\qquad \comment{represent $\sigma$ with appropiate $\sigma_i$}\\
+    &\qquad = [x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)}, \ldots, x_{\sigma_{l/n}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/n}(l)}]\\
+    &\qquad \comment{definition of \join}\\
+    &\qquad = \join\
+      \begin{aligned}[t]
+        \big[&[x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)}],\\
+             &\ldots,\\
+             &[x_{\sigma_{l/n}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/n}(l)}]\big]
+      \end{aligned}\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = \join\
+      \begin{aligned}[t]
+        \big[&\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, \ldots, x_m],\\
+             &\ldots,\\
+             &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_{l-m+1+}, \ldots, x_l]\big]
+      \end{aligned}\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
+    &\qquad\qquad \big[[x_1, \ldots, x_m], \ldots, [x_{l-m+1+}, \ldots, x_l]\big]\big)\\
+    &\qquad \comment{definition of \splitN}\\
+    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\splitN\ m\ xs)\big)\\
+    &\qquad = (\join \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m)\ xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 4]
+  We will proof this obvious equivalent reformulation of the rule:
+  \begin{align*}
+    \partRed\ (\oplus)\ \id_\oplus\ n^m \rightarrow \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)
+  \end{align*}
+  Proof by induction over $m$. We start with the base case, let $m= 0$.
+  \begin{align*}
+    \partRed\ (\oplus)\ \id_\oplus\ n^0\ xs &= \partRed\ (\oplus)\ \id_\oplus\ 1\ xs\\
+      & \comment{definition of \partRed}\\
+      &= xs\\
+      &\comment{definition of \iterateN}\\
+      &= \iterateN\ 0\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs\\
+  \end{align*}
+  The induction step $(m-1) \rightarrow m$.
+  Let $xs = [x_1, \ldots, x_l]$.
+  \begin{align*}
+    &\partRed\ (\oplus)\ \id_\oplus\ n^m\ xs\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n^m)}, \ldots, x_{\sigma(l-n^m+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
+    &\qquad \comment{accociativity of $\oplus$}\\
+    &\qquad = \begin{aligned}[t]
+       [\ &(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma((n^{m-1}-1)\times n +1)} \oplus \dots \oplus x_{\sigma((n^{m-1})\times n)}),\\
+        &\ldots,\\
+        &
+          \begin{aligned}[b]
+            &(x_{\sigma(((l/n-(n^{m-1})+1)-1)\times n + 1)} \oplus \dots \oplus x_{\sigma((l/n-(n^{m-1})+1)\times n)})\\
+            &\quad \oplus \dots \oplus (x_{\sigma((l/n-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(l/n\times n)})
+          \end{aligned}\ ]\\
+      \end{aligned}\\
+    &\qquad = [y_1 \oplus \dots \oplus y_{(n^{m-1})}, \ldots, y_{(l/n - (n^{m-1}))} \oplus \dots \oplus y_{(l/n)}]\\
+    &\qquad\qquad \text{where}\ y_i = x_{\sigma((i-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(i\times n)}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [y_1, \ldots, y_{l/n}]\\
+    &\qquad \comment{definition of $y_i$}\\
+    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\\
+    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
+    &\qquad \comment{induction hypothesis}\\
+    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
+    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\partRed\ (\oplus)\ \id_\oplus\ n\ xs)\\
+    &\qquad \comment{definition of \iterateN}\\
+    &\qquad = \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs
+  \end{align*}
+
+%  \begin{align*}
+%    &\iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs\\
+%    &\qquad \comment{definition of \iterateN}\\
+%    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\partRed\ (\oplus)\ \id_\oplus\ n\ xs)\\
+%    &\qquad \comment{definition of \partRed}\\
+%    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
+%    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{l}]\\
+%    &\qquad \comment{induction hypothesis}\\
+%    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{l}]\\
+%    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [y_1, \ldots, y_{l/n}]\\
+%    &\qquad\qquad \text{where}\ y_i = x_{(i-1)\times n + 1} \oplus \dots \oplus x_{i\times n}\\
+%    &\qquad \comment{definition of \partRed}\\
+%    &\qquad = [y_1 \oplus \dots \oplus y_{(n^{m-1})}, \ldots, y_{(l/n - (n^{m-1}))} \oplus \dots \oplus y_{(l/n)}]\\
+%    &\qquad \comment{definition of $y_i$}\\
+%    &\qquad = \begin{aligned}[t]
+%       [&\\
+%        &(x_1 \oplus \dots \oplus x_n) \oplus \dots \oplus (x_{(n^{m-1}-1)\times n +1} \oplus \dots \oplus x_{(n^{m-1})\times n}),\\
+%        &\ldots,\\
+%        &
+%          \begin{aligned}
+%            &(x_{((l/n-(n^{m-1})+1)-1)\times n + 1} \oplus \dots \oplus x_{(l/n-(n^{m-1})+1)\times n})\\
+%            &\quad \oplus \dots \oplus (x_{(l/n-1)\times n + 1} \oplus \dots \oplus x_{l/n\times n})
+%          \end{aligned}\\
+%        ]\\
+%      \end{aligned}\\
+%    &\qquad \comment{simplicfication and accociativity of $\oplus$}\\
+%    &\qquad = [x_1 \oplus \dots \oplus x_{n^m}, \ldots, x_{l-n^m+1} \oplus \dots \oplus x_l]
+%  \end{align*}
+\end{proof}
+
+
+
+\paragraph{Simplification Rules}
+
+We repeat \autoref{eq:algo:simpl} here:
+\begin{rerule*}{lcl}
+  \join_n \circ \splitN\ n       & \rightarrow & \id\\
+  \splitN\ n \circ \join_n       & \rightarrow & \id\\
+  \asScalar_n \circ \asVector\ n & \rightarrow & \id\\
+  \asVector\ n \circ \asScalar_n & \rightarrow & \id
+\end{rerule*}
+
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 1]\strut\\
+  Let $xs = [x_1, \ldots, x_m]$.
+  \begin{align*}
+    (\join_n \circ \splitN\ n)\ xs &= \join_n\ (\splitN\ n\ xs)\\
+      &\comment{definition of \splitN}\\
+      &= \join_n\ \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]\\
+      &\comment{definition of \join}\\
+      &= xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 2]\strut\\
+  Let $xs = \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]$.
+  \begin{align*}
+    (\splitN\ n \circ \join_n)\ xs &= \splitN\ n\ (\join_n\ xs)\\
+      &\comment{definition of \join}\\
+      &= \splitN\ n\ [x_1, \ldots, x_m]\\
+      &\comment{definition of \splitN}\\
+      &= xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 3]\strut\\
+  Let $xs = [x_1, \ldots, x_m]$.
+  \begin{align*}
+    &(\asScalar_n \circ \asVector\ n)\ xs = \asScalar_n\ (\asVector\ n\ xs)\\
+    &\qquad\comment{definition of \asVector}\\
+    &\qquad = \asScalar_n\ [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]\\
+    &\qquad\comment{definition of \asScalar}\\
+    &\qquad = xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 4]\strut\\
+  Let $xs = [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]$.
+  \begin{align*}
+    &(\asVector\ n \circ \asScalar_n)\ xs = \asVector\ n\ (\asScalar_n\ xs)\\
+    &\qquad\comment{definition of \asScalar}\\
+    &\qquad = \asVector\ n\ [x_1, \ldots, x_m]\\
+    &\qquad\comment{definition of \asVector}\\
+    &\qquad = xs
+  \end{align*}
+\end{proof}
+
+\paragraph{Fusion Rules}
+
+We repeat \autoref{eq:algo:fusion} here:
+\begin{rerule*}{lcl}
+  \map\ f \circ \map\ g
+    & \rightarrow & \map\ (f \circ g)\\
+  \reduceSeq\ (\oplus)\ \id_\oplus \circ \map\ f
+    & \rightarrow & \\
+  {\hspace{3em}}
+  \reduceSeq\
+    \big(\ \lambda\ (a,b)\ .
+      &\hspace{-.75em} a \oplus (f\ b)&\hspace{-.75em}\big)\ \id_\oplus
+\end{rerule*}
+
+\begin{proof}[Proof of \autoref{eq:algo:fusion}; option 1]
+  Let $xs = [x_1, \ldots, x_n]$.
+  \begin{align*}
+    (\map\ f\circ \map\ g)\ xs
+      &= \map\ f\ (\map\ g\ xs)\\
+      &\comment{definition of \map}\\
+      &= \map\ f\ [g\ x_1, \ldots, g\ x_n]\\
+      &\comment{definition of \map}\\
+      &= [f\ (g\ x_1), \ldots, f\ (g\ x_n)]\\
+      &\comment{definition of $\circ$}\\
+      &= [(f\circ g)\ x_1, \ldots, (f\circ g)\ x_n]\\
+      &\comment{definition of \map}\\
+      &= \map (f\circ g)\ xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:algo:fusion}; option 2]
+  Let $xs = [x_1, \ldots, x_n]$.
+  \begin{align*}
+    &(\reduceSeq\ (\oplus)\ \id_\oplus \circ \map\ f)\ xs\\
+    &\qquad = \reduceSeq\ (\oplus)\ \id_\oplus\ (\map\ f\ xs)\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \reduceSeq\ (\oplus)\ \id_\oplus\ [f\ x_1, f\ x_2, \ldots, f\ x_n]\\
+    &\qquad \comment{definition of \reduceSeq}\\
+    &\qquad = [ (\dots ((\id_\oplus \oplus (f\ x_1)) \oplus (f\ x_2)) \dots \oplus (f\ x_n)) ]\\
+    &\qquad = [ (\dots ((\id_\oplus \odot x_1) \odot x_2) \dots \odot x_n) ]\\
+    &\qquad\qquad \text{where } (\odot) = \lambda\ (a,b)\ .\ a \oplus (f\ b)\\
+    &\qquad \comment{definition of \reduceSeq}\\
+    &\qquad = \reduceSeq\ (\odot)\ \id_\oplus\ xs\\
+    &\qquad \comment{definition of $\odot$}\\
+    &\qquad = \reduceSeq\ \big(\ \lambda\ (a,b)\ .\ a \oplus (f\ b)\ \big)\ \id_\oplus\ xs
+  \end{align*}
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+\section{OpenCL-Specific Rules}
+
+This section shows the proofs for the \OpenCL-specific rules defined in \autoref{section:rules:opencl}.
+
+
+\paragraph{Maps}
+
+We repeat \autoref{eq:low:map} here:
+\begin{rerule*}{lclcl}
+  \map
+    & \rightarrow & \mapWorkgroup     & | & \mapLocal\\
+    & | & \mapGlobal    & | & \mapWarp\\
+    & | & \mapLane     & | & \mapSeq
+\end{rerule*}
+
+\begin{proof}[Proof]
+  All of the options in this rule are correct by definition, as all map patterns share the same execution semantics.
+\end{proof}
+
+
+\paragraph{Reduction}
+
+We repeat \autoref{eq:low:red} here:
+\begin{rerule*}{lcl}
+  \reduce\ (\oplus)\ \id_\oplus & \rightarrow & \reduceSeq\ (\oplus)\ \id_\oplus
+\end{rerule*}
+
+\begin{proof}[Proof]
+  Let $xs = [x_1, \ldots, x_n]$.
+  \begin{align*}
+      &\comment{definition of \reduce}\\
+    \reduce\ (\oplus)\ \id_\oplus\ xs
+      &= x_1 \oplus \dots \oplus x_n\\
+      &\comment{associativity of $\oplus$ \& identity of $\id_\oplus$}\\
+      &= (\dots ((\id_\oplus \oplus x_1) \oplus x_2)\dots \oplus x_n)\\
+      &\comment{definition of \reduceSeq}\\
+      &= \reduceSeq\ (\oplus)\ \id_\oplus\ xs
+  \end{align*}
+\end{proof}
+
+
+\paragraph{Reorder}
+
+We repeat \autoref{eq:low:stride} here:
+\begin{rerule*}{lcl}
+  \reorder & \rightarrow & \textit{id}\quad |\quad \reorderStride\ s
+\end{rerule*}
+
+\begin{proof}[Proof of \autoref{eq:low:stride}; option 1]
+  Let $xs = [x_1, \ldots, x_n]$.
+  \begin{align*}
+    \reorder\ xs &= [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
+                 &\comment{choose $\sigma$ as the identity permutation} \Rightarrow\\
+                 & [x_{\sigma(1)}, \ldots, x_{\sigma(n)}] = [x_1, \ldots, x_n] = \id\ xs
+  \end{align*}
+\end{proof}
+\begin{proof}[Proof of \autoref{eq:low:stride}; option 2]
+  The definition of \reorderStride is as follows:
+  \begin{align*}
+    &\reorderStride\ s\ [x_1, \ldots, x_m] = [y_1, \ldots, y_m]\\
+    &\qquad \text{where}\ y_i = x_{i\ \text{\normalfont div } n + s\times (i \bmod{n})}
+  \end{align*}
+  We can express the relationship between $ys$ and $xs$ as a function $\sigma$ with: $x_\sigma(i) = y_i$, \ie, $\sigma(i) = (i\ \text{div}\ n + s\times (i \bmod{n})$.
+  We want to show that $\sigma$ is a permutation of the interval $[1, m]$, so that $\sigma$ is a valid choice when rewriting \reduce.
+  We show the $\sigma$ is a permutation by proofing that $\sigma$ is a bijective function mapping indices from the interval $[1,m]$ in the same interval.
+
+  First we show the injectivity, by showing:
+  \begin{align*}
+    \forall i, j \in [1, m] \text{ with } i\neq j \quad \Rightarrow \quad \sigma(i)\neq \sigma(j)
+  \end{align*}
+  Let us assume without loss of generality that $i< j$.
+
+%  We first proof the case where $i = 0$.
+%  For $\sigma(i)$ we have:
+%  \begin{align*}
+%    \sigma(i) = (0\ \text{div}\ n) + s\times (0 \bmod{n}) = 0 + s\times 0 = 0
+%  \end{align*}
+%  For $\sigma(j$) we have:
+%  \begin{align*}
+%    \sigma(j) = (j\ \text{div}\ n) + s\times (j \bmod{n})
+%  \end{align*}
+%  Let us assume that $(j \bmod{n}) = 0$:
+%  \begin{align*}
+%    &\Rightarrow j \text{ is evenly divisible by $n$ and } n > 0\\
+%    &\Rightarrow (j\ \text{div}\ n) > 0\\
+%    &\Rightarrow (j\ \text{div}\ n) + \underbrace{s\times (j\bmod{n})}_{= 0} > 0
+%  \end{align*}
+%  If we assume the opposite, \ie, $(j \bmod{n}) \neq 0$:
+%  \begin{align*}
+%    &\Rightarrow \underbrace{(j\ \text{div}\ n)}_{\geq 0} + \underbrace{s}_{>0}\times \underbrace{(j\bmod{n})}_{>0} > 0
+%  \end{align*}
+%  As $\sigma(i) = 0$ and in both cases $\sigma(j)>0$: $\sigma(i) \neq \sigma(j)$ for $i = 0$.\\[1em]
+%
+%  We now proof the remaining case where $i\neq 0$.
+  As $i,j\in [1,m]$ and by definition of $\bmod{}$ and div every summand in $\sigma$ is greater than zero.
+  Therefore, for $\sigma(i) = \sigma(j)$ to be true all of their corresponding summands have to be equal.
+  We will show, that this can never be the case.
+  Let us write $j$ as $j=i+k$ where $0<k<m-1$.
+
+  If we assume $i\ \text{div}\ n = (i+k)\ \text{div}\ n$:
+\todo{investigate!}
+  \begin{align*}
+    &\Rightarrow i\bmod{n} \neq (i+k)\bmod{n}\\
+    &\comment{why?}\\
+    &\Rightarrow s \times (i\bmod{n}) \neq s \times ((i+k)\bmod{n})\\
+    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \neq (j\ \text{div}\ n) + s\times (j\bmod{n})
+  \end{align*}
+  If we assume the opposite $i\bmod{n} = (i+k)\bmod{n}$:
+  \begin{align*}
+    &\Rightarrow i\ \text{div}\ n \neq (i+k)\ \text{div}\ n\\
+    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \neq (j\ \text{div}\ n) + s\times (j\bmod{n})
+  \end{align*}
+  This shows the injectivity of $\sigma$.\\[1em]
+
+  Now we show the surjectivity, by showing:
+  \begin{align*}
+    \forall i \in [1, m]\quad \sigma(i)\in [1, m]
+  \end{align*}
+
+  We know that $m= s\times n$
+  \begin{align*}
+    &\Rightarrow i\ \text{div}\ n \leq s \quad \forall i\in [1,m]
+  \end{align*}
+  By definition of $\bmod{}$: $(i\bmod{n}) \leq (n-1)\quad \forall i\in [1,m]$
+  \begin{align*}
+    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \leq s + s\times (n-1) = s\times n = m
+  \end{align*}
+  As already discussed is $\sigma(i)>0\ \forall i\in [1,m]$, because of the definitions of $\bmod{}$, div, and $\sigma$.
+
+  Therefore, $\sigma$ is injective and surjective, thus, bijective which makes it a well defined permutation of $[1,m]$.
+
+\end{proof}
+
+
+\paragraph{Local and Global Memory}
+
+We repeat \autoref{eq:low:mem} here:
+\begin{rerule*}{lcl}
+  \mapLocal\ f & \rightarrow & \toGlobal\ (\mapLocal\ f)\\
+  \mapLocal\ f & \rightarrow & \toLocal\ (\mapLocal\ f)
+\end{rerule*}
+
+\begin{proof}[Proof]
+  These rules follow directly from the definition of \toGlobal and \toLocal, as these have no effect on the computed value, \ie, they behave like the \id function.
+\end{proof}
+
+
+\paragraph{Vectorization}
+
+We repeat \autoref{eq:algo:vect} here:
+\begin{rerule*}{lcl}
+  \map\ f
+    & \rightarrow &
+      \asScalar
+        \circ \map\ (\vect\ n\ f)
+        \circ \asVector\ n
+\end{rerule*}
+
+
+\begin{proof}[Proof]
+  Let $xs = [x_1, \ldots, x_m]$.
+  \begin{align*}
+    &\map\ f\ xs = [f\ x_1, \ldots, f\ x_m]\\
+    &\qquad \comment{definition of \asScalar}\\
+    &\qquad = \asScalar\ [\{f\ x_1, \ldots, f\ x_n\}, \ldots ,\{f\ x_{m-n+1}, \ldots, f\ x_m\}]\\
+    &\qquad = \asScalar\ [f_n\ \{x_1, \ldots, x_n\}, \ldots ,f_n\ \{x_{m-n+1}, \ldots, x_m\}]\\
+    &\qquad \text{where } f_n\ \{x_1, \ldots, x_n\} = \{f\ x_1, \ldots, f\ x_n\}\\
+    &\qquad \comment{definition of $f_n$ and \vect}\\
+    &\qquad = \asScalar\
+      \begin{aligned}[t]
+        [&(\vect\ n\ f)\ \{x_1, \ldots, x_n\},\ \ldots ,\\
+         &(\vect\ n\ f)\ \{x_{m-n+1}, \ldots, x_m\}]
+      \end{aligned}\\
+    &\qquad \comment{definition of \map}\\
+    &\qquad = \asScalar\ (\map\ (\vect\ n\ f)\\
+    &\qquad\qquad [\{x_1, \ldots, x_n\}, \ldots ,\{x_{m-n+1}, \ldots, x_m\}]\\
+    &\qquad \comment{definition of \asVector}\\
+    &\qquad = \asScalar\ (\map\ (\vect\ n\ f)\ (\asVector\ n\ xs))\\
+    &\qquad = (\asScalar \circ \map\ (\vect\ n\ f) \circ \asVector\ n)\ xs
+  \end{align*}
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 %----------------------------------------------------------------------------------------
 
-\section{Derivations}
-\label{section:derivations}
+\chapter{Derivations}
+% \addtocontents{lof}{\protect\vspace{\beforebibskip}}%
+\label{chapter:derivations}
 
 \begin{figure*}[t]
 \begin{align*}

@@ -11,12 +11,14 @@ many rules can be applied successively to produce expressions that compose hardw
 Similarly to our patterns, we distinguish between algorithmic and \OpenCL-specific rules.
 Algorithmic rules produce derivations that represent different algorithmic choices.
 Our \OpenCL-specific rules map expressions to \OpenCL patterns.
-Once the expression is lowered and consist only of \OpenCL patterns, it is possible to produce \OpenCL code for each single pattern straightforwardly with our code generator as described in the following section.
+Once the expression consists only of \OpenCL patterns, it is possible to produce \OpenCL code for each single pattern straightforwardly with our code generator as described in the following section.
 
 We write $a \rightarrow b$ for a rewrite rule which allows to replace the occurrence of term $a$ in an expression with term $b$.
 Sometimes multiple rewrites are valid then we write $a \rightarrow b\ |\ c$ to indicate the choice to replace term $a$ either with term $b$ or term $c$.
 
 For each rule we provide a proof of its correctness, \ie, that applying the rewrite rule does not change the semantic of the expression the rule is applied to.
+We will discuss some proofs directly here in this section.
+All proofs can be found in \autoref{chapter:proofs}.
 
 %We discuss some proofs of the rules here to give an idea how the correctness of the rules can be formally proven.
 %The proofs for all rules can be found in the appendix in \autoref{}.
@@ -50,7 +52,7 @@ For each rule we provide a proof of its correctness, \ie, that applying the rewr
 
 Each algorithmic rule formulates a provably correct statement of the relationship of multiple algorithmic patterns.
 Applying the rules allows to rewrite an expression and, by doing so, explore different implementations.
-As the algorithmic rules are separated from the  \OpenCL rules, these rules can explore valid implementations regardless of their concrete implementation in a concrete low-level programming model like \OpenCL.
+As the algorithmic rules are separated from the  \OpenCL rules, these rules can explore valid implementations regardless of their concrete implementation in a low-level programming model like \OpenCL.
 
 \paragraph{Identity}
 The identity rule in \autoref{eq:algo:identity} specifies that it is always valid to compose any function $f$ with the identity function \emph{id}.
@@ -63,7 +65,10 @@ As we always operate on arrays, we technically compose $f$ with $\map\ id$.
 %
 The \textit{id} function can act as a copy operation; this is, \eg, useful for expressing copies of an array to local memory when composed with the \toLocal \OpenCL pattern: $\toLocal\ (\map\ \textit{id})$.
 
-\begin{proof}[Proof of \autoref{eq:algo:identity}; option 1]
+We show here just the proof for the first option.
+The proof for the second option is shown in \autoref{chapter:proofs}.
+
+\begin{proof}[Proof of \autoref{eq:algo:identity}; option 1]\strut\\
   Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (f \circ \map\ \textit{id})\ xs
@@ -72,17 +77,6 @@ The \textit{id} function can act as a copy operation; this is, \eg, useful for e
         & \comment{definition of \map}                                         && \comment{definition of \textit{id}}\\
         &= f\ ([\textit{id}\ x_1, \textit{id}\ x_2, \ldots, \textit{id}\ x_n]) &&= f\ xs
       \end{aligned}
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:identity}; option 2]
-  Let $xs = [x_1, \ldots, x_n]$.
-  \begin{align*}
-    (\map\ \textit{id} \circ\ f)\ xs
-      &= \map\ \textit{id}\ (f\ xs)\\
-      & \comment{definition of \map}\\
-      &= [\textit{id}\ (f\ xs)_1, \textit{id}\ (f\ xs)_2, \ldots, \textit{id}\ (f\ xs)_n]\\
-      & \comment{definition of \textit{id}}\\
-      &= f\ xs
   \end{align*}
 \end{proof}
 
@@ -99,39 +93,7 @@ The rule in \autoref{eq:algo:iterate} expresses the fact that an iteration can b
   \label{eq:algo:iterate}
 \end{rerule}
 
-\begin{proof}[Proof of \autoref{eq:algo:iterate}; option 1]
-  \begin{align*}
-      & \comment{definition of \iterateN} && \comment{definition of \iterateN}\\
-    \iterateN\ 1\ f\ xs
-      &= \iterateN\ (1-1)\ f\ (f\ xs) \hspace{-5em}&& = f\ xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:iterate}; option 2]
-  Proof by induction over the natural number $n$.
-  We start with the base case, let $n=0$:
-  \begin{align*}
-      & \comment{definition of \iterateN}\\
-    \iterateN\ (m+0)\ f\ xs
-      &= \iterateN\ m\ f\ (\iterateN\ 0\ f\ xs)\\
-      & \comment{definition of \iterateN}\\
-      &= (\iterateN\ m\ f \circ \iterateN\ 0\ f)\ xs
-  \end{align*}
-  We finish with the induction step $n-1 \rightarrow n$:
-  \begin{align*}
-      & \comment{definition of \iterateN}\\
-    \iterateN\ (m+n)\ f\ xs
-      &= \iterateN\ (m+n-1)\ f\ (f\ xs)\\
-      & \comment{induction hypothesis}\\
-      &= (\iterateN\ m\ f\ \circ \iterateN\ (n-1)\ f) (f\ xs)\\
-      & \comment{definition of $\circ$}\\
-      &= \iterateN\ m\ f\ (\iterateN\ (n-1)\ f\ (f\ xs))\\
-      & \comment{definition of \iterateN}\\
-      &= \iterateN\ m\ f\ (\iterateN\ n\ f\ xs)\\
-      & \comment{definition of $\circ$}\\
-      &= (\iterateN\ m\ f \circ \iterateN\ n\ f)\ xs
-  \end{align*}
-\end{proof}
-
+This rule can be proven by induction as shown in \autoref{chapter:proofs}.
 
 \paragraph{Reorder commutativity}
 The following \autoref{eq:algo:reorder} shows that if the data can be reordered arbitrarily, as indicated by the \reorder pattern, then, it does not matter if we apply a function $f$ to each element before or after the reordering.
@@ -144,31 +106,7 @@ The following \autoref{eq:algo:reorder} shows that if the data can be reordered 
   \label{eq:algo:reorder}
 \end{rerule}
 
-\begin{proof}[Proof of \autoref{eq:algo:reorder}]
-  We start with the expression $\map\ f \circ \reorder$.
-  Let $xs = [x_1, \ldots, x_n]$.
-  \begin{align*}
-    (\map\ f \circ \reorder)\ xs
-      &= \map\ f\ (\reorder\ xs)\\
-      & \comment{definition of \reorder}\\
-      &= \map\ f\ [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
-      & \comment{definition of \map}\\
-      &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
-  \end{align*}
-  Now we investigate the expression $\reorder \circ \map\ f$:
-  \begin{align*}
-    (\reorder \circ \map\ f)\ xs
-      &= \reorder\ (\map\ f\ xs)\\
-      & \comment{definition of \map}\\
-      &= \reorder\ [f\ x_1, \ldots, f\ x_n]\\
-      &= \reorder\ [y_1, \ldots, y_n]\qquad \text{with } y_i = f\ x_i\\
-      & \comment{definition of \reorder}\\
-      &= [y_{\sigma(1)}, \dots, y_{\sigma(n)}]\\
-      & \comment{definition of $y_i$}\\
-      &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
-  \end{align*}
-  As both expression we started with can be simplified to the same expression they are equal and, therefore, both options of the rule are correct.
-\end{proof}
+The proof can be found in \autoref{chapter:proofs}.
 
 \paragraph{Split-join}
 The split-join rule expressed by \autoref{eq:algo:splitjoin} partitions a map into two maps.
@@ -183,6 +121,8 @@ The split-join rule expressed by \autoref{eq:algo:splitjoin} partitions a map in
 This allows us to nest map patterns in each other and, thus, maps the computation to the thread hierarchy of the \OpenCL programming model:
 using the \OpenCL-specific rules (discussed in \autoref{section:rules:opencl}) we can rewrite $\map\ (\map\ f)$ for example to $\mapWorkgroup\ (\mapLocal\ f)$.
 This is an expression we have seen in our motivation example (\autoref{fig:codeex}) for mapping a computation to \OpenCL work-group and work-item.
+
+We show the proof here, which employs the definitions of \splitN, \map, and \join.
 
 \begin{proof}[Proof of \autoref{eq:algo:splitjoin}]
   We start from the right-hand side and show the equality of both sides.
@@ -222,11 +162,13 @@ From the algorithmic point of view, we first define a partial reduction pattern 
     \id_\oplus &: \alpha,\\
     n &: int,\\
     xs &: [\alpha]_m,\\
-    \partRed\ (\oplus)\ \id_\oplus\ xs &: [\alpha]_{\frac{m}{n}}
+    \partRed\ (\oplus)\ \id_\oplus\ xs &: [\alpha]_{\frac{m}{n}}.
   \end{align*}
 \end{definition}
 \noindent
 This partial reduction reduces an array of $m$ elements to an array of $m/n$ elements, without respecting the order of the elements of the input array.
+
+\bigskip
 
 The reduction can be expressed as a partial reduction combined with a full reduction as shown in \autoref{eq:algo:red}.
 This rule ensures that we end up with one unique element.
@@ -240,22 +182,8 @@ This rule ensures that we end up with one unique element.
   \label{eq:algo:red}
 \end{rerule}
 
-\begin{proof}[Proof of \autoref{eq:algo:red}]
-  We start from the right-hand side and show the equality of both sides:
-  \begin{align*}
-    &(\reduce\ (\oplus)\ \id_\oplus \circ \partRed\ (\oplus)\ id_\oplus\ n)\ xs\\
-    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ (\partRed\ (\oplus)\ id_\oplus\ n\ xs)\\
-    &\qquad \comment{definition of \partRed}\\
-    &\qquad = \reduce\ (\oplus)\ \id_\oplus\\
-    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)},\ \dots ,\ x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
-    &\qquad \comment{definition of \reduce}\\
-    &\qquad = [(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)})]\\
-    &\qquad \comment{commutativity \& accociativity of $\oplus$}\\
-    &\qquad = [x_1 \oplus \dots \oplus x_m]\\
-    &\qquad \comment{definition of \reduce}\\
-    &\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
-  \end{align*}
-\end{proof}
+The rule can be proven using the definitions of \reduce and \partRed as well as exploiting the commutative and associative property of $\oplus$.
+The proof is shown in \autoref{chapter:proofs}.
 
 \paragraph{Partial Reduction}
 \autoref{eq:algo:part-red} shows the rewrite rules for the partial reduction.
@@ -274,145 +202,21 @@ This rule ensures that we end up with one unique element.
 \end{rerule}
 %
 The first option for partial reduction leads to the full reduction.
+This rule is obviously only valid if the types on both sides match.
+
 The next possible derivation expresses the fact that it is possible to reorder the elements to be reduced, expressing the commutativity property we demand in our definition of reduction (see \autoref{definition:pattern:reduce}).
+
 The third option is actually the only place where parallelism is expressed in the definition of our reduction pattern.
 This rule expressed the fact that it is valid to partition the input elements first and then reduce them independently.
 This exploits the associativity property we require from the reduction operator.
+
 Finally, the last option expresses the notion that it is possible to reduce the input array in multiple steps, by performing an iterative process where in each step a partial reduction is performed.
 This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\autoref{lst:reduce6}.
 
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 1]
-  Let $xs = [x_1, \ldots, x_m]$.\\
-  Choose $n=m$ $\Rightarrow$
-  \begin{align*}
-    &\qquad\qquad\qquad\qquad\qquad\qquad\qquad \comment{definition of \partRed}\\
-    &(\partRed\ (\oplus)\ \id_\oplus\ m)\ [x_1, \ldots, x_m] = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(m)}]\\
-    &\qquad \comment{commutativity of $\oplus$} \qquad \comment{definition of \reduce}\\
-    &\qquad = [x_1 \oplus \dots \oplus x_m]\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 2]
-  Let $xs = [x_1, \ldots, x_m]$
-  \begin{align*}
-    &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
-    &\qquad \comment{definition of \partRed}\\
-    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
-    &\qquad \comment{represent $\sigma$ with appropiate $\sigma'$ and $\sigma''$}\\
-    &\qquad =
-      \begin{aligned}[t]
-        \big[&x_{\sigma'(\sigma''(1))} \oplus \dots \oplus x_{\sigma'(\sigma''(n))}, \ldots,\\
-         &x_{\sigma'(\sigma''(m-n+1))} \oplus \dots \oplus x_{\sigma'(\sigma''(m))}\big]
-       \end{aligned}\\
-    &\qquad \comment{definition of \partRed}\\
-    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n\ [x_{\sigma''(1)}, \ldots, x_{\sigma''(m)}]\\
-    &\qquad \comment{definition of \reorder}\\
-    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n\ (\reorder\ xs)\\
-    &\qquad = (\partRed\ (\oplus)\ \id_\oplus\ n \circ \reorder)\ xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 3]
-  Let $xs = [x_1, \ldots, x_l]$.
-  \begin{align*}
-    &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
-    &\qquad \comment{definition of \partRed}\\
-    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
-    &\qquad \comment{represent $\sigma$ with appropiate $\sigma_i$}\\
-    &\qquad = [x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)}, \ldots, x_{\sigma_{l/n}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/n}(l)}]\\
-    &\qquad \comment{definition of \join}\\
-    &\qquad = \join\
-      \begin{aligned}[t]
-        \big[&[x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)}],\\
-             &\ldots,\\
-             &[x_{\sigma_{l/n}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/n}(l)}]\big]
-      \end{aligned}\\
-    &\qquad \comment{definition of \partRed}\\
-    &\qquad = \join\
-      \begin{aligned}[t]
-        \big[&\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, \ldots, x_m],\\
-             &\ldots,\\
-             &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_{l-m+1+}, \ldots, x_l]\big]
-      \end{aligned}\\
-    &\qquad \comment{definition of \map}\\
-    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
-    &\qquad\qquad \big[[x_1, \ldots, x_m], \ldots, [x_{l-m+1+}, \ldots, x_l]\big]\big)\\
-    &\qquad \comment{definition of \splitN}\\
-    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\splitN\ m\ xs)\big)\\
-    &\qquad = (\join \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m)\ xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 4]
-  We will proof this obvious equivalent reformulation of the rule:
-  \begin{align*}
-    \partRed\ (\oplus)\ \id_\oplus\ n^m \rightarrow \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)
-  \end{align*}
-  Proof by induction over $m$. We start with the base case, let $m= 0$.
-  \begin{align*}
-    \partRed\ (\oplus)\ \id_\oplus\ n^0\ xs &= \partRed\ (\oplus)\ \id_\oplus\ 1\ xs\\
-      & \comment{definition of \partRed}\\
-      &= xs\\
-      &\comment{definition of \iterateN}\\
-      &= \iterateN\ 0\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs\\
-  \end{align*}
-  The induction step $(m-1) \rightarrow m$.
-  Let $xs = [x_1, \ldots, x_l]$.
-  \begin{align*}
-    &\partRed\ (\oplus)\ \id_\oplus\ n^m\ xs\\
-    &\qquad \comment{definition of \partRed}\\
-    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n^m)}, \ldots, x_{\sigma(l-n^m+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
-    &\qquad \comment{accociativity of $\oplus$}\\
-    &\qquad = \begin{aligned}[t]
-       [\ &(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma((n^{m-1}-1)\times n +1)} \oplus \dots \oplus x_{\sigma((n^{m-1})\times n)}),\\
-        &\ldots,\\
-        &
-          \begin{aligned}[b]
-            &(x_{\sigma(((l/n-(n^{m-1})+1)-1)\times n + 1)} \oplus \dots \oplus x_{\sigma((l/n-(n^{m-1})+1)\times n)})\\
-            &\quad \oplus \dots \oplus (x_{\sigma((l/n-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(l/n\times n)})
-          \end{aligned}\ ]\\
-      \end{aligned}\\
-    &\qquad = [y_1 \oplus \dots \oplus y_{(n^{m-1})}, \ldots, y_{(l/n - (n^{m-1}))} \oplus \dots \oplus y_{(l/n)}]\\
-    &\qquad\qquad \text{where}\ y_i = x_{\sigma((i-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(i\times n)}\\
-    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [y_1, \ldots, y_{l/n}]\\
-    &\qquad \comment{definition of $y_i$}\\
-    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\\
-    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
-    &\qquad \comment{induction hypothesis}\\
-    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
-    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
-    &\qquad \comment{definition of \partRed}\\
-    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\partRed\ (\oplus)\ \id_\oplus\ n\ xs)\\
-    &\qquad \comment{definition of \iterateN}\\
-    &\qquad = \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs
-  \end{align*}
+All options can be proven using the definitions of \reduce and \partRed as well as the commutativity and associativity of $\oplus$.
+The third rule is shown via induction.
+All proofs can be found in \autoref{chapter:proofs}.
 
-%  \begin{align*}
-%    &\iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs\\
-%    &\qquad \comment{definition of \iterateN}\\
-%    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\partRed\ (\oplus)\ \id_\oplus\ n\ xs)\\
-%    &\qquad \comment{definition of \partRed}\\
-%    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
-%    &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{l}]\\
-%    &\qquad \comment{induction hypothesis}\\
-%    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{l}]\\
-%    &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [y_1, \ldots, y_{l/n}]\\
-%    &\qquad\qquad \text{where}\ y_i = x_{(i-1)\times n + 1} \oplus \dots \oplus x_{i\times n}\\
-%    &\qquad \comment{definition of \partRed}\\
-%    &\qquad = [y_1 \oplus \dots \oplus y_{(n^{m-1})}, \ldots, y_{(l/n - (n^{m-1}))} \oplus \dots \oplus y_{(l/n)}]\\
-%    &\qquad \comment{definition of $y_i$}\\
-%    &\qquad = \begin{aligned}[t]
-%       [&\\
-%        &(x_1 \oplus \dots \oplus x_n) \oplus \dots \oplus (x_{(n^{m-1}-1)\times n +1} \oplus \dots \oplus x_{(n^{m-1})\times n}),\\
-%        &\ldots,\\
-%        &
-%          \begin{aligned}
-%            &(x_{((l/n-(n^{m-1})+1)-1)\times n + 1} \oplus \dots \oplus x_{(l/n-(n^{m-1})+1)\times n})\\
-%            &\quad \oplus \dots \oplus (x_{(l/n-1)\times n + 1} \oplus \dots \oplus x_{l/n\times n})
-%          \end{aligned}\\
-%        ]\\
-%      \end{aligned}\\
-%    &\qquad \comment{simplicfication and accociativity of $\oplus$}\\
-%    &\qquad = [x_1 \oplus \dots \oplus x_{n^m}, \ldots, x_{l-n^m+1} \oplus \dots \oplus x_l]
-%  \end{align*}
-\end{proof}
 
 
 \paragraph{Simplification Rules}
@@ -427,46 +231,9 @@ These rules express the fact that consecutive \splitN-\join pairs and \asVector-
   \label{eq:algo:simpl}
 \end{rerule}
 
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 1]\strut\\
-  Let $xs = [x_1, \ldots, x_m]$.
-  \begin{align*}
-    (\join_n \circ \splitN\ n)\ xs &= \join_n\ (\splitN\ n\ xs)\\
-      &\comment{definition of \splitN}\\
-      &= \join_n\ \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]\\
-      &\comment{definition of \join}\\
-      &= xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 2]\strut\\
-  Let $xs = \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]$.
-  \begin{align*}
-    (\splitN\ n \circ \join_n)\ xs &= \splitN\ n\ (\join_n\ xs)\\
-      &\comment{definition of \join}\\
-      &= \splitN\ n\ [x_1, \ldots, x_m]\\
-      &\comment{definition of \splitN}\\
-      &= xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 3]\strut\\
-  Let $xs = [x_1, \ldots, x_m]$.
-  \begin{align*}
-    &(\asScalar_n \circ \asVector\ n)\ xs = \asScalar_n\ (\asVector\ n\ xs)\\
-    &\qquad\comment{definition of \asVector}\\
-    &\qquad = \asScalar_n\ [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]\\
-    &\qquad\comment{definition of \asScalar}\\
-    &\qquad = xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 4]\strut\\
-  Let $xs = [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]$.
-  \begin{align*}
-    &(\asVector\ n \circ \asScalar_n)\ xs = \asVector\ n\ (\asScalar_n\ xs)\\
-    &\qquad\comment{definition of \asScalar}\\
-    &\qquad = \asVector\ n\ [x_1, \ldots, x_m]\\
-    &\qquad\comment{definition of \asVector}\\
-    &\qquad = xs
-  \end{align*}
-\end{proof}
+These rules follow directly from the definitions of the involved patterns.
+The proofs are shown in \autoref{chapter:proofs}.
+
 
 \paragraph{Fusion Rules}
 Finally, our rules for fusing consecutive patterns are shown in \autoref{eq:algo:fusion}.
@@ -485,13 +252,16 @@ Finally, our rules for fusing consecutive patterns are shown in \autoref{eq:algo
 \end{rerule}
 %
 The first rule fuses the functions applied by two consecutive maps.
-The second rule fuses the map-reduce pattern by creating a lambda function that is the result of merging functions $f$ and $g$ from the original reduction and map,, respectively.
+The second rule fuses the map-reduce pattern by creating a lambda function that is the result of merging functions $f$ and $g$ from the original reduction and map, respectively.
 This rule only applies to the sequential \reduce pattern since this is the only implementation not requiring the associativity property required by the more generic \reduce pattern.
 % When generating code, these rules in effect allow us to fuse the implementation of the different functions and avoid having to store temporary results.
 The functional programming community has studied more generic rules for fusion~\cite{CouttsLeSt2007,JonesToHo2001}.
 However, as we currently focus on a restricted set of patterns, our simpler fusion rules have, so far, proven to be sufficient.
 
-\begin{proof}[Proof of \autoref{eq:algo:fusion}; option 1]
+The proofs for both rules are straightforward.
+The proof for the first rule is shown here, the one for the second rule is shown in \autoref{chapter:proofs}.
+
+\begin{proof}[Proof of \autoref{eq:algo:fusion}; rule 1]
   Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (\map\ f\circ \map\ g)\ xs
@@ -500,27 +270,8 @@ However, as we currently focus on a restricted set of patterns, our simpler fusi
       &= \map\ f\ [g\ x_1, \ldots, g\ x_n]\\
       &\comment{definition of \map}\\
       &= [f\ (g\ x_1), \ldots, f\ (g\ x_n)]\\
-      &\comment{definition of $\circ$}\\
-      &= [(f\circ g)\ x_1, \ldots, (f\circ g)\ x_n]\\
-      &\comment{definition of \map}\\
-      &= \map (f\circ g)\ xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:fusion}; option 2]
-  Let $xs = [x_1, \ldots, x_n]$.
-  \begin{align*}
-    &(\reduceSeq\ (\oplus)\ \id_\oplus \circ \map\ f)\ xs\\
-    &\qquad = \reduceSeq\ (\oplus)\ \id_\oplus\ (\map\ f\ xs)\\
-    &\qquad \comment{definition of \map}\\
-    &\qquad = \reduceSeq\ (\oplus)\ \id_\oplus\ [f\ x_1, f\ x_2, \ldots, f\ x_n]\\
-    &\qquad \comment{definition of \reduceSeq}\\
-    &\qquad = [ (\dots ((\id_\oplus \oplus (f\ x_1)) \oplus (f\ x_2)) \dots \oplus (f\ x_n)) ]\\
-    &\qquad = [ (\dots ((\id_\oplus \odot x_1) \odot x_2) \dots \odot x_n) ]\\
-    &\qquad\qquad \text{where } (\odot) = \lambda\ (a,b)\ .\ a \oplus (f\ b)\\
-    &\qquad \comment{definition of \reduceSeq}\\
-    &\qquad = \reduceSeq\ (\odot)\ \id_\oplus\ xs\\
-    &\qquad \comment{definition of $\odot$}\\
-    &\qquad = \reduceSeq\ \big(\ \lambda\ (a,b)\ .\ a \oplus (f\ b)\ \big)\ \id_\oplus\ xs
+      &\comment{definition of $\circ$}\qquad\quad \comment{definition of \map}\\
+      &= [(f\circ g)\ x_1, \ldots, (f\circ g)\ x_n] = \map (f\circ g)\ xs
   \end{align*}
 \end{proof}
 
@@ -533,7 +284,7 @@ The split-join rule (\autoref{fig:algo:splitjoin}) allows a divide-and-conquer s
 This eventually enables different parallel implementations which we can express with \OpenCL, as we will see in the next subsection.
 
 The rules presented here are by no means complete and can easily be extended to express more possible implementations.
-When adding new patterns to the system, this set of rules have to be extended as well.
+When adding new patterns to the system, the rules have to be extended as well.
 
 In the next subsection we will discuss \OpenCL specific rewrite rules which allow us to map patter implementations to the low-level \OpenCL concepts.
 
@@ -687,7 +438,7 @@ The rule in \autoref{eq:low:map} is used to produce the \OpenCL-specific map pat
 %
 When generating code the code generator has to ensure that the \OpenCL thread hierarchy is respected.
 For instance, it is only legal to nest a \mapLocal inside a \mapWorkgroup and it is not valid to nest a \mapGlobal or another \mapWorkgroup inside a \mapWorkgroup.
-In the current implementation of the code generator a context information is maintained which records the nesting of patterns.
+In the current implementation of the code generator context information is maintained which records the nesting of patterns.
 Therefore, it is easy to detect wrongly nested \map patterns and reject the malformed code.
 
 \begin{proof}[Proof of \autoref{eq:low:map}]
@@ -701,23 +452,11 @@ There is only one rule for lowering the \reduce pattern to \OpenCL (\autoref{eq:
   \reduce\ (\oplus)\ \id_\oplus & \rightarrow & \reduceSeq\ (\oplus)\ \id_\oplus
   \label{eq:low:red}
 \end{rerule}
-Parallel implementations of the reduction are defined at a higher level by composition of other algorithmic patterns.
+Parallel implementations of the reduction are defined at a higher level by composition of other algorithmic patterns, as seen in the previous subsection.
 Most existing compilers and libraries which parallelize the reduction treat it directly as a primitive operation which is not expressed in terms of other more basic operations.
 With our approach it is possible to explore different implementations for the reduction by applying different rules.
 
-\begin{proof}[Proof of \autoref{eq:low:red}]
-  Let $xs = [x_1, \ldots, x_n]$.
-  \begin{align*}
-      &\comment{definition of \reduce}\\
-    \reduce\ (\oplus)\ \id_\oplus\ xs
-      &= x_1 \oplus \dots \oplus x_n\\
-      &\comment{associativity of $\oplus$ \& identity of $\id_\oplus$}\\
-      &= (\dots ((\id_\oplus \oplus x_1) \oplus x_2)\dots \oplus x_n)\\
-      &\comment{definition of \reduceSeq}\\
-      &= \reduceSeq\ (\oplus)\ \id_\oplus\ xs
-  \end{align*}
-\end{proof}
-
+The proof is straightforward (see \autoref{chapter:proofs}) given the associativity and commutativity of the $\oplus$ operator.
 
 \paragraph{Reorder}
 \autoref{eq:low:stride} presents the rule that reorders elements of an array.
@@ -732,90 +471,10 @@ As described earlier, the major use case for the stride reorder is to enable coa
 %
 The implementation of the code generator could be easily extended to support other kinds of reordering functions, \eg, for reversing an array, or transposing a matrix.
 
-\begin{proof}[Proof of \autoref{eq:low:stride}; option 1]
-  Let $xs = [x_1, \ldots, x_n]$.
-  \begin{align*}
-    \reorder\ xs &= [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
-                 &\comment{choose $\sigma$ as the identity permutation} \Rightarrow\\
-                 & [x_{\sigma(1)}, \ldots, x_{\sigma(n)}] = [x_1, \ldots, x_n] = \id\ xs
-  \end{align*}
-\end{proof}
-\begin{proof}[Proof of \autoref{eq:low:stride}; option 2]
-  The definition of \reorderStride is as follows:
-  \begin{align*}
-    &\reorderStride\ s\ [x_1, \ldots, x_m] = [y_1, \ldots, y_m]\\
-    &\qquad \text{where}\ y_i = x_{i\ \text{\normalfont div } n + s\times (i \bmod{n})}
-  \end{align*}
-  We can express the relationship between $ys$ and $xs$ as a function $\sigma$ with: $x_\sigma(i) = y_i$, \ie, $\sigma(i) = (i\ \text{div}\ n + s\times (i \bmod{n})$.
-  We want to show that $\sigma$ is a permutation of the interval $[1, m]$, so that $\sigma$ is a valid choice when rewriting \reduce.
-  We show the $\sigma$ is a permutation by proofing that $\sigma$ is a bijective function mapping indices from the interval $[1,m]$ in the same interval.
-
-  First we show the injectivity, by showing:
-  \begin{align*}
-    \forall i, j \in [1, m] \text{ with } i\neq j \quad \Rightarrow \quad \sigma(i)\neq \sigma(j)
-  \end{align*}
-  Let us assume without loss of generality that $i< j$.
-
-%  We first proof the case where $i = 0$.
-%  For $\sigma(i)$ we have:
-%  \begin{align*}
-%    \sigma(i) = (0\ \text{div}\ n) + s\times (0 \bmod{n}) = 0 + s\times 0 = 0
-%  \end{align*}
-%  For $\sigma(j$) we have:
-%  \begin{align*}
-%    \sigma(j) = (j\ \text{div}\ n) + s\times (j \bmod{n})
-%  \end{align*}
-%  Let us assume that $(j \bmod{n}) = 0$:
-%  \begin{align*}
-%    &\Rightarrow j \text{ is evenly divisible by $n$ and } n > 0\\
-%    &\Rightarrow (j\ \text{div}\ n) > 0\\
-%    &\Rightarrow (j\ \text{div}\ n) + \underbrace{s\times (j\bmod{n})}_{= 0} > 0
-%  \end{align*}
-%  If we assume the opposite, \ie, $(j \bmod{n}) \neq 0$:
-%  \begin{align*}
-%    &\Rightarrow \underbrace{(j\ \text{div}\ n)}_{\geq 0} + \underbrace{s}_{>0}\times \underbrace{(j\bmod{n})}_{>0} > 0
-%  \end{align*}
-%  As $\sigma(i) = 0$ and in both cases $\sigma(j)>0$: $\sigma(i) \neq \sigma(j)$ for $i = 0$.\\[1em]
-%
-%  We now proof the remaining case where $i\neq 0$.
-  As $i,j\in [1,m]$ and by definition of $\bmod{}$ and div every summand in $\sigma$ is greater than zero.
-  Therefore, for $\sigma(i) = \sigma(j)$ to be true all of their corresponding summands have to be equal.
-  We will show, that this can never be the case.
-  Let us write $j$ as $j=i+k$ where $0<k<m-1$.
-
-  If we assume $i\ \text{div}\ n = (i+k)\ \text{div}\ n$:
-\todo{investigate!}
-  \begin{align*}
-    &\Rightarrow i\bmod{n} \neq (i+k)\bmod{n}\\
-    &\comment{why?}\\
-    &\Rightarrow s \times (i\bmod{n}) \neq s \times ((i+k)\bmod{n})\\
-    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \neq (j\ \text{div}\ n) + s\times (j\bmod{n})
-  \end{align*}
-  If we assume the opposite $i\bmod{n} = (i+k)\bmod{n}$:
-  \begin{align*}
-    &\Rightarrow i\ \text{div}\ n \neq (i+k)\ \text{div}\ n\\
-    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \neq (j\ \text{div}\ n) + s\times (j\bmod{n})
-  \end{align*}
-  This shows the injectivity of $\sigma$.\\[1em]
-
-  Now we show the surjectivity, by showing:
-  \begin{align*}
-    \forall i \in [1, m]\quad \sigma(i)\in [1, m]
-  \end{align*}
-
-  We know that $m= s\times n$
-  \begin{align*}
-    &\Rightarrow i\ \text{div}\ n \leq s \quad \forall i\in [1,m]
-  \end{align*}
-  By definition of $\bmod{}$: $(i\bmod{n}) \leq (n-1)\quad \forall i\in [1,m]$
-  \begin{align*}
-    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \leq s + s\times (n-1) = s\times n = m
-  \end{align*}
-  As already discussed is $\sigma(i)>0\ \forall i\in [1,m]$, because of the definitions of $\bmod{}$, div, and $\sigma$.
-
-  Therefore, $\sigma$ is injective and surjective, thus, bijective which makes it a well defined permutation of $[1,m]$.
-
-\end{proof}
+The proof for the \textit{id} function is trivial.
+For the other option we have to show, that the \reorderStride pattern is a valid reordering.
+We do this by showing that the mapping of indices as defined in the \reorderStride definition is a bijective function and, therefore, defines a permutation.
+The details can be found in \autoref{chapter:proofs}.
 
 \paragraph{Local and Global Memory}
 \autoref{eq:low:mem} contains two rules that enable \GPU local memory usage.
@@ -830,7 +489,7 @@ They express the fact that the result of a \mapLocal can always be stored in loc
 This holds since a \mapLocal always exists within a \mapWorkgroup for which the local memory is defined in \OpenCL.
 These rules allow us to describe how the data is mapped to the \GPU memory hierarchy.
 
-As discussed earlier, the implementation of the code generator ensures that the \OpenCL hierarchy is respected by only allowing well-defined nestings of \map patterns, as shown in \autoref{figure}.
+As discussed earlier, the implementation of the code generator ensures that the \OpenCL hierarchy is respected by only allowing well-defined nestings of \map patterns.
 
 \begin{proof}[Proof of \autoref{eq:low:mem}]
   These rules follow directly from the definition of \toGlobal and \toLocal, as these have no effect on the computed value, \ie, they behave like the \id function.
@@ -843,7 +502,7 @@ As discussed earlier, the implementation of the code generator ensures that the 
 \begin{rerule}{lcl}
   \map\ f
     & \rightarrow &
-      \asScalar_n
+      \asScalar
         \circ \map\ (\vect\ n\ f)
         \circ \asVector\ n
   \label{eq:algo:vect}
@@ -856,28 +515,7 @@ This constrain can easily be checked by looking at the function's $f$ type, \ie,
 The \vect pattern is used to produce a vectorized version of the customizing function $f$.
 Note that the vector width $n$ has to match for the vectorization of the function and the modification of the array.
 
-\begin{proof}[Proof of \autoref{eq:algo:vect}]
-  Let $xs = [x_1, \ldots, x_m]$.
-  \begin{align*}
-    &\map\ f\ xs = [f\ x_1, \ldots, f\ x_m]\\
-    &\qquad \comment{definition of \asScalar}\\
-    &\qquad = \asScalar\ [\{f\ x_1, \ldots, f\ x_n\}, \ldots ,\{f\ x_{m-n+1}, \ldots, f\ x_m\}]\\
-    &\qquad = \asScalar\ [f_n\ \{x_1, \ldots, x_n\}, \ldots ,f_n\ \{x_{m-n+1}, \ldots, x_m\}]\\
-    &\qquad \text{where } f_n\ \{x_1, \ldots, x_n\} = \{f\ x_1, \ldots, f\ x_n\}\\
-    &\qquad \comment{definition of $f_n$ and \vect}\\
-    &\qquad = \asScalar\
-      \begin{aligned}[t]
-        [&(\vect\ n\ f)\ \{x_1, \ldots, x_n\},\ \ldots ,\\
-         &(\vect\ n\ f)\ \{x_{m-n+1}, \ldots, x_m\}]
-      \end{aligned}\\
-    &\qquad \comment{definition of \map}\\
-    &\qquad = \asScalar\ (\map\ (\vect\ n\ f)\\
-    &\qquad\qquad [\{x_1, \ldots, x_n\}, \ldots ,\{x_{m-n+1}, \ldots, x_m\}]\\
-    &\qquad \comment{definition of \asVector}\\
-    &\qquad = \asScalar\ (\map\ (\vect\ n\ f)\ (\asVector\ n\ xs))\\
-    &\qquad = (\asScalar \circ \map\ (\vect\ n\ f) \circ \asVector\ n)\ xs
-  \end{align*}
-\end{proof}
+The proof is straightforward given the definitions of all involved patterns and can be found in \autoref{chapter:proofs}.
 
 \paragraph{Summary}
 \autoref{fig:lowRules} shows an overview of the \OpenCL-specific rewrite rules.
@@ -897,7 +535,7 @@ Each rule formalizes a different implementation or optimization strategy in \Ope
 \end{itemize}
 
 As for the algorithmic rules, the \OpenCL-specific rules presented here are not complete and do not cover all possible optimizations in \OpenCL.
-Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation}, that these rules are a good starting set for generating efficient \OpenCL code.
+Nevertheless, we will see in \autoref{chapter:codeGeneration-evaluation} that these rules are a good starting set for generating efficient \OpenCL code.
 
 \begin{figure}[t]
 \centering
@@ -1015,8 +653,8 @@ We will start by looking back at the introductory example from \autoref{section:
 Then we will look at the parallel reduction example and show that we can systematically derive optimized implementations equivalent to the implementations discussed in \autoref{sec:reduce:case-study}.
 
 \subsubsection{A First Example: Scaling a Vector}
-\autoref{eq:vectorScal:impl} shows the implementation of the vector scaling example we used in \autoref{section:code-generation:overview}.
-This directly corresponds to \autoref{fig:codeex:map}.
+\autoref{eq:vectorScal:impl} shows the implementation of the vector scaling example we used in \autoref{section:code-generation:overview} as our motivation example.
+The expression shown here directly corresponds to \autoref{fig:codeex:map}.
 \begin{align}
   mul3\ x &= x \times 3\nonumber\\
   vectorScal &= \map\ mul3
@@ -1064,7 +702,7 @@ But first we will discuss possible derivations for the parallel reduction.
 
 In \autoref{section:reduce:case-study} we looked at implementations of the parallel reduction manually optimized for an Nvidia \GPU.
 In this subsection we want to resemble these implementations with corresponding expressions comprised of the patterns presented in \autoref{section:patterns}.
-The implementations presented in \autoref{lst:reduce0}--\autoref{lst:reduce6} are manual implementations where optimizations have been applied ad-hoc.
+The implementations presented earlier in \autoref{lst:reduce0}--\autoref{lst:reduce6} are manual implementations where optimizations have been applied ad-hoc.
 The key difference to the implementations presented in this section is, that these are systematically derived from a single high-level expression using the rewrite rules introduced in this section.
 Therefore, these implementations can be generated systematically by an optimizing compiler.
 The rules guarantee that all derived expressions are semantically equivalent.
@@ -1075,11 +713,10 @@ Each \OpenCL low-level expression presented in this subsection is derived from t
   \label{eq:reduceSum}
 \end{align}
 %
-The formal derivations for all expressions are shown in \autoref{chapter:AppendixA} in \autoref{section:derivations}.
+The formal derivations showing which rules to apply to reach an expression from the high-level expression shown here are shown in \autoref{chapter:derivations} for all expressions in this subsection.
 
 \paragraph{First Pattern-Based Expression}
 \autoref{eq:reduce11} shows our first expression implementing parallel reduction.
-\todo{erst Bild, wo die Formel mit einer OpenCL Platform zusammen gezeigt wird? (?)}
 \begin{lstlisting}[
   float,
   basicstyle=\normalsize\rmfamily,%\onehalfspacing,
@@ -1096,13 +733,13 @@ $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce11:1}$
 This expression closely resembles the structure of the first two implementations presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.
 First the input array is split into chunks of size 128 (\autoref{eq:reduce11:5}) and each work-group processes such a chunk of data.
 128 corresponds to the work-group size we assumed for our implementations in \autoref{section:reduce:case-study}.
-Inside of a work-group in \autoref{eq:reduce11:4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function to perform a copy nested inside the $\toLocal$ pattern.
+Inside of a work-group in \autoref{eq:reduce11:4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function nested inside the $\toLocal$ pattern to perform a copy.
 Afterwards, in \autoref{eq:reduce11:3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into pairs of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
 This iterative process resembles the for-loops from \autoref{lst:reduce0} and \autoref{lst:reduce1} where in every iteration two elements are reduced.
 Finally, in \autoref{eq:reduce11:2} the computed result is copied back to the global memory.
 
 The first two implementations discussed in \autoref{section:reduce:case-study} are very similar and the only difference is which work-item remains active in the parallel reduction tree.
-Currently, we do not model this subtle difference in our patterns, therefore, we cannot create an expression which distinguishes between these two implementations.
+Currently, we do not model this subtle difference with our patterns, therefore, we cannot create an expression which distinguishes between these two implementations.
 This is not a major drawback, because none of the three investigated architectures favoured the first over the second implementation, as we saw in \autoref{section:reduce:case-study}.
 Therefore, our code generator always generates code matching the second implementation, as we will discuss in more detail in the next section.
 
@@ -1140,11 +777,11 @@ $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce12:1}$
   $\big) \circ \splitN\ 128\label{eq:reduce12:7}$
 \end{lstlisting}
 %
-\autoref{eq:reduce12} shows our second expression implementing parallel reduction, which mimic the third implementation of parallel reduction shown in \autoref{lst:reduce2}.
-The $\reorderStride$ pattern is used which makes local memory bank conflicts highly unlikely.
+\autoref{eq:reduce12} shows our second expression implementing parallel reduction, which resembles the third implementation of parallel reduction shown in \autoref{lst:reduce2}.
+The $\reorderStride$ pattern is used which makes local memory bank conflicts unlikely.
 Please note that the pattern is used inside the $\iterateN$ pattern.
 Therefore, the stride changes in every iteration, which is expressed by referring to the size of the array in the current iteration.
-We use a lambda expression to name the input array ($xs$), use a $size$ function to access its size, and use the $\$$ operator, known from Haskell, to denote function application, \ie, $f\ \$\ x = (f\ x)$.
+We use a lambda expression to name the input array ($xs$), use a $size$ function to access its size, and use the $\$$ operator, known from Haskell, to denote function application, \ie, $f \circ g\ \$\ x = (f\circ g)\ x$.
 
 
 \paragraph{Increase Computational Intensity per Work-item\hspace{3em}\strut}
@@ -1182,7 +819,7 @@ $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce13:1}$
   $\big) \circ \splitN\ (2\times 128)$
 \end{lstlisting}
 %
-This expression resembles the fourth implementation shown in \autoref{lst:reduce3}.
+This expression resembles the fourth Nvidia implementation shown in \autoref{lst:reduce3}.
 By replacing the copy operation into the local memory with a reduction of two elements we increase the computational intensity per work-item.
 The first $\reorderStride$ pattern is used to ensure the coalesced memory access when accessing the global memory.
 As now each work-group processes twice the amount of elements, we split the input data in twice the size of a work-group: $2\times 128$.
@@ -1392,15 +1029,16 @@ The first \reorderStride expression ensures that memory accesses to the global m
 In this subsection, we presented implementations of the parallel reduction purely composed of our patterns.
 These implementations resemble the \OpenCL implementations presented in \autoref{section:reduce:case-study}.
 The presented expressions are all derivable from a simple high-level expression describing the parallel summation.
-The derivations are a bit lengthy and thus not shown here, but instead in \autoref{chapter:AppendixA} in \autoref{section:derivation}.
+The derivations are a bit lengthy and thus not shown here, but instead in \autoref{chapter:derivations}.
 
-By expressing highly specialized and optimized implementations we show how flexible and versatile our patterns and rules on them are.
-We will see in the next section how these expressions can be turned into \OpenCL code.
+By expressing highly specialized and optimized implementations we show how flexible and versatile our patterns and rules are.
 In \autoref{chapter:codeGeneration-evaluation}, we will come back to these expressions and evaluate the performance achieved by the \OpenCL code generated from them.
+We will see in the next section how these expressions can be turned into \OpenCL code.
+
+\bigskip
 
 
-
-
+Before we look at how \OpenCL code is generated, we discuss one additional optimization: fusion of patterns.
 
 
 
@@ -1417,7 +1055,6 @@ In \autoref{chapter:codeGeneration-evaluation}, we will come back to these expre
 
 
 \subsubsection{Systematic Fusion of Patterns}
-Before we look at how \OpenCL code is generated, we discuss one additional optimization: fusion of patterns.
 Back in \autoref{chapter:skelcl-evaluation} in \autoref{section:skelcl:evaluation:linearAlgebra} we discussed how the sum of absolute values (\emph{asum}) can be implemented in \SkelCL.
 Two algorithmic skeletons, \reduce and \map, where composed to express this application as shown in \autoref{eq:asum:patterns}.
 \begin{align}
@@ -1432,12 +1069,12 @@ Two algorithmic skeletons, \reduce and \map, where composed to express this appl
 \end{align}
 %
 When evaluating the performance of the \SkelCL implementation, we identified a problem:
-\SkelCL treats each algorithmic skeleton separately, thus, forcing the \map skeleton to write a temporary array result back to global memory and then read it again for the next computation, which greatly limits performance.
-The temporary array could be avoided, but in the library approach followed by \SkelCL it is extremely difficult to implement a generic mechanism for fusing algorithmic skeletons.
+\SkelCL treats each algorithmic skeleton separately, thus, forcing the \map skeleton to write a temporary array back to global memory and then read it again for the next computation, which greatly limits performance.
+The temporary array could be avoided, but in the library approach followed by \SkelCL it is difficult to implement a generic mechanism for fusing algorithmic skeletons.
 
 
 By using our pattern-based approach presented in this chapter together with the rewrite rules, we are now able to address this issue.
-\autoref{fig:algo:fusion} shows our current fusion rule, which allows us to fuse two patterns into one, thus, avoiding intermediate results.
+Our fusion rule (shown in \autoref{fig:algo:fusion}) allows to fuse two patterns into one, thus, avoiding intermediate results.
 \autoref{fig:derivation} shows how we can derive a fused version for calculating \emph{asum} from the high-level expression written by the programmer.
 
 \begin{figure*}[t]
@@ -1503,11 +1140,12 @@ We expand \map, which can be simplified by removing the two corresponding \join 
 Then two \map patterns are fused and in the next step the nested \map is lowered into the \mapSeq pattern.
 We then first transform \partRed back into \reduce (using rule~\ref{fig:algo:red}) and then apply the \OpenCL rule~\ref{fig:low:red}.
 Finally, we apply rule~\ref{fig:algo:fusion} to fuse the \mapSeq and \reduceSeq into a single \reduceSeq.
-This sequence of transformations results in an expression which allows for better \OpenCL implementation since no temporary storage is required for the intermediate result.
+This sequence of transformations results in an expression which allows for a better \OpenCL implementation since just a single \map pattern is used customized with a reduction.
+No temporary storage is required for the intermediate result in this expression.
 
-One interesting observation is that in the final expression the two customizing functions $+$ and $|\, .\,|$ are merged and a lambda expression has been created which uses these two functions: $\lambda\ a, b\ .\ a+|\, b\, |$.
+One interesting observation is that in the final expression the two customizing functions $+$ and $|\, .\,|$ are merged and a lambda expression has been created which is defined in terms of these functions: $\lambda\ a, b\ .\ a+|\, b\, |$.
 The generated lambda expression is not associative, as $a+|\, b\, | \neq b+|\, a\, |$.
-Therefore, this lambda is used in a sequential implementation of reduction and can not be used as the customizing function for the entire parallel reduction.
+Therefore, a sequential implementation of reduction is used.
 Nevertheless, the final expression implements a parallel reduction, as the \map pattern is used with the \splitN and \join patterns to split the array in a divide-and-conquer style and the \map pattern is followed by a \reduce pattern customized with addition which can be implemented in parallel, as we know.
 
 
@@ -1518,25 +1156,25 @@ The rewrite rules presented in this section define a design space of possible im
 The rules can safely be applied automatically by a compiler as they -- provably -- do not change the semantics of the input program.
 
 Using the parallel reduction example, we have seen that multiple implementations can be derived for the same high-level algorithmic expression when applying different rules.
-This leads to the obvious, but non-trivial, and central question:
+This leads to the obvious, but non-trivial, central question:
 which rules should be applied in which order to obtain the best possible implementation for a particular target hardware device.
-We will not attempt to answer this question in this thesis.
-The system presented in this section constitutes the foundational work necessary to be able to raise this question and, therefore, is just a first step towards a fully automated compiler generating the most optimized parallel implementation possible for a given hardware device from a single high-level program.
 
-Ongoing research on design space exploration~\cite{} develops efficient methods for searching large design spaces, like the one defined by our rewrite rules.
-Research on formal performance models~\cite{} could also be useful for modeling the performance behavior of our low-level expressions on given hardware devices.
+The system presented in this chapter constitutes the foundational work necessary to be able to raise this question in the first place and is, therefore, just an initial step towards a fully automated compiler generating the most optimized parallel implementation possible for a given hardware device from a single high-level program.
 
-We will discuss this topic in more detail in \autoref{section:future-work}.
+In \autoref{sec:codeGeneration-evaluation:automatic} we will present an prototype implementation of a search toll, which applies the rules completely automatically.
+Our early tests with the parallel reduction program as an example suggest, that it is possible to automatically find good implementations on three different hardware architectures.
+
+We intend to research techniques for efficiently searching the implementation space in the future, as will discuss in more detail in \autoref{section:future-work}.
 
 
 
 \subsection{Conclusion}
 In this section, we have introduced a set of rewrite rules which allow to systematically rewrite expressions written using the patterns introduced earlier in \autoref{section:patterns}.
-The power of our approach lies in the composition of the rules that produce complex low-level expressions from simple high-level expressions.
+The power of our approach lies in the composition of the rules that produce complex low-level \OpenCL-specific expressions from simple high-level algorithmic expressions.
 
 We have seen how the rules can be used to transform simple expressions written by an application developer into highly specialized and optimized low-level \OpenCL expressions.
 These low-level expressions match hardware-specific concepts of \OpenCL, such as mapping computation and data to the thread and memory hierarchy, exploiting memory coalescing, and vectorization.
-Each single rule encodes a simple, easy to understand, provable fact.
+Each single rule encodes a simple, easy to understand, and provable fact.
 By composition of the rules we systematically derive low-level expressions which are semantically equivalent to the high-level expressions by construction.
 % \todoU{This results in a powerful mechanism to safely explore the space of possible implementations.}{sg: ??warum? es wurde doch nix von ``explore'' vorher gesagt?}
 

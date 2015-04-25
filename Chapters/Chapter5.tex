@@ -36,5 +36,17 @@ Then we will give an overview of our approach and present it in more detail in t
 \input{Chapters/Chapter5/generator.tex}
 
 \section{Conclusion}
-\todo{List contributions and benefits of using the pattern code generator approach}
+In this chapter we introduced a novel code generation technique for pattern-based programs.
+We started the chapter with an investigation in the portability of optimizations in \OpenCL.
+We concluded, that optimizations are not portable in \OpenCL and argued for a more systematic approach.
+In the following we introduced a set of high-level algorithmic patterns -- similar to the algorithmic skeletons defined in \SkelCL in Part 2 -- but also low-level \OpenCL-specific patterns resembling the \OpenCL programming model.
+We presented a formal system of rewrite rules which allow for systematically rewriting of pattern-based expressions, especially, for transforming programs expressed with the high-level algorithmic patterns into \OpenCL-specific programs expressed with the low-level patterns.
+We showed the soundness of our approach by proofing that the rewrite rules do not change the program semantics.
+Finally, we presented an \OpenCL code generator which generates \OpenCL code for programs expressed with the low-level rules.
+
+The rewrite rules encode different algorithmic as well as low-level optimization choices.
+By applying the rules we derived expressions resembling manually optimized \OpenCL code written by Nvidia and performed an optimization to fuse two pattern, enabling the generation of an optimized implementation for the \emph{asum} benchmark, which we could not generate with \SkelCL.
+
+In the next chapter, we will evaluate the performance of the systematically generated \OpenCL code.
+We will also investigate and evaluate a prototype search tool which applies the rewrite rules automatically to find good implementations on three different hardware architectures for achieving performance portability.
 
