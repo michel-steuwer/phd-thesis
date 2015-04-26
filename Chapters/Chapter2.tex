@@ -27,12 +27,12 @@ We will discuss both architectures in the following two sections.
 
 \subsection{Multi-Core \CPUs}
 % multi-core CPUs
-\autoref{fig:multicore} shows an abstract representation of a typical multi-core \CPU architecture, like Intel's latest \CPU architecture: Haswell~\cite{IntelHaswell}.
+\autoref{fig:multi-core} shows an abstract representation of a typical multi-core \CPU architecture, like Intel's latest \CPU architecture: Haswell~\cite{IntelHaswell}.
 \begin{figure}
   \centering
   \includegraphics[width=.75\textwidth]{CPU}
   \caption{Overview of a multi-core \CPU architecture}
-  \label{fig:multicore}
+  \label{fig:multi-core}
 \end{figure}
 % describe caches
 The \CPU is divided into multiple cores each of which features two levels of caches.
@@ -47,9 +47,9 @@ This happens transparently to the programmer even when executing a sequential pr
 The \CPU core exploits \emph{instruction level parallelism} (ILP) by performing out-of-order execution which re-orders instructions prior to execution while still respecting their dependencies:
 \eg, if two or more instructions have no dependencies then they can be executed in parallel.
 In the Intel Haswell architecture, 4 arithmetic operations and 4 memory operations can be performed in parallel in one clock cycle on every core.
-Furthermore, most modern \CPU architectures support SIMD vector extensions like the \emph{Advanced Vector Extensions} (AVX) or the older \emph{Streaming SIMD Extensions} (SSE).
+Furthermore, most modern \CPU architectures support \SIMD vector extensions like the \emph{Advanced Vector Extensions} (\AVX) or the older \emph{Streaming \SIMD Extensions} (\SSE).
 These extensions add additional instructions to the instruction set architecture, allowing the compiler to generate code explicitly grouping data into vectors of small fixed sizes which can be processed in parallel.
-The current AVX extension allows vectors of up to 256 bits, \eg, a grouping of 8 single precision floating point numbers, to be processed in parallel.
+The current \AVX extension allows vectors of up to 256 bits, \eg, a grouping of 8 single precision floating point numbers, to be processed in parallel.
 Most modern optimizing compilers perform some form of automatic vectorization, but often programmers vectorize programs manually when the compiler fails to generate sufficiently optimized code.
 
 % make conclusions: latency oriented => caches important, good performance for single and multiple threads, comparably low core count and hyper threading -> limited thread-level parallelism
@@ -66,9 +66,9 @@ The caches help to keep the threads running in parallel on the multi-core \CPU b
 
 % Possible optimizations
 Among the most important optimizations to achieve high performance on modern multi-core \CPUs are:
-exploiting the SIMD vector extensions and optimizing the cache usage~\cite{IntelCPUOptimizingGuide}.
+exploiting the \SIMD vector extensions and optimizing the cache usage~\cite{IntelCPUOptimizingGuide}.
 
-\subsection[Graphics Processing Units (GPUs)]{Graphics Processing Units}
+\subsection[Graphics Processing Units (\GPUs)]{Graphics Processing Units}
   % GPUs
 \autoref{fig:gpu} shows an abstract representation of a typical \GPU architecture, like Nvidia's latest high-performance computing \GPU architecture: Kepler~\cite{CUDAKepler2012}.
 \begin{figure}
@@ -81,9 +81,8 @@ exploiting the SIMD vector extensions and optimizing the cache usage~\cite{Intel
 While the overall design looks fairly similar to the design of the multi-core \CPU, the architecture of the \GPU is actually very different in its details.
 The lightweight \GPU cores are grouped together into what Nvidia calls a \emph{Streaming Multiprocessor} (SM).
 In the Kepler architecture, an SM features 192 single-precision cores, 64 double-precision units, 32 special function units, and 32 memory units.
-% \autoref{fig:gpuSM} shows the design of an SM in the Kepler architecture.
 The 192 single-precision cores are very lightweight compared to the complex \CPU cores we discussed in the previous subsection.
-A single \GPU core does not support SIMD vectorization:
+A single \GPU core does not support \SIMD vectorization:
 it performs the straightforward in-order execution, and does not perform complex branch prediction.
 This design makes the implementation of such a core in hardware cheap and enables the grouping of hundreds of cores in a single SM.
 
@@ -159,7 +158,7 @@ We now discuss the current approaches to program multi-core \CPUs and \GPUs in d
 
 
 
-\section{Programming of Multi-Core CPUs and GPUs}
+\section{Programming of Multi-Core \CPUs and \GPUs}
 Arguably the most popular programming approach for multi-core \CPUs is \emph{multithreading}.
 Threading libraries exist for almost all popular programming languages, including C~\cite{Cstandard,Pthreads} and \Cpp~\cite{Cppstandard}.
 Threads are conceptionally similar to processes in an operating system, with the major difference that threads share the same address space in memory while processes usually do not.
@@ -183,7 +182,7 @@ All major processor manufactures support the \OpenCL standard, including AMD, AR
 We will study the \OpenCL programming approach in more detail, as it is the technical foundation of the work presented later in \autoref{part:skelcl} and \autoref{part:codeGeneration} of this thesis.
 
 
-\subsection{The OpenCL Programming Approach}
+\subsection{The \OpenCL Programming Approach}
 \OpenCL is a standard for programming multi-core \CPUs, \GPUs, and other types of parallel processors.
 \OpenCL was created in 2008 and has since been refined multiple times.
 In this thesis, we will use the \OpenCL standard version 1.1 which was ratified in June 2010.
@@ -411,116 +410,3 @@ The high-level semantic of algorithmic skeletons enable high-level optimizations
 These optimizations exploit information about the algorithmic structure of a program which is often hard or impossible to extract from unstructured programs.
 In this thesis, we will present a system for encoding and systematically applying such high-level optimizations to generate highly optimized code from a high-level, skeleton-based program representation.
 
-
-%\from{HIPS begin}
-%\section{GPU programming using OpenCL (HIPS)}
-%
-%The OpenCL standard~\cite{OpenCL} can be used for programming any OpenCL-capable device.
-%These devices embrace most modern GPUs and other accelerators, e.\,g., the Cell BE, as well as standard multi-core CPUs.
-%
-%OpenCL distinguishes between a \emph{host} system, usually containing one or several CPUs, and \emph{devices} that are integrated into the host system.
-%An OpenCL device logically consists of one or more \emph{compute units} (CUs) that are divided into one or more \emph{processing elements} (PEs).
-%All computation on the device is performed in the PEs.
-%OpenCL applications run on the host and call \emph{kernel functions} which are executed simultaneously by multiple PEs on one or more devices.
-%A single instance of a kernel function is called a \emph{work-item} and can be identified by its \emph{global ID}.
-%Every work-item executes the same code, but the execution can vary per work-item due to branching according to the global ID.
-%Work-items are organized in \emph{work-groups}.
-%When a kernel function is started, the host code specifies how many work-items are launched and how many work-items form a work-group.
-%All work-items in one work-group are executed on the same CU.
-%Therefore, the size of a work-group can have a significant effect on the runtime performance.
-%
-%In OpenCL, host and device have separate memories.
-%Thus, functions are provided to transfer data from the host's to the device's memory (\emph{upload}) and back (\emph{download}).
-%Memory areas have to be allocated on the device before data can be accessed by it and deallocated thereafter.
-%
-%For portability across a wide range of devices, kernel functions are compiled at runtime.
-%The host program passes the kernel's source code as a plain string to the OpenCL driver to create executable binary code.
-%This is different compared to CUDA which provides a special compiler \texttt{nvcc} to compile the device code and the host code.
-%
-%Creating applications for multi-GPU systems introduces new challenges, like partitioning the application appropriately and, explicitly implementing data transfer between devices~\cite{SchellmannVG08}.
-%The host application must coordinate and perform synchronization and data exchange explicitly.
-%The source code for performing such exchanges further increases the amount of boilerplate code.
-%
-%In the following, we describe how our SkelCL library addresses these problems of GPGPU programming.
-%\from{HIPS end}
-%
-%
-%\from{HiStencils begin}
-%\section{Stencils Using OpenCL (HiStencils)}
-%\label{sec:background}
-%
-%A \emph{stencil computation} is a computation pattern on a multi-dimensional grid, where each point of the grid is updated (often iteratively) as a function of its neighboring points.
-%Each point of the grid stores a set of application-dependent values.
-%The computation performed to update the values of each point is called the \emph{stencil operation}.
-%A stencil operation updates the value of a point depending on the values of the neighboring points.
-%The points taken into account for a stencil operation are defined by the \emph{stencil shape}.
-%
-%Let us consider how stencil computations are implemented on manycore systems with GPUs using the state-of-the-art OpenCL standard.
-%Listing~\ref{lst:sobel_opencl} presents the structure of an OpenCL implementation of the Sobel operator on one GPU, a typical stencil computation used in image processing for detecting edges in images.
-%Lines 9--13 show how the direct neighboring elements, e.g., the \emph{upper left} (\texttt{ul}) neighbor, are accessed and passed to a function performing the Sobel operation in line 16.
-%Many low-level details have to be considered for a correct implementation, like raw pointer handling, including index computations (e.g., line 10), and explicit out-of-bound  accesses handling (e.g., line 9).
-%
-%\begin{lstlisting}[%
-%caption={Structure of the OpenCL implementation of Sobel edge detection},%
-%float=tbp,%
-%label={lst:sobel_opencl}]
-%kernel
-%  void sobel(global const char* in_img,
-%             global char* out_img,
-%             int w, int h) {
-%  int i = get_global_id(0);
-%  int j = get_global_id(1);
-%
-%  if (i < w && j < h) {
-%    char ul = (j-1 > 0 && i-1 > 0)
-%        ? in_img[((j-1)*w)+(i-1)] : 0;
-%    ...
-%    char lr = (j+1 < h && i+1 < w)
-%        ? in_img[((j+1)*w)+(i+1)] : 0;
-%
-%    out_img[j*w+i] =
-%        computeSobel(ul, ..., lr);
-%  }
-%}
-%\end{lstlisting}
-%
-%The OpenCL version is obviously correct, but not efficient:
-%the fast local GPU memory is not used and the control flow diverges heavily between different work items, which is disadvantageous on current GPU architectures.
-%However, the corresponding optimizations require a deep knowledge of the GPU's architecture and must be programmed and tuned manually and are, therefore, a complicated task for application developers.
-%If the program is to be used on a multi-GPU system then the application developer has to additionally implement and optimize the explicit data distribution across GPUs and the communication between them.
-%\from{HiStencils end}
-%
-%\from{PACT begin}
-%\section{OpenCL (PACT)}
-%\paragraph{OpenCL Execution Model}
-%OpenCL can be used to program manycore CPUs and GPUs.
-%Both are typically represented in the system as an accelerator.
-%Programming these devices consists of writing a compute \emph{kernel} in OpenCL C that executes on the device and writing the host code that orchestrates data movement, allocates memory and manages the execution on the device.
-%
-%\paragraph{Thread Organization and Synchronization}
-%Most GPUs are organized as multicore processors with each core executing multiple threads concurrently.
-%OpenCL represents this with the concept of \emph{workgroups} that contain \emph{local threads}.
-%Threads within a core are typically grouped in \emph{warps} (using Nvidia terminology) where each thread executes in a lock-step synchronized manner.
-%Only one warp is active at a time and execution switches to a different warp when the pipeline stalls to hide memory latency.
-%OpenCL allows to synchronize threads at the kernel level on the host or at the workgroup level using a barrier function synchronizing the local threads.
-%Threads within a warp are implicitly synchronized on GPUs.
-%
-%
-%\paragraph{Vector Units}
-%Most modern CPUs and devices such as AMD GPUs integrates vector units that can process more than on data element at a time.
-%The OpenCL programming model exposes this with special data types such as \texttt{int4} where any operations on this type will be executed in the vector units.
-%In the absence of vector units in the hardware, the OpenCL compiler scalarizes the code automatically.
-%
-%\paragraph{Memory Coalescing}
-%On GPUs, requests to the main device memory are usually performed at the granularity of a cache line, which is typically 64 bytes.
-%Therefore, due to the organization of the threads in warps, it is important to ensure that consecutive threads access consecutive memory elements to maximize memory bandwidth.
-%
-%\paragraph{Local Memory}
-%Most GPUs have a per-core cache and a local memory shared among all local threads.
-%OpenCL defines a global and local address space.
-%On GPUs, local memory has a high bandwidth and low latency and is used to store frequently accessed data.
-%On CPUs, local memory is usually simply mapped to a region of global memory.
-%\from{PACT end}
-
-% include related work
-%\input{Chapters/Chapter2/related_work}

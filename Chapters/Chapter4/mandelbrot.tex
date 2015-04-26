@@ -60,26 +60,26 @@ void mandelbrot(const int width, const int height) {
   writeToDisk(image); }
 \end{lstlisting}
 
-We created a similar parallel implementation for computing a Mandelbrot fractal using OpenCL.
+We created a similar parallel implementation for computing a Mandelbrot fractal using \OpenCL.
 We compare the programming effort and performance for this implementation against our \SkelCL-based implementation.
 
 \subsubsection*{Programming effort}
 \label{sec:mandelbrot:programming}
 
-\SkelCL require a single line of code for initialization in the host code, whereas OpenCL requires a lengthy initialization of different data structures which takes about 20 lines of code.
+\SkelCL require a single line of code for initialization in the host code, whereas \OpenCL requires a lengthy initialization of different data structures which takes about 20 lines of code.
 
 The host code differs significantly between both implementations.
-In OpenCL, several API functions are called to load and build the kernel, pass arguments to it and to launch it using a specified work-group size.
+In \OpenCL, several \API functions are called to load and build the kernel, pass arguments to it and to launch it using a specified work-group size.
 In \SkelCL, the \map skeleton is used to compute the color of all pixels in the image.
 An \code{IndexMatrix} representing complex numbers, each of which is processed to produce a pixel of the Mandelbrot fractal, is passed to the \map skeleton upon execution.
-Specifying the work-group size is mandatory in OpenCL, whereas this is optional in \SkelCL.
+Specifying the work-group size is mandatory in \OpenCL, whereas this is optional in \SkelCL.
 
 \paragraph{Program size}
-The OpenCL-based implementation has 118 lines of code (kernel: 28~lines, host program: 90~lines) and is thus more than twice as long as the \SkelCL versions with 57 lines (26, 31) (see \autoref{fig:mandelbrot_runtime}).
+The \OpenCL-based implementation has 118 lines of code (kernel: 28~lines, host program: 90~lines) and is thus more than twice as long as the \SkelCL versions with 57 lines (26, 31) (see \autoref{fig:mandelbrot_runtime}).
 
 \paragraph{Kernel size}
 The kernel function is similar in both implementations: it takes a pixel's position (\ie, a complex number) as input, performs the iterative calculation for this pixel, and returns the pixel's color.
-However, while the input positions are given explicitly when using the \map skeleton in SkelCL, no positions are passed to the kernel in the OpenCL-based implementation.
+However, while the input positions are given explicitly when using the \map skeleton in \SkelCL, no positions are passed to the kernel in the \OpenCL-based implementation.
 The positions are implicitly determined based on the work-item's index.
 
 \subsubsection*{Performance experiments}
@@ -94,12 +94,11 @@ The positions are implicitly determined based on the work-item's index.
 
 
 We tested our implementations on a single \GPU of our test system to compute a Mandelbrot fractal of size 4096$\times$3072 pixels.
-In OpenCL, work-groups of 16$\times$16 are used; \SkelCL uses its default work-group size of~256 work-items.
+In \OpenCL, work-groups of 16$\times$16 are used; \SkelCL uses its default work-group size of~256 work-items.
 
 The results are shown in \autoref{fig:mandelbrot_runtime}.
 As compared to the runtime of the \SkelCL-based implementation (26 seconds), the implementation based on OpenCL (25 seconds) is faster by 4\%.
-Since \SkelCL is built on top of OpenCL, the performance difference of \SkelCL and OpenCL can be regarded as the overhead introduced by SkelCL.
-% Previous work~\cite{KongDiYaLiCaStMaZh2010} also reported that CUDA was usually faster than OpenCL, which also explains the higher performance of the implementation based on CUDA.
-The Mandelbrot application demonstrates that \SkelCL introduces a tolerable overhead of less than 5\% as compared to OpenCL.
-A clear benefit of this overhead is the reduced programming effort required by the SkelCL program.
+Since \SkelCL is built on top of \OpenCL, the performance difference of \SkelCL and \OpenCL can be regarded as the overhead introduced by \SkelCL.
+The Mandelbrot application demonstrates that \SkelCL introduces a tolerable overhead of less than 5\% as compared to \OpenCL.
+A clear benefit of this overhead is the reduced programming effort required by the \SkelCL program.
 

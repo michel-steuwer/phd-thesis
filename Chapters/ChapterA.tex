@@ -4,6 +4,8 @@
 \label{chapter:proofs}
 \addtocontents{lof}{\protect\vspace{\beforebibskip}}%
 
+This appendix present the proofs which show, that the rewrite rules presented in \autoref{section:rules} do not change the semantics of pattern-based programs.
+
 \section{Algorithmic Rules}
 
 This section shows the proofs for the algorithmic rules defined in \autoref{section:rules:algo}.
@@ -57,7 +59,7 @@ We repeat \autoref{eq:algo:iterate} here:
   \end{align*}
 \end{proof}
 \begin{proof}[Proof of option 2]
-  Proof by induction over the natural number $n$.
+  Proof by induction.
   We start with the base case, let $n=0$:
   \begin{align*}
       & \comment{definition of \iterateN}\\
@@ -93,7 +95,7 @@ We repeat \autoref{eq:algo:reorder} here:
 \end{rerule*}
 
 \begin{proof}[Proof]
-  We start with the expression $\map\ f \circ \reorder$.
+  We start with the expression $\map\ f \circ \reorder$.\\
   Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (\map\ f \circ \reorder)\ xs
@@ -115,7 +117,7 @@ We repeat \autoref{eq:algo:reorder} here:
       & \comment{definition of $y_i$}\\
       &= [f\ x_{\sigma(1)}, \ldots, f\ x_{\sigma(n)}]
   \end{align*}
-  As both expression we started with can be simplified to the same expression they are equal and, therefore, both options of the rule are correct.
+  As both expression we started with can be simplified to the same expression they have the same semantics, therefore, both options of the rule are correct.
 \end{proof}
 
 \paragraph{Split-join}
@@ -155,7 +157,8 @@ We repeat \autoref{eq:algo:red} here:
 \end{rerule*}
 
 \begin{proof}[Proof]
-  We start from the right-hand side and show the equality of both sides:
+  We start from the right-hand side and show the equality of both sides.
+  Let $xs = [x_1, \ldots, x_m]$.
   \begin{align*}
     &(\reduce\ (\oplus)\ \id_\oplus \circ \partRed\ (\oplus)\ id_\oplus\ n)\ xs\\
     &\qquad = \reduce\ (\oplus)\ \id_\oplus\ (\partRed\ (\oplus)\ id_\oplus\ n\ xs)\\
@@ -182,28 +185,30 @@ We repeat \autoref{eq:algo:part-red} here:
     & | &
       \partRed\ (\oplus)\ \id_\oplus\ n \circ \reorder\\
     & | &
-      \join \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m\\
+      \join_m \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m\\
     & | &
       \iterateN\ \log_m(n)\ (\partRed\ (\oplus)\ \id_\oplus\ m)
 \end{rerule*}
 
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 1]
-  Let $xs = [x_1, \ldots, x_m]$.\\
-  Choose $n=m$ $\Rightarrow$
+\begin{proof}[Proof of option 1]
+  Let $xs = [x_1, \ldots, x_m]$.
+  Since the rules can only be valid if their types matches it must hold $n=m$.
   \begin{align*}
-    &\qquad\qquad\qquad\qquad\qquad\qquad\qquad \comment{definition of \partRed}\\
-    &(\partRed\ (\oplus)\ \id_\oplus\ m)\ [x_1, \ldots, x_m] = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(m)}]\\
-    &\qquad \comment{commutativity of $\oplus$} \qquad \comment{definition of \reduce}\\
-    &\qquad = [x_1 \oplus \dots \oplus x_m]\qquad = \reduce\ (\oplus)\ \id_\oplus\ xs
+    &(\partRed\ (\oplus)\ \id_\oplus\ m)\ [x_1, \ldots, x_m]\\
+    &\qquad \comment{definition of \partRed}\\
+    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(m)}]\\
+    &\qquad \comment{commutativity of $\oplus$} \quad \comment{definition of \reduce}\\
+    &\qquad = [x_1 \oplus \dots \oplus x_m]\qquad =\quad \reduce\ (\oplus)\ \id_\oplus\ xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 2]
+
+\begin{proof}[Proof of option 2]
   Let $xs = [x_1, \ldots, x_m]$
   \begin{align*}
     &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
     &\qquad \comment{definition of \partRed}\\
-    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
-    &\qquad \comment{represent $\sigma$ with appropiate $\sigma'$ and $\sigma''$}\\
+    &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)},\ \ldots,\ x_{\sigma(m-n+1)} \oplus \dots \oplus x_{\sigma(m)}]\\
+    &\qquad \comment{represent permutation $\sigma$ with appropiate permutations $\sigma'$, $\sigma''$}\\
     &\qquad =
       \begin{aligned}[t]
         \big[&x_{\sigma'(\sigma''(1))} \oplus \dots \oplus x_{\sigma'(\sigma''(n))}, \ldots,\\
@@ -216,42 +221,56 @@ We repeat \autoref{eq:algo:part-red} here:
     &\qquad = (\partRed\ (\oplus)\ \id_\oplus\ n \circ \reorder)\ xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 3]
+
+\begin{proof}[Proof of option 3]
   Let $xs = [x_1, \ldots, x_l]$.
   \begin{align*}
     &\partRed\ (\oplus)\ \id_\oplus\ n\ xs\\
     &\qquad \comment{definition of \partRed}\\
     &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
-    &\qquad \comment{represent $\sigma$ with appropiate $\sigma_i$}\\
-    &\qquad = [x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)}, \ldots, x_{\sigma_{l/n}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/n}(l)}]\\
-    &\qquad \comment{definition of \join}\\
-    &\qquad = \join\
-      \begin{aligned}[t]
-        \big[&[x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)}],\\
-             &\ldots,\\
-             &[x_{\sigma_{l/n}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/n}(l)}]\big]
-      \end{aligned}\\
+    &\qquad \comment{represent permutation $\sigma$ with appropiate permutations $\sigma_i$}\\
+    &\qquad 
+      \begin{array}{ll}
+      = & \big[\ x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)},\ \ldots,\\
+        & \ \ \ \ x_{\sigma_1(m-n+1)} \oplus \dots \oplus x_{\sigma_1(m)},\\
+        & \ \ \ \ldots,\\
+        & \ \ \ x_{\sigma_{l/m}(l-m+1)} \oplus \dots \oplus x_{\sigma_{l/m}(l-m+n+1)},\ \ldots,\\
+        & \ \ \ \ x_{\sigma_{l/m}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/m}(l)}\ \big]
+      \end{array}\\
+    &\qquad \comment{definition of $\join_m$}\\
+    &\qquad
+      \begin{array}{lll}
+        = \join_m\ \big[&  &[\ x_{\sigma_1(1)} \oplus \dots \oplus x_{\sigma_1(n)},\\
+             &  &\ \ \ldots,\\
+             &  &\ \ x_{\sigma_1(m-n+1)} \oplus \dots \oplus x_{\sigma_1(m)}],\\
+             &\multicolumn{2}{l}{\ldots,}\\
+             &  &[\ x_{\sigma_{l/m}(l-m+1)} \oplus \dots \oplus x_{\sigma_{l/m}(l-m+n+1)},\\
+             &  &\ \ \ldots,\\
+             &  &\ \ x_{\sigma_{l/m}(l-n+1)} \oplus \dots \oplus x_{\sigma_{l/m}(l)}]\qquad\big]
+      \end{array}\\
     &\qquad \comment{definition of \partRed}\\
-    &\qquad = \join\
+    &\qquad = \join_m\
       \begin{aligned}[t]
-        \big[&\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, \ldots, x_m],\\
-             &\ldots,\\
-             &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_{l-m+1+}, \ldots, x_l]\big]
+        \big[\ &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, \ldots, x_m],\\
+               &\ldots,\\
+               &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_{l-m+1+}, \ldots, x_l]\ \big]
       \end{aligned}\\
     &\qquad \comment{definition of \map}\\
-    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
+    &\qquad = \join_m\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
     &\qquad\qquad \big[[x_1, \ldots, x_m], \ldots, [x_{l-m+1+}, \ldots, x_l]\big]\big)\\
     &\qquad \comment{definition of \splitN}\\
-    &\qquad = \join\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\splitN\ m\ xs)\big)\\
-    &\qquad = (\join \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m)\ xs
+    &\qquad = \join_m\ \big(\map\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\splitN\ m\ xs)\big)\\
+    &\qquad = (\join_m \circ \map\ (\partRed\ (\oplus)\ \id_\oplus\ n) \circ \splitN\ m)\ xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:part-red}; option 4]
-  We will proof this obvious equivalent reformulation of the rule:
+\newpage
+
+\begin{proof}[Proof of option 4]
+  We will proof the following obvious equivalent reformulation of the rule:
   \begin{align*}
     \partRed\ (\oplus)\ \id_\oplus\ n^m \rightarrow \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)
   \end{align*}
-  Proof by induction over $m$. We start with the base case, let $m= 0$.
+  Proof by induction. We start with the base case, let $m= 0$.
   \begin{align*}
     \partRed\ (\oplus)\ \id_\oplus\ n^0\ xs &= \partRed\ (\oplus)\ \id_\oplus\ 1\ xs\\
       & \comment{definition of \partRed}\\
@@ -266,17 +285,17 @@ We repeat \autoref{eq:algo:part-red} here:
     &\qquad \comment{definition of \partRed}\\
     &\qquad = [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n^m)}, \ldots, x_{\sigma(l-n^m+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
     &\qquad \comment{accociativity of $\oplus$}\\
-    &\qquad = \begin{aligned}[t]
-       [\ &(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma((n^{m-1}-1)\times n +1)} \oplus \dots \oplus x_{\sigma((n^{m-1})\times n)}),\\
-        &\ldots,\\
-        &
-          \begin{aligned}[b]
-            &(x_{\sigma(((l/n-(n^{m-1})+1)-1)\times n + 1)} \oplus \dots \oplus x_{\sigma((l/n-(n^{m-1})+1)\times n)})\\
-            &\quad \oplus \dots \oplus (x_{\sigma((l/n-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(l/n\times n)})
-          \end{aligned}\ ]\\
-      \end{aligned}\\
+%    &\qquad = \begin{aligned}[t]
+%       [\ &(x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}) \oplus \dots \oplus (x_{\sigma((n^{m-1}-1)\times n +1)} \oplus \dots \oplus x_{\sigma((n^{m-1})\times n)}),\\
+%        &\ldots,\\
+%        &
+%          \begin{aligned}[b]
+%            &(x_{\sigma(((l/n-(n^{m-1})+1)-1)\times n + 1)} \oplus \dots \oplus x_{\sigma((l/n-(n^{m-1})+1)\times n)})\\
+%            &\quad \oplus \dots \oplus (x_{\sigma((l/n-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(l/n\times n)})
+%          \end{aligned}\ ]\\
+%      \end{aligned}\\
     &\qquad = [y_1 \oplus \dots \oplus y_{(n^{m-1})}, \ldots, y_{(l/n - (n^{m-1}))} \oplus \dots \oplus y_{(l/n)}]\\
-    &\qquad\qquad \text{where}\ y_i = x_{\sigma((i-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(i\times n)}\\
+    &\qquad\qquad \text{where}\ y_i = (x_{\sigma((i-1)\times n + 1)} \oplus \dots \oplus x_{\sigma(i\times n)})\\
     &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\ [y_1, \ldots, y_{l/n}]\\
     &\qquad \comment{definition of $y_i$}\\
     &\qquad = \partRed\ (\oplus)\ \id_\oplus\ n^{(m-1)}\\
@@ -285,7 +304,8 @@ We repeat \autoref{eq:algo:part-red} here:
     &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
     &\qquad\qquad [x_{\sigma(1)} \oplus \dots \oplus x_{\sigma(n)}, \ldots, x_{\sigma(l-n+1)} \oplus \dots \oplus x_{\sigma(l)}]\\
     &\qquad \comment{definition of \partRed}\\
-    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ (\partRed\ (\oplus)\ \id_\oplus\ n\ xs)\\
+    &\qquad = \iterateN\ (m-1)\ (\partRed\ (\oplus)\ \id_\oplus\ n)\\
+    &\qquad \qquad (\partRed\ (\oplus)\ \id_\oplus\ n\ xs)\\
     &\qquad \comment{definition of \iterateN}\\
     &\qquad = \iterateN\ m\ (\partRed\ (\oplus)\ \id_\oplus\ n)\ xs
   \end{align*}
@@ -320,8 +340,7 @@ We repeat \autoref{eq:algo:part-red} here:
 %  \end{align*}
 \end{proof}
 
-
-
+\newpage
 \paragraph{Simplification Rules}
 
 We repeat \autoref{eq:algo:simpl} here:
@@ -332,7 +351,7 @@ We repeat \autoref{eq:algo:simpl} here:
   \asVector\ n \circ \asScalar_n & \rightarrow & \id
 \end{rerule*}
 
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 1]\strut\\
+\begin{proof}[Proof of option 1]
   Let $xs = [x_1, \ldots, x_m]$.
   \begin{align*}
     (\join_n \circ \splitN\ n)\ xs &= \join_n\ (\splitN\ n\ xs)\\
@@ -342,7 +361,7 @@ We repeat \autoref{eq:algo:simpl} here:
       &= xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 2]\strut\\
+\begin{proof}[Proof of option 2]
   Let $xs = \big[ [x_1, \ldots, x_n], \ldots, [x_{m-n+1}, \ldots, x_m]\big]$.
   \begin{align*}
     (\splitN\ n \circ \join_n)\ xs &= \splitN\ n\ (\join_n\ xs)\\
@@ -352,7 +371,7 @@ We repeat \autoref{eq:algo:simpl} here:
       &= xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 3]\strut\\
+\begin{proof}[Proof of option 3]
   Let $xs = [x_1, \ldots, x_m]$.
   \begin{align*}
     &(\asScalar_n \circ \asVector\ n)\ xs = \asScalar_n\ (\asVector\ n\ xs)\\
@@ -362,7 +381,7 @@ We repeat \autoref{eq:algo:simpl} here:
     &\qquad = xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:simpl}; option 4]\strut\\
+\begin{proof}[Proof of option 4]
   Let $xs = [\{x_1, \ldots, x_n\}, \ldots, \{x_{m-n+1}, \ldots, x_{m}\}]$.
   \begin{align*}
     &(\asVector\ n \circ \asScalar_n)\ xs = \asVector\ n\ (\asScalar_n\ xs)\\
@@ -387,7 +406,7 @@ We repeat \autoref{eq:algo:fusion} here:
       &\hspace{-.75em} a \oplus (f\ b)&\hspace{-.75em}\big)\ \id_\oplus
 \end{rerule*}
 
-\begin{proof}[Proof of \autoref{eq:algo:fusion}; option 1]
+\begin{proof}[Proof of option 1]
   Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     (\map\ f\circ \map\ g)\ xs
@@ -402,7 +421,7 @@ We repeat \autoref{eq:algo:fusion} here:
       &= \map (f\circ g)\ xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:algo:fusion}; option 2]
+\begin{proof}[Proof of option 2]
   Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     &(\reduceSeq\ (\oplus)\ \id_\oplus \circ \map\ f)\ xs\\
@@ -425,11 +444,11 @@ We repeat \autoref{eq:algo:fusion} here:
 
 
 
+\newpage
 
 
 
-
-\section{OpenCL-Specific Rules}
+\section{\OpenCL-Specific Rules}
 
 This section shows the proofs for the \OpenCL-specific rules defined in \autoref{section:rules:opencl}.
 
@@ -477,7 +496,7 @@ We repeat \autoref{eq:low:stride} here:
   \reorder & \rightarrow & \textit{id}\quad |\quad \reorderStride\ s
 \end{rerule*}
 
-\begin{proof}[Proof of \autoref{eq:low:stride}; option 1]
+\begin{proof}[Proof of option 1]
   Let $xs = [x_1, \ldots, x_n]$.
   \begin{align*}
     \reorder\ xs &= [x_{\sigma(1)}, \ldots, x_{\sigma(n)}]\\
@@ -485,15 +504,16 @@ We repeat \autoref{eq:low:stride} here:
                  & [x_{\sigma(1)}, \ldots, x_{\sigma(n)}] = [x_1, \ldots, x_n] = \id\ xs
   \end{align*}
 \end{proof}
-\begin{proof}[Proof of \autoref{eq:low:stride}; option 2]
+
+\begin{proof}[Proof of option 2]
   The definition of \reorderStride is as follows:
   \begin{align*}
     &\reorderStride\ s\ [x_1, \ldots, x_m] = [y_1, \ldots, y_m]\\
-    &\qquad \text{where}\ y_i = x_{i\ \text{\normalfont div } n + s\times (i \bmod{n})}
+    &\qquad \text{where}\ y_i = x_{(i-1)\ \text{\normalfont div } n + s\times ((i-1) \bmod{n}) + 1}
   \end{align*}
-  We can express the relationship between $ys$ and $xs$ as a function $\sigma$ with: $x_\sigma(i) = y_i$, \ie, $\sigma(i) = (i\ \text{div}\ n + s\times (i \bmod{n})$.
+  We can express the relationship between $ys$ and $xs$ as a function $\sigma$ with: $x_\sigma(i) = y_i$, \ie, $\sigma(i) = ((i-1)\ \text{div}\ n + s\times ((i-1) \bmod{n}) + 1$.
   We want to show that $\sigma$ is a permutation of the interval $[1, m]$, so that $\sigma$ is a valid choice when rewriting \reduce.
-  We show the $\sigma$ is a permutation by proofing that $\sigma$ is a bijective function mapping indices from the interval $[1,m]$ in the same interval.
+  We show the $\sigma$ is a permutation by proving that $\sigma$ is a bijective function mapping indices from the interval $[1,m]$ in the same interval.
 
   First we show the injectivity, by showing:
   \begin{align*}
@@ -523,38 +543,43 @@ We repeat \autoref{eq:low:stride} here:
 %  As $\sigma(i) = 0$ and in both cases $\sigma(j)>0$: $\sigma(i) \neq \sigma(j)$ for $i = 0$.\\[1em]
 %
 %  We now proof the remaining case where $i\neq 0$.
-  As $i,j\in [1,m]$ and by definition of $\bmod{}$ and div every summand in $\sigma$ is greater than zero.
+  As $i,j\in [1,m]$ and by definition of $\bmod{}$ and div every summand in $\sigma$ is positive.
   Therefore, for $\sigma(i) = \sigma(j)$ to be true all of their corresponding summands have to be equal.
   We will show, that this can never be the case.
   Let us write $j$ as $j=i+k$ where $0<k<m-1$.
 
-  If we assume $i\ \text{div}\ n = (i+k)\ \text{div}\ n$:
-\todo{investigate!}
+  If we assume: $(i-1)\ \text{div}\ n = (i+k-1)\ \text{div}\ n$
   \begin{align*}
-    &\Rightarrow i\bmod{n} \neq (i+k)\bmod{n}\\
-    &\comment{why?}\\
-    &\Rightarrow s \times (i\bmod{n}) \neq s \times ((i+k)\bmod{n})\\
-    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \neq (j\ \text{div}\ n) + s\times (j\bmod{n})
+    &\comment{definition of \text{div} \& $\bmod{}$ and $i,k > 0$}\\
+    &\Rightarrow (i-1)\bmod{n} \neq (i+k-1)\bmod{n}\\
+    &\comment{$s>0$}\\
+    &\Rightarrow s \times ((i-1)\bmod{n}) \neq s \times ((i+k-1)\bmod{n})\\[.5em]
+    &\Rightarrow ((i-1)\ \text{div}\ n) + s\times ((i-1)\bmod{n}) + 1\\
+    &\quad \neq ((j-1)\ \text{div}\ n) + s\times ((j-1)\bmod{n}) + 1
   \end{align*}
-  If we assume the opposite $i\bmod{n} = (i+k)\bmod{n}$:
-  \begin{align*}
-    &\Rightarrow i\ \text{div}\ n \neq (i+k)\ \text{div}\ n\\
-    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \neq (j\ \text{div}\ n) + s\times (j\bmod{n})
-  \end{align*}
-  This shows the injectivity of $\sigma$.\\[1em]
 
+  If we assume the opposite $(i-1)\bmod{n} = (i+k-1)\bmod{n}$:
+  \begin{align*}
+    &\comment{definition of \text{div} \& $\bmod{}$ and $i,k > 0$}\\
+    &\Rightarrow (i-1)\ \text{div}\ n \neq (i+k-1)\ \text{div}\ n\\[.5em]
+    &\Rightarrow ((i-1)\ \text{div}\ n) + s\times ((i-1)\bmod{n}) + 1\\
+    &\quad \neq ((j-1)\ \text{div}\ n) + s\times ((j-1)\bmod{n}) + 1
+  \end{align*}
+  This shows the injectivity of $\sigma$.\\[.5em]
+
+  \noindent
   Now we show the surjectivity, by showing:
   \begin{align*}
     \forall i \in [1, m]\quad \sigma(i)\in [1, m]
   \end{align*}
-
   We know that $m= s\times n$
   \begin{align*}
-    &\Rightarrow i\ \text{div}\ n \leq s \quad \forall i\in [1,m]
+    &\Rightarrow (i-1)\ \text{div}\ n \leq s \quad \forall i\in [1,m]
   \end{align*}
-  By definition of $\bmod{}$: $(i\bmod{n}) \leq (n-1)\quad \forall i\in [1,m]$
+  By definition of $\bmod{}$: $((i-1)\bmod{n}) \leq (n-1)\quad \forall i\in [1,m]$
   \begin{align*}
-    &\Rightarrow (i\ \text{div}\ n) + s\times (i\bmod{n}) \leq s + s\times (n-1) = s\times n = m
+    &\Rightarrow ((i-1)\ \text{div}\ n) + s\times ((i-1)\bmod{n}) \leq s + s\times (n-1)\\
+    &\quad = s\times n = m
   \end{align*}
   As already discussed is $\sigma(i)>0\ \forall i\in [1,m]$, because of the definitions of $\bmod{}$, div, and $\sigma$.
 
@@ -626,32 +651,38 @@ We repeat \autoref{eq:algo:vect} here:
 
 %----------------------------------------------------------------------------------------
 
-\chapter{Derivations}
+\chapter{Derivations for Parallel Reduction}
 % \addtocontents{lof}{\protect\vspace{\beforebibskip}}%
 \label{chapter:derivations}
 
-\begin{figure*}[t]
+This appendix shows the derivations which transform the high-level expression $\reduce\ (+)\ 0$ into the low-level expressions shown in \autoref{sec:deriving:reduce}.
+The numbers above the equality sign refer to the rules from \autoref{fig:algoRules} and \autoref{fig:lowRules}.
+
+\paragraph{First Pattern-Based Expression}
+This is the derivation for the expression shown in \autoref{eq:reduce11}.
+
+\small
+
 \begin{align*}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
 %
   \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
+      \reduce \circ \partRed\ (+)\ 0\ 128\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 128
+      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0\ 128)\ \circ \splitN\ 128
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\iterateN\ 7\ (\partRed\ (+)\ 0\ 2)\ \big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 128
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2)\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
 %
@@ -659,7 +690,7 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2)\ \circ\\
     &\qquad\quad\map\ id\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
@@ -668,7 +699,7 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2)\ \circ\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
@@ -677,20 +708,13 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:low:map}}{=\hspace{.2em}}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2)\ \circ\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
-%
-  &\ldots
 \end{align*}
-\caption{reduce10: This is eq. to Listings 5.1--5.2.}
-\end{figure*}
 
-\begin{figure*}[t]
 \begin{align*}
-  &\hspace{.5em}\ldots\\
-%
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}\&\ref{fig:low:red}}{=\hspace{.2em}}\\[-.75em]
     &\qquad\ \ 
@@ -711,37 +735,45 @@ We repeat \autoref{eq:algo:vect} here:
   \end{aligned}
 %  
 \end{align*}
-\caption{reduce10 continued}
-\end{figure*}
 
-\begin{figure*}[t]
+\normalsize
+
+
+
+
+
+\paragraph{Avoiding Interleaved Addressing}
+This is the derivation for the expression shown in \autoref{eq:reduce12}.
+
+\small
+
 \begin{align*}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
 %
   \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
+      \reduce \circ \partRed\ (+)\ 0\ 128\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 128
+      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0\ 128)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 128
+    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0\ 2)\ \big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0\ \circ \reorder)\ \big)\ \circ \splitN\ 128
+    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0\ 2\ \circ \reorder)\ \big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:reorder}}{=\hspace{.2em}}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
 %
@@ -749,7 +781,7 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\ \circ\\
     &\qquad\quad\map\ id\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
@@ -758,26 +790,20 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\ \circ\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
 %
-  &\ldots
 \end{align*}
-\caption{reduce12: This is eq. to Listings 5.1--5.2.}
-\end{figure*}
 
-\begin{figure*}[t]
 \begin{align*}
-  &\hspace{.5em}\ldots\\
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:low:map}}{=\hspace{.2em}}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorder)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\ \circ \reorder)\ \circ\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
@@ -787,8 +813,7 @@ We repeat \autoref{eq:algo:vect} here:
     &\qquad\ \ 
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorder)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorder)\ \circ\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
@@ -797,8 +822,8 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:low:stride}}{=\hspace{.2em}}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ ((size\ xs)/2)\ \$\ xs)\ \circ\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\\
     &\qquad\big)\ \circ \splitN\ 128
   \end{aligned}\\[.5em]
@@ -807,52 +832,63 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:low:mem}}{=\hspace{.2em}}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad \iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s\ )\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ ((size\ xs)/2)\ \$\ xs)\ \circ\\
     &\qquad \circ \join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\\
     &\qquad\big) \circ \splitN\ 128
   \end{aligned}
 %  
 \end{align*}
-\caption{reduce12 continued}
-\end{figure*}
 
-\begin{figure*}[t]
+\normalsize
+
+
+
+
+\paragraph{Increase Computational Intensity per Work-item}
+This is the derivation for the expression shown in \autoref{eq:reduce13}.
+
+\small
+
 \begin{align*}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
 %
   \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
+      \reduce \circ \partRed\ (+)\ 0\ 256\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 256
+      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0\ 256)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 8\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 256
+    &\qquad\quad\iterateN\ 8\ (\partRed\ (+)\ 0\ 2)\ \big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 8\ (\partRed\ (+)\ 0\ \circ \reorder)\ \big)\ \circ \splitN\ 256
+    &\qquad\quad\iterateN\ 8\ (\partRed\ (+)\ 0\ 2\ \circ \reorder)\ \big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:reorder}}{=\hspace{.2em}}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
+%
+\end{align*}
+
+\begin{align*}
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
@@ -860,7 +896,7 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
+    &\qquad\quad\iterateN\ 8\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\ \circ\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
@@ -868,26 +904,17 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
-%
-  &\ldots
-\end{align*}
-\caption{reduce13: This is eq. to Listings 5.4}
-\end{figure*}
-
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{.5em}\ldots\\
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:low:map}}{=\hspace{.2em}}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \mapLocal\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\join \circ \mapLocal\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
@@ -896,8 +923,7 @@ We repeat \autoref{eq:algo:vect} here:
     &\qquad\ \ 
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorder)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorder)\ \circ\\
     &\qquad\quad\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorder\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
@@ -906,8 +932,8 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:low:stride}}{=\hspace{.2em}}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \mapLocal\ (\mapSeq\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s)\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ ((size\ xs)/2)\ \$\ xs )\ \circ\\
     &\qquad\quad\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
     &\qquad\qquad\reorderStride\ 128\\
     &\qquad\big)\ \circ \splitN\ 256
@@ -917,62 +943,60 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:low:mem}}{=\hspace{.2em}}
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s\ )\ \circ\\
+    &\qquad\quad\iterateN\ 7\ (\lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ ((size\ xs)/2)\ \$\ xs )\ \circ\\
     &\qquad\quad\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
     &\qquad\qquad\reorderStride\ 128\\
-    &\qquad\big) \circ \splitN\ 128
+    &\qquad\big) \circ \splitN\ 256
   \end{aligned}
 %  
 \end{align*}
-\caption{reduce13 continued}
-\end{figure*}
 
-\begin{figure*}[t]
+\normalsize
+
+
+
+
+\paragraph{Avoid Synchronization Inside a Warp}
+This is the derivation for the expression shown in \autoref{eq:reduce14}.
+
+\small
+
 \begin{align*}
   &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
 %
   \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \partRed\ (+)\ 0\\[.5em]
+      \reduce \circ \partRed\ (+)\ 0\ 256\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0)\ \circ \splitN\ 256
+      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0\ 256)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\iterateN\ 3\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 256
+      \reduce \circ \join \circ \map\ \big(\ \iterateN\ 8\ (\partRed\ (+)\ 0\ 2)\ \big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\partRed\ (+)\ 0)\ \big)\ \circ \splitN\ 256
+    &\qquad\quad\iterateN\ 6\ (\partRed\ (+)\ 0\ 2)\ \circ\\
+    &\qquad\quad\iterateN\ 2\ (\partRed\ (+)\ 0\ 2)\ \big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\partRed\ (+)\ 0\ \circ \reorder)\ \big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0\ \circ \reorder) \circ \splitN\ 2)\\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ \iterateN\ 2\ (\partRed\ (+)\ 0\ 2\ \circ \reorder)\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
   &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:reorder}}{=\hspace{.2em}}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2 \circ \reorder)\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
@@ -980,8 +1004,8 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\map\ id\ \circ \\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
@@ -989,79 +1013,63 @@ We repeat \autoref{eq:algo:vect} here:
     &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 2\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\ \circ\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
-%
-  &\ldots
-\end{align*}
-\caption{reduce14: This is eq. to Listings 5.5}
-\end{figure*}
-
-\begin{figure*}[t]
-\begin{align*}
-  &\hspace{.5em}\ldots\\
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\partRed\ (+)\ 0\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0)\ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \iterateN\ 6\ (\partRed\ (+)\ 0)\ \big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\hspace{-2em}\quad\begin{aligned}
-    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
-      \reduce \circ \join \circ \map\ \big(\\
-    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \iterateN\ 6\ (\partRed\ (+)\ 0\ \circ \reorder)\ \big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
-    &\qquad\big)\ \circ \splitN\ 256
-  \end{aligned}\\[.5em]
-%
-  &\ldots
 \end{align*}
-\caption{reduce14: continued}
-\end{figure*}
 
-\begin{figure*}[t]
 \begin{align*}
-  &\hspace{.5em}\ldots\\
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
-    &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \iterateN\ 6\ (\join \circ \map\ (\partRed\ (+)\ 0)\circ \splitN\ 2\ \circ \reorder)\ \big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 64)\ \splitN\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\big)\ \circ \splitN\ 256
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\ \iterateN\ 6\ (\partRed\ (+)\ 0\ 2)\ \big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\big)\ \circ \splitN\ 256
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\ \iterateN\ 6\ (\partRed\ (+)\ 0\ 2\ \circ \reorder)\ \big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\big)\ \circ \splitN\ 256
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\ \iterateN\ 6\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2)\circ \splitN\ 2 \circ\\
+    &\qquad\qquad\reorder)\ \big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
@@ -1070,26 +1078,21 @@ We repeat \autoref{eq:algo:vect} here:
       \reduce \circ \join \circ \map\ \big(\\
     &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
     &\qquad\quad\join \circ \map\ \big(\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\ \circ\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\ \circ\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\ \circ\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\ \circ\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\ \circ\\
-    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0))\circ \splitN\ 2 \circ \reorder\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\\
     &\qquad\quad\big)\circ \splitN\ 64\ \circ\\
-    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder)\ \circ\\
-    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0) \circ \splitN\ 2\circ \reorder\\
+    &\qquad\quad\iterateN\ 1\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder)\ \circ\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\circ \reorder\\
     &\qquad\big)\ \circ \splitN\ 256
   \end{aligned}\\[.5em]
 %
-  &\ldots
 \end{align*}
-\caption{reduce14: continued}
-\end{figure*}
 
-\begin{figure*}[t]
 \begin{align*}
-  &\hspace{.5em}\ldots\\
 %
   &\hspace{-2em}\quad\begin{aligned}
     &\overset{\ref{fig:low:map}\ \&\ \ref{fig:algo:red}\ \&\ \ref{fig:low:red}\ \&\ \ref{fig:low:mem}}{=\hspace{.2em}}\\
@@ -1097,27 +1100,273 @@ We repeat \autoref{eq:algo:vect} here:
       \reduce \circ \join \circ \mapWorkgroup\ \big(\\
     &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
     &\qquad\quad \join \circ \mapWarp\ (\\
-    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad\quad \reorderStride\ 1\ \circ\\
-    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad\quad \reorderStride\ 2\ \circ\\
-    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad\quad \reorderStride\ 4\ \circ\\
-    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad\quad \reorderStride\ 8\ \circ\\
-    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad\quad \reorderStride\ 16\ \circ\\
-    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad\quad \reorderStride\ 32\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 1\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 2\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 4\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 8\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 16\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 32\\
     &\qquad\quad) \circ \splitN\ 64\ \circ\\
-    &\qquad\quad \iterateN\ 1\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
-    &\qquad\qquad \reorderStride\ s\ )\ \circ\\
+    &\qquad\quad \iterateN\ 1\ (\lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ )\ \circ\\
     &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
     &\qquad\qquad \reorderStride\ 128\\
     &\qquad\big) \circ \splitN\ 256
   \end{aligned}
 %  
 \end{align*}
-\caption{reduce14 continued}
-\end{figure*}
 
+\normalsize
+
+
+\paragraph{Complete Loop Unrolling}
+This is the derivation for the expression shown in \autoref{eq:reduce15}.
+We continue with the last expression from the previous derivation.
+
+\small
+
+\begin{align*}
+  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\text{derivation above}}{=\hspace{.2em}}\\
+    &\qquad
+      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad \join \circ \mapWarp\ (\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 1\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 2\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 4\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 8\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 16\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 32\\
+    &\qquad\quad) \circ \splitN\ 64\ \circ\\
+    &\qquad\quad \iterateN\ 1\ (\lambda\ xs\ .\ \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ ((size\ xs)/2)\ \$\ xs\ )\ \circ\\
+    &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ 128\\
+    &\qquad\big) \circ \splitN\ 256
+  \end{aligned}
+\end{align*}
+
+\begin{align*}
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}\\
+    &\qquad
+      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+    &\qquad\quad \join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad \join \circ \mapWarp\ (\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 1\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 2\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 4\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 8\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 16\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 32\\
+    &\qquad\quad) \circ \splitN\ 64\ \circ\\
+    &\qquad\quad  \join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 64)\ \circ\\
+    &\qquad\quad \join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad \reorderStride\ 128\\
+    &\qquad\big) \circ \splitN\ 256
+  \end{aligned}
+%  
+\end{align*}
+
+\normalsize
+
+
+\paragraph{Fully Optimized Implementation}
+This is the derivation for the expression shown in \autoref{eq:reduce16}.
+
+\small
+
+\begin{align*}
+  &\hspace{-1.5em}vecSum = \reduce\ (+)\ 0
+%
+  \overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \partRed\ (+)\ 0\ blockSize\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ (\partRed\ (+)\ 0\ blockSize)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\iterateN\ \log_{2}(blockSize)\ (\partRed\ (+)\ 0\ 2)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\iterateN\ 7\ (\partRed\ (+)\ 0\ 2)\ \circ\\
+    &\qquad\quad\iterateN\ (\log_{2}(blockSize/128))\ (\partRed\ (+)\ 0\ 2)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\iterateN\ 6\ (\partRed\ (+)\ 0\ 2)\ \circ\\
+    &\qquad\quad\iterateN\ 1\ (\partRed\ (+)\ 0\ 2)\ \circ\\
+    &\qquad\quad\iterateN\ (\log_{2}(blockSize/128))\ (\partRed\ (+)\ 0\ 2)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+\end{align*}
+
+\begin{align*}
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:identity}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\map\ id\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:splitjoin}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 64)\ \splitN\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\ \iterateN\ 6\ (\partRed\ (+)\ 0\ 2)\ \big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\ \iterateN\ 6\ (\partRed\ (+)\ 0\ 2\ \circ \reorder)\ \big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+\end{align*}
+
+\begin{align*}
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\ \iterateN\ 6\ (\join \circ \map\ (\partRed\ (+)\ 0\ 2)\ \circ \splitN\ 2\ \circ\\
+    &\qquad\qquad\reorder)\ \big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:iterate}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\\
+    &\qquad\quad\big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\\
+    &\qquad\quad\big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\partRed\ (+)\ 0\ 2\circ \reorder\ \circ \\
+    &\qquad\quad\partRed\ (+)\ 0\ (blockSize/128)\circ \reorder \\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+\end{align*}
+
+\begin{align*} 
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:algo:red}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \map\ \big(\\
+    &\qquad\quad\join \circ \map\ (\map\ id) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \map\ \big(\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\ \circ\\
+    &\qquad\qquad \join \circ \map\ (\partRed\ (+)\ 0\ 2))\circ \splitN\ 2 \circ \reorder\\
+    &\qquad\quad\big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ 2) \circ \splitN\ 2\ \circ \reorder\ \circ \\
+    &\qquad\quad\join \circ \map\ (\partRed\ (+)\ 0\ (blockSize/128)) \circ\\
+    &\qquad\quad \splitN\ (blockSize/128)\circ \reorder\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}\\[.5em]
+%
+  &\hspace{-2em}\quad\begin{aligned}
+    &\overset{\ref{fig:low:map}\ \&\ \ref{fig:algo:red}\ \&\ \ref{fig:low:red}\ \&\ \ref{fig:low:mem}}{=\hspace{.2em}}
+      \reduce \circ \join \circ \mapWorkgroup\ \big(\\
+    &\qquad\quad\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ id)) \circ \splitN\ 1\ \circ\\
+    &\qquad\quad\join \circ \mapWarp\ \big(\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0))\circ \splitN\ 2 \circ \reorderStride\ 1\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0))\circ \splitN\ 2 \circ \reorderStride\ 2\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0))\circ \splitN\ 2 \circ \reorderStride\ 4\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0))\circ \splitN\ 2 \circ \reorderStride\ 8\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0))\circ \splitN\ 2 \circ \reorderStride\ 16\ \circ\\
+    &\qquad\qquad \join \circ \mapLane\ (\reduceSeq\ (+)\ 0))\circ \splitN\ 2 \circ \reorderStride\ 32\\
+    &\qquad\quad\big)\circ \splitN\ 64\ \circ\\
+    &\qquad\quad\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2\ \circ \reorderStride\ 64\ \circ \\
+    &\qquad\quad\join \circ \toLocal\ (\mapLocal\ (\reduceSeq\ (+)\ 0)) \circ\\
+    &\qquad\quad \splitN\ (blockSize/128)\circ \reorderStride\ 128\\
+    &\qquad\big)\ \circ \splitN\ blockSize
+  \end{aligned}
+%  
+\end{align*}
+
+\normalsize

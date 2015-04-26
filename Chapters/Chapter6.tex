@@ -16,8 +16,8 @@ For all applications we show performance results comparing the generated \OpenCL
 
 \section{Experimental Setup}
 We used three hardware platforms: an Nvidia GeForce GTX 480 \GPU, an AMD Radeon HD 7970 \GPU and a dual socket Intel Xeon E5530 server, with 8 cores in total.
-We used the latest \OpenCL runtime from Nvidia (CUDA-SDK 5.5), AMD (AMD-APP 2.8.1) and Intel (XE 2013 R3).
-The GPU drivers installed were 310.44 for Nvidia and 13.1 for AMD on our Linux system.
+We used the latest \OpenCL runtime from Nvidia (\CUDA-SDK 5.5), AMD (AMD-APP 2.8.1) and Intel (XE 2013 R3).
+The \GPU drivers installed were 310.44 for Nvidia and 13.1 for AMD on our Linux system.
 
 We use the profiling \APIs from \OpenCL and \CUDA to measure kernel execution time and the \textit{gettimeofday} function for the \CPU implementation.
 We exclude the data transfer time to and from the \GPU in all runtime numbers reported in this chapter, as we want to focus on the quality of the generated \OpenCL kernel code.
@@ -122,7 +122,7 @@ the third expression (\autoref{fig:reduce:expr:3}) corresponds to the fully opti
 \end{figure}
 
 \autoref{fig:reduce:expr:performance} shows the performance of these three versions compared to the corresponding native \OpenCL implementations by Nvidia and two additional libraries providing implementations of parallel reduction on \GPUs.
-CUBLAS~\cite{cuBLAS} represents the CUDA-specific implementation of BLAS that only runs on Nvidia hardware.
+\CUBLAS~\cite{cuBLAS} represents the \CUDA-specific implementation of \BLAS that only runs on Nvidia hardware.
 Here we used the \emph{asum} benchmark for our comparison which performs a parallel reduction but in addition applies a function computing the absolute value on every element of the input vector.
 We also include a parallel reduction implemented with Thrust~\cite{BellHo2011}, a library for simplified \GPU programming developed by Nvidia and based on \CUDA.
 
@@ -130,7 +130,7 @@ The results are reported in GB/s, \ie, the achieved memory bandwidth which is co
 This metric allows to compare each version against the hardware bandwidth limit.
 The performance of the generated \OpenCL code from our three expressions matches, or even slightly outperforms, the corresponding native \OpenCL implementations written by Nvidia.
 These results show that our systematically generated code can offer high performance, once the right set of optimizations -- encoded in our rewrite rules -- is applied.
-The performance of our generated code for the fully optimized low-level expression even matches the performance of the highly optimized CUBLAS library written by Nvidia and outperforms the Thrust library.
+The performance of our generated code for the fully optimized low-level expression even matches the performance of the highly optimized \CUBLAS library written by Nvidia and outperforms the Thrust library.
 
 \subsection{Automatically Applying of the Rewrite Rules}
 \label{sec:codeGeneration-evaluation:automatic}
@@ -236,9 +236,9 @@ While this does not seem to affect performance much, a better search strategy co
 \autoref{fig:reduce:expr:automatic:performance} shows the performance of the code generated for the three expressions performing a parallel reduction shown in \autoref{fig:reduce:expr:auto}.
 The three plots show the performance for the Nvidia platform (on the left), the AMD platform (in the middle), and the Intel platform (on the right).
 All plots are scaled according to the hardware bandwidth limit of the platform.
-On each platform we compare against a vendor provided, highly tuned implementation of the BLAS library, where we measured the bandwidth achieved for the \emph{asum} application.
+On each platform we compare against a vendor provided, highly tuned implementation of the \BLAS library, where we measured the bandwidth achieved for the \emph{asum} application.
 Where in the \emph{asum} application an additional operation (applying the absolute value function) is performed for every data item, we showed in \autoref{section:skelcl:evaluation:linearAlgebra} that the performance difference for the parallel reduction benchmark and the \emph{asum} benchmark is negligible when both are implemented properly.
-Therefore, we consider the BLAS implementations as valid contenders for a fair performance comparison.
+Therefore, we consider the \BLAS implementations as valid contenders for a fair performance comparison.
 
 \begin{figure}
   \centering
@@ -247,16 +247,16 @@ Therefore, we consider the BLAS implementations as valid contenders for a fair p
   \label{fig:reduce:expr:automatic:performance}
 \end{figure}
 
-The results shows that the generated code for the automatically found expressions are on par with the CUBLAS implementation of Nvidia and the clBLAS implementation of AMD achieving about 95\% of their performance.
-On the Intel platform our generated code actually outperforms the MKL implementation.
-This is due to the implementation of MKL and the particular multi-core \CPU used in the experiments.
-For the \emph{asum} benchmark the MKL implementation does not use thread level parallelism, presumably with the assumption that \emph{asum} is a memory bound benchmark.
+The results shows that the generated code for the automatically found expressions are on par with the \CUBLAS implementation of Nvidia and the \clBLAS implementation of AMD achieving about 95\% of their performance.
+On the Intel platform our generated code actually outperforms the \MKL implementation.
+This is due to the implementation of \MKL and the particular multi-core \CPU used in the experiments.
+For the \emph{asum} benchmark the \MKL implementation does not use thread level parallelism, presumably with the assumption that \emph{asum} is a memory bound benchmark.
 The used multi-core \CPU is actually a two socket machine where two chips are combined on a single motherboard.
 In this configuration there are two memory controllers available -- one for each socket.
 Therefore, thread level parallelism is actual beneficial for the \emph{asum} benchmark on this particular hardware giving our generated code a speedup of 1.67.
 
 The three plots together also show that our approach offers true performance portability.
-Where each individual BLAS implementation is not-portable and bound to a specific hardware architecture, our system automatically searched and found three expressions systematically derived from a single high-level representation which offer high performance on all three platforms.
+Where each individual \BLAS implementation is not-portable and bound to a specific hardware architecture, our system automatically searched and found three expressions systematically derived from a single high-level representation which offer high performance on all three platforms.
 With our approach we achieve the same relative performance on all platforms which is within 75\% of the corresponding hardware bandwidth limit.
 
 \begin{figure*}[p]
@@ -264,21 +264,21 @@ With our approach we achieve the same relative performance on all platforms whic
 \centering
 \begin{subfigure}[b]{0.65\linewidth}
 \includegraphics[width=\linewidth]{nv\string_search.pdf}
-\caption{Nvidia GPU}
+\caption{Nvidia \GPU}
 \label{fig:search:nv}
 \end{subfigure}
 \\
 %
 \begin{subfigure}[b]{0.65\linewidth}
 \includegraphics[width=\linewidth]{amd\string_search.pdf}
-\caption{AMD GPU}
+\caption{AMD \GPU}
 \label{fig:search:amd}
 \end{subfigure}
 \\
 %
 \begin{subfigure}[b]{0.65\linewidth}
 \includegraphics[width=\linewidth]{intel\string_search.pdf}
-\caption{Intel CPU}
+\caption{Intel \CPU}
 \label{fig:search:intel}
 \end{subfigure}
 
@@ -333,7 +333,7 @@ For scaling (\autoref{lst:linear-algebra-expr:scal}), the \map pattern applies a
 The sum of absolute values (\autoref{lst:linear-algebra-expr:asum}) and the dot product (\autoref{lst:linear-algebra-expr:dot}) applications both produce scalar results by performing a summation, which we express using the \reduce pattern customized with the addition.
 For dot product, a pair-wise multiplication of its two input vectors is performed before applying the reduction expressed using the \zip and \map patterns.
 
-The \autoref{lst:linear-algebra-expr:gemv} shows matrix vector multiplication as defined in BLAS: $\vec{y} = \alpha A \vec{x} + \beta \vec{y}$.
+The \autoref{lst:linear-algebra-expr:gemv} shows matrix vector multiplication as defined in \BLAS: $\vec{y} = \alpha A \vec{x} + \beta \vec{y}$.
 To multiply the matrix $mat$ with the vector $xs$, the \map pattern maps the computation of the dot-product with the input vector $xs$ to each row of the matrix $mat$.
 Afterwards the resulting vector is added to the scaled vector $ys$ using the \zip and \map patterns.
 Notice how we are reusing the high-level expressions for dot-product and scaling as building blocks for the more complex matrix-vector multiplication.
@@ -342,7 +342,7 @@ The dot-product from $gemv$ might be implemented in a totally different way from
 
 \begin{lstlisting}[%
   float,%
-  caption={Linear algebra kernels from the BLAS library expressed using our high-level algorithmic patterns.},%
+  caption={Linear algebra kernels from the \BLAS library expressed using our high-level algorithmic patterns.},%
   label={lst:linear-algebra-expr},%
   lineskip={1em}% TODO: smaller skip before last line
   ]
@@ -360,11 +360,11 @@ $gemv\ mat\ xs\ ys\ \alpha\ \beta =\label{lst:linear-algebra-expr:gemv}$        
 
 
 First, we show how our approach performs across our three test platforms.
-We use the BLAS OpenCL implementations written by AMD as our baseline for this evaluation since it is implemented in \OpenCL and functionally portable across all test platforms.
-\autoref{fig:linear-algebra-expr:clblas} shows the performance of our approach relative to clBLAS for our four benchmarks.
-As can be seen, we achieve better performance than clBLAS on most platforms and benchmarks.
+We use the \BLAS \OpenCL implementations written by AMD as our baseline for this evaluation since it is implemented in \OpenCL and functionally portable across all test platforms.
+\autoref{fig:linear-algebra-expr:clblas} shows the performance of our approach relative to \clBLAS for our four benchmarks.
+As can be seen, we achieve better performance than \clBLAS on most platforms and benchmarks.
 The speedups are the highest for the \CPU, with up to 20$\times$ for the $asum$ benchmark with a small input size.
-The reason is that clBLAS was written and tuned specifically for an AMD \GPU which usually exhibit a larger number of parallel processing units.
+The reason is that \clBLAS was written and tuned specifically for an AMD \GPU which usually exhibit a larger number of parallel processing units.
 Our systematically derived expression for this benchmark is specifically tuned for the \CPU by avoiding creating too much parallelism, which is what gives us such large speedup.
 
 
@@ -373,62 +373,62 @@ Our systematically derived expression for this benchmark is specifically tuned f
 \subsection{Comparison vs. Highly-tuned Implementations}
 
 We compare our approach with a state of the art implementation for each platform.
-For Nvidia, we pick the highly tuned CUBLAS implementation of BLAS written by Nvidia.
-For the AMD \GPU, we use the same clBLAS implementation as before given that it has been written and tuned specifically for AMD \GPUs.
-Finally, for the \CPU we use the Math Kernel Library (MKL) implementation of BLAS written by Intel, which is known for its high performance.
+For Nvidia, we pick the highly tuned \CUBLAS implementation of \BLAS written by Nvidia.
+For the AMD \GPU, we use the same \clBLAS implementation as before given that it has been written and tuned specifically for AMD \GPUs.
+Finally, for the \CPU we use the Math Kernel Library (\MKL) implementation of \BLAS written by Intel, which is known for its high performance.
 
-\autoref{fig:linear-algebra-expr:results:nv} shows that the code generated by our approach matches the performance of CUBLAS for $scal$, $asum$ and $dot$ on the Nvidia \GPU.
-For $gemv$ we outperform CUBLAS on the small size by 20\% while we are within 5\% for the large input size.
-Given that CUBLAS is a proprietary library highly tuned for Nvidia \GPUs, these results show that our technique is able to achieve high performance.
+\autoref{fig:linear-algebra-expr:results:nv} shows that the code generated by our approach matches the performance of \CUBLAS for $scal$, $asum$ and $dot$ on the Nvidia \GPU.
+For $gemv$ we outperform \CUBLAS on the small size by 20\% while we are within 5\% for the large input size.
+Given that \CUBLAS is a proprietary library highly tuned for Nvidia \GPUs, these results show that our technique is able to achieve high performance.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=.8\linewidth]{Plots/LA/LA_vs_clBLAS.pdf}
   \caption[Performance of our approach relative to a portable \OpenCL reference implementation]%
-          {Performance of our approach relative to a portable \OpenCL reference implementation (clBLAS).}
+          {Performance of our approach relative to a portable \OpenCL reference implementation (\clBLAS).}
   \label{fig:linear-algebra-expr:clblas}
 \end{figure}
 
-On the AMD \GPU, we are surprisingly up to 4.5$\times$ faster than the clBLAS implementation on $gemv$ small input size as shown in \autoref{fig:linear-algebra-expr:results:amd}.
-The reason for this is found in the way clBLAS is implemented.
-clBLAS generates the \OpenCL code using fixed templates.
+On the AMD \GPU, we are surprisingly up to 4.5$\times$ faster than the \clBLAS implementation on $gemv$ small input size as shown in \autoref{fig:linear-algebra-expr:results:amd}.
+The reason for this is found in the way \clBLAS is implemented.
+\clBLAS generates the \OpenCL code using fixed templates.
 In contrast to our approach, only one implementation is generated since they do not explore different pattern compositions.
 
-For the Intel \CPU (\autoref{fig:linear-algebra-expr:results:intel}), our approach beats MKL for one benchmark and matches the performance of MKL on most of the other three benchmarks.
+For the Intel \CPU (\autoref{fig:linear-algebra-expr:results:intel}), our approach beats \MKL for one benchmark and matches the performance of \MKL on most of the other three benchmarks.
 For the small input sizes for the $scal$ and $dot$ benchmarks we are within 13\% and 30\% respectively.
-For the larger input sizes, we are on par with MKL for both benchmarks.
-The $asum$ implementation in the MKL does not use thread level parallelism, where our implementation does and, thus, achieves a speedup of up to 1.78 on the larger input size.
+For the larger input sizes, we are on par with \MKL for both benchmarks.
+The $asum$ implementation in the \MKL does not use thread level parallelism, where our implementation does and, thus, achieves a speedup of up to 1.78 on the larger input size.
 
 
 \begin{figure*}[p]
   \centering
   \begin{subfigure}[b]{0.65\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_BEST\string_nv}
-    \caption{Nvidia GPU}
+    \caption{Nvidia \GPU}
     \label{fig:linear-algebra-expr:results:nv}
   \end{subfigure}
   \\
   \begin{subfigure}[b]{0.65\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_BEST\string_amd}
-    \caption{AMD GPU}
+    \caption{AMD \GPU}
     \label{fig:linear-algebra-expr:results:amd}
   \end{subfigure}
   \\
   \begin{subfigure}[b]{0.65\linewidth}
     \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_MKL\string_intel}
-    \caption{Intel CPU}
+    \caption{Intel \CPU}
     \label{fig:linear-algebra-expr:results:intel}
   \end{subfigure}
   \caption[Performance comparison with state of the art platform-specific libraries]%
-          {Performance comparison with state of the art platform-specific libraries; CUBLAS for Nvidia, clBLAS for AMD, MKL for Intel.
-           Our approach matches the performance on all three platforms and outperforms clBLAS in some cases.
+          {Performance comparison with state of the art platform-specific libraries; \CUBLAS for Nvidia, \clBLAS for AMD, \MKL for Intel.
+           Our approach matches the performance on all three platforms and outperforms \clBLAS in some cases.
          }
    \label{fig:linear-algebra-expr:results}
 \end{figure*}
 
 \section{Physics Application}
 
-The molecular dynamics (MD) application is a physics simulation taken from the SHOC~\cite{DanalisMMMRSTV10} benchmark suite.
+The molecular dynamics (\MD) application is a physics simulation taken from the {\small SHOC}~\cite{DanalisMMMRSTV10} benchmark suite.
 It calculates the sum of all forces acting on a particle from its neighbors.
 \autoref{lst:md} shows the implementation using our high-level patterns.
 
@@ -476,8 +476,8 @@ $md\ ps\ nbhs\ t = \map\ \big(\lambda\ p,ns.\label{lst:md:md}$
     \caption{BlackScholes}
     \label{fig:blackScholes:results}
   \end{subfigure}
-  \caption[Performance of our approach relative to native \OpenCL implementations of the MD and BlackScholes benchmarks]%
-          {Performance of our approach relative to portable \OpenCL implementations of the MD and BlackScholes benchmarks.}
+  \caption[Performance of our approach relative to native \OpenCL implementations of the \MD and BlackScholes benchmarks]%
+          {Performance of our approach relative to portable \OpenCL implementations of the \MD and BlackScholes benchmarks.}
    \label{fig:bs:ms:results}
 \end{figure}
 
@@ -524,7 +524,7 @@ On the \CPU, we actually achieve a 2.2$\times$ speedup due to the fact that the 
 
 In this chapter we have evaluated the code generation approach introduced in \autoref{chapter:codeGeneration}.
 We have seen that our approach successfully addresses the performance portability challenge and generates code which achieves high performance on three distinct hardware platforms: a Nvidia \GPU, an AMD \GPU, and an Intel \CPU.
-Furthermore, the comparison against the highly tuned BLAS libraries shows, that our code generator can produce highly efficient code for high-level expressions which are systematically transformed into low-level expressions before compilation.
+Furthermore, the comparison against the highly tuned \BLAS libraries shows, that our code generator can produce highly efficient code for high-level expressions which are systematically transformed into low-level expressions before compilation.
 
 We have successfully addressed a drawback of \SkelCL and presented performance results for the \emph{asum} and the dot product benchmarks.
 The performance is comparable to the best implementations available, as our code generation approach fuses patterns and generates efficient kernels for these benchmarks.
@@ -537,340 +537,4 @@ These expressions where significantly different from the implementations develop
 This concludes the two main technical parts of the thesis.
 In the next part we will summaries our work and contributions, discuss how the two presented projects relate to each other and how they can be combined and improved in the future.
 Finally, we will conclude the thesis with a comparison against related work.
-
-%
-%\autoref{fig:linear-algebra-expr:clblas} also shows the results we obtain relative to the Nvidia SDK \bench{BlackScholes} and SHOC molecular dynamics \bench{MD} benchmark.
-%For \bench{BlackScholes},
-%For \bench{MD}, we are actually on par with the OpenCL implementation on all platforms.
-
-
-%\begin{figure}[t]
-%  \includegraphics[width=\linewidth]{PLDI2015/application\string_results\string_vs\string_clBLAS}
-%  \caption{Performance of our approach relative to a portable OpenCL reference implementation (clBLAS).
-%           We outperform it on most benchmarks and platforms.}
-%  \label{fig:clblas}
-%\end{figure}
-
-
-
-
-
-
-
-
-
-
-
-
-%\from{PACT begin}
-%This section presents the applications we have used to evaluate our approach.
-%We discuss how applications from linear algebra, physics, and mathematical finance can be represented as expressions composed of our high-level algorithmic patterns.
-%Furthermore, we discuss how our rules are used to systematically rewrite and optimize expressions.
-%\from{PACT end}
-%
-%\from{PACT begin}
-%\section{Experimental Setup (PACT)}
-%\subsection{Platform and Performance Measurement}
-%
-%We used three hardware platforms to perform the experiments: an Nvidia GeForce GTX 480 GPU, an AMD Radeon HD 7970 GPU and a dual socket Intel Xeon E5530 server, with 8 cores in total and hyper-threading enabled.
-%We used the latest OpenCL runtime from Nvidia (CUDA-SDK 5.5), AMD (AMD-APP 2.8.1) and Intel (XE 2013 R3 3.2.1.16712).
-%The GPU drivers installed on our Linux system were 310.44 for Nvidia and 13.1 for AMD.
-%ATLAS is built as an auto-tuned multi-threaded C library using gcc 4.7.2.
-%
-%We use the profiling function from the OpenCL and CUDA API to measure kernel execution time and the \textit{gettimeofday} function in the case of the ATLAS implementation.
-%Following the Nvidia benchmarking methodology~\cite{Harris07reduction}, the data transfer time to and from the GPU is excluded.
-%We repeat each experiment 1000 times and report the median runtime.
-%
-%\subsection{Input Sizes}
-%
-%For our linear algebra benchmarks, we have performed experiments with two input sizes.
-%For \bench{scal}, \bench{asum} and \bench{dot}, the small input size corresponds to a vector size of 16M elements which translates to 64MB of data.
-%The large input size uses 128M elements which correspond to 512MB (the maximum OpenCL buffer size for our platforms).
-%
-%For \bench{gemv}, we use an input matrix of 4096 $\times$ 4096 elements (64MB) and a vector size of 4096 elements (16KB) for the small input size.
-%For the large input size, the matrix size is 8192 $\times$ 16384 elements (512MB) and the vector size 8192 elements (32KB).
-%For \bench{BlackScholes}, the problem size is fixed to 4 million elements and for \bench{MD} it is 12288 particles.
-%
-%\subsection{Benchmarks}
-%
-%\begin{table*}[t]
-%\centering
-%\renewcommand{\arraystretch}{1.25}
-%\rowcolors{2}{oddcolor}{evencolor}
-%\setlength{\tabcolsep}{3pt}
-% \begin{tabular}{lrclrcl}
-%  \toprule
-%  \tabhead{Name} & \multicolumn{3}{c}{\tabhead{Formula}} & & & \multicolumn{1}{l}{\tabhead{High-level expression}}\\
-%  \midrule
-%  Vector scale & $\vec{x}$&$=$&$\alpha \vec{x}$
-%               & $scal(\alpha, \vec{x})$&$=$&$map(\ast \alpha,\ \vec{x})$\\
-%  Sum of abs. values & $c$&$=$&$\sum_i |x_i|$
-%                   & $asum(\vec{x})$&$=$&$reduce(+,0) \circ map(abs,\ \vec{x})$\\
-%  Dot product & $c$&$=$&$\sum_i (x_i \ast y_i) $
-%                & $dot(\vec{x}, \vec{y})$&$=$&$reduce(+,0) \circ map(\ast) \circ zip(\vec{x},\ \vec{y})$\\
-%  \rule{0pt}{13pt}% make the row higher at the top ...
-%  Matrix-vector mult. & $\vec{y}$&$=$&$\alpha A\vec{x} + \beta \vec{y}$
-%                      & \hspace{.2em}$ gemv(A, \vec{x}, \vec{y}, \alpha, \beta)
-%                          $&$=$&$map(+) \circ zip\Big(
-%                          map\big(scal(\alpha) \circ dot(\vec{x}) ,\ A\big),\
-%                      scal(\beta, \vec{y})\Big) $\\[.25em]% ... and the bottom
-%  BlackScholes & $ \langle\vec{c}, \vec{p}\rangle$&$=$&$\text{\textit{BSModel}}(\vec{s}) $ & $\text{\textit{BlackScholes}}(\vec{s})$&=&$map(\text{\textit{BSModel}},\ \vec{s})$\\
-%  Molecular Dyn. (MD)           & &&& \multicolumn{3}{c}{$map\big(reduce(\text{\textit{calculateForce}}, 0)\big) \circ zip(\text{\textit{particles}}, \text{\textit{neighArray}})$}\\
-%  \bottomrule
-% \end{tabular}
-%\caption{Benchmarks used for our experiments.}
-%\label{tab:benchmarks}
-%\end{table*}
-%
-%Our list of benchmarks is shown in Table~\ref{tab:benchmarks} with the corresponding high-level expression written by the programmer.
-%The first three benchmarks perform well-known computations on 1D vectors of floats: scaling, computing the sum of absolute values, and computing the dot product of two vectors.
-%For scaling, the \pat{map} pattern combined with the $\ast\alpha$ function multiplies every element of the vector with the constant $\alpha$.
-%The sum of absolute values and the dot product applications both produce scalar results by performing a summation, which we express using the \pat{reduce} pattern combined with the addition.
-%Before performing the reduction in the dot product application a pair-wise multiplication of its two input vectors is performed.
-%This is expressed using the \pat{zip} and \pat{map} patterns.
-%
-%Matrix vector multiplication was chosen to illustrate a case where we perform computation on a 2D data structure.
-%The expression in the fourth row of Table~\ref{tab:benchmarks} describes this benchmark.
-%The \pat{map} nested inside the \pat{zip} maps the computation of the dot-product with the input vector $\vec{x}$ to each row of the matrix $A$.
-%Notice how we are reusing the high-level expressions for dot-product and scaling a vector as basic building blocks for the more complex matrix-vector multiplication.
-%This shows the power of our system where expressions describing concepts at the algorithmic level can be reused, without committing to a particular low-level implementation.
-%
-%Finally, we want to show that our technique is not limited to linear algebra and can be applied to any benchmark that can be express in terms of our high-level patterns.
-%BlackScholes uses a Monte-Carlo method for option pricing and MD, from SHOC~\cite{danalis10shoc}, calculates forces between particles.
-%Table~\ref{tab:benchmarks} shows that BlackScholes can be easily expressed with a \pat{map} pattern since this problem is embarrassingly parallel: for each stock price $s_i$ the BlackScholes model computes a pair of call and put options $\langle c_i, p_i\rangle$.
-%MD calculates the sum of all forces acting on each particles from their neighbors.
-%The neighborArray represents an array of neighbors, with each row corresponding to the neighbors of a particular particle from the particles array.
-%The reduction inside \pat{map} calculates the resulting force exercised on one particular particle by all neighbor particles.
-%
-%
-%\subsection{Example: Sum of Absolute Values}
-%\label{sec:example}
-%
-%This section shows our rules in action transforming an expression to compute the sum of the absolute values of a vector (the \emph{asum} benchmark from Table~\ref{tab:benchmarks}).
-%The computation can easily be expressed using two of our high-level algorithmic patterns:
-%$reduce(+, 0,\ map(abs,\ \vec{x}))$.
-%First, the $abs$ function is applied to every element of the input vector $\vec{x}$ and then the intermediate result is summed up using the $reduce$ pattern which is customized with the plus operator.
-%Using the function composition operator, we write this expression in a more functional style:
-%$reduce(+, 0) \circ map(abs)$.
-%This simplifies the reasoning about this expression as unnecessary details (e.g. the name of the input vector) are omitted.
-%
-%We are transforming this expression in several steps using our rules as shown in Figure~\ref{fig:derivation}.
-%The letter/number combination for each rule refers to Figure~\ref{fig:algo} or~\ref{fig:low}.
-%First, we apply the reduction rule to replace \pat{reduce} with \pat{reduce} $\circ$ \pat{part-red} and then immediately apply the same rule again to expand \pat{par-red}.
-%The double application of rule~\ref{fig:algo:red} is shown as Step 1 in Figure~\ref{fig:derivation}.
-%Afterwards, we expand the \pat{map} (Step 2), which allows us to simplify the expression by removing the two corresponding \pat{outerJoin} and \pat{outerSplit} patterns (Step 3).
-%After fusing two \pat{maps} (Step 4), we lower the \pat{map} and \pat{reduce} patterns in Step 5.
-%Finally, we apply rule~\ref{fig:algo:fusion} to fuse the \pat{map-seq} and \pat{reduce-seq} into a single \pat{reduce-seq} (Step 6).
-%This sequence of transformations results in a more optimal implementation since no temporary storage is required for the intermediate result.
-%
-%This example shows how our system can systematically optimize programs at an algorithmic level without performing complex compiler analysis.
-%
-%\begin{figure}[t]
-%\centering
-%\includegraphics[width=\linewidth]{PACT2014/derivation4-times}
-%\caption{Derivation for $asum(\vec{x})$ to a fused version.
-%  The number in the circles refers to the used rule.
-%}
-%\label{fig:derivation}
-%\end{figure}
-%\from{PACT end}
-%
-%
-%\section{Linear Algebra Applications}
-%
-%  \subsection{Level-1 BLAS Routines}
-%
-%    \paragraph{Vector scale}
-%
-%    \paragraph{Sum of absolute balues}
-%
-%    \paragraph{Dot product}
-%
-%  \subsection{Matrix-Vector Multiplication}
-%
-%\section{Mathematical Finance}
-%
-%\section{Physics Simulation}
-%
-%\from{PACT begin}
-%\section{Experiments (PACT)}
-%
-%We now evaluate our approach compared to reference OpenCL implementations of our benchmarks on all platforms.
-%Furthermore, we compare the BLAS routines against platform-specific tuned implementations.
-%We also analyze the expression found automatically for one of our benchmarks.
-%
-%
-%
-%
-%\subsection{Comparison vs. Portable Implementation}
-%
-%\begin{figure}[t]
-%  \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_clBLAS}
-%  \caption{Performance of our approach relative to a portable OpenCL reference implementation.
-%           We outperform the clBLAS implementation on most benchmarks and platforms.}
-%  \label{fig:clblas}
-%\end{figure}
-%
-%We want to show how our approach performs across three platforms.
-%We use the BLAS OpenCL implementations written by AMD as our baseline for this evaluation since it is inherently portable across our different platforms.
-%Figure~\ref{fig:clblas} shows the performance of our approach relative to clBLAS~\cite{clBLAS} for the BLAS routines.
-%As can be seen, we achieve better performance than clBLAS on most platforms and benchmarks.
-%The speedups are the highest on the CPU, with up to 20$\times$ for the \bench{asum} benchmark with a small input size.
-%The reason is that clBLAS was written and tuned specifically for an AMD GPU which usually exhibit a larger number of parallel processing units.
-%As we will see later, our automatically derived expression for this benchmark is specifically tuned for the CPU by avoiding creating too much parallelism, which is what gives us such large speedup.
-%
-%Figure~\ref{fig:clblas} also shows the results we obtain relative to the Nvidia SDK \bench{BlackScholes} and SHOC molecular dynamics \bench{MD} benchmark.
-%For \bench{BlackScholes}, we see that our approach is on par with the performance of the Nvidia implementation on both GPUs.
-%On the CPU, we actually achieve a 2.2$\times$ speedup due to the fact that the Nvidia implementation is tuned for GPUs while our implementation generates different code for the CPU.
-%For \bench{MD}, we are actually on par with the OpenCL implementation on all platforms.
-%
-%
-%\subsection{Comparison vs. Highly-tuned Implementations}
-%
-%\begin{figure*}[t]
-%  \centering
-%  \begin{subfigure}[b]{0.315\linewidth}
-%    \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_BEST\string_nv}
-%    \caption{Nvidia GPU}
-%    \label{fig:results-nv}
-%  \end{subfigure}
-%  \hfill
-%  \begin{subfigure}[b]{0.315\linewidth}
-%    \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_BEST\string_amd}
-%    \caption{AMD GPU}
-%    \label{fig:results-amd}
-%  \end{subfigure}
-%  \hfill
-%  \begin{subfigure}[b]{0.315\linewidth}
-%    \includegraphics[width=\linewidth]{PACT2014/application\string_results\string_vs\string_BEST\string_intel}
-%    \caption{Intel CPU}
-%    \label{fig:results-cpu}
-%  \end{subfigure}
-%  \caption{Performance comparison of our approach relative to a highly-tuned platform-specific library; CUBLAS for Nvidia, clBLAS for AMD and ATLAS for the CPU.
-%           Our approach matches the performance of CUBLAS, outperforms clBLAS on some routines and outperforms ATALS on most routines.}
-%   \label{fig:results}
-%\end{figure*}
-%
-%We compare our approach with a highly-tuned implementation for each platform.
-%For Nvidia, we pick the highly tuned CUBLAS~\cite{cuBLAS} CUDA-specific implementation of BLAS written by Nvidia.
-%For the AMD GPU, we use the same clBLAS~\cite{clBLAS} implementation as before given that it has been written and tuned specifically for AMD GPUs.
-%Finally, for the CPU we use the ATLAS~\cite{whaley98atlas} implementation of BLAS.
-%ATLAS uses auto-tuning techniques to automatically generate high-performance code for the CPU based on template code.
-%
-%Figure~\ref{fig:results-nv} shows that we actually match the performance of CUBLAS for \bench{scal}, \bench{asum} and \bench{dot}.
-%For \bench{gemv} we outperform CUBLAS on the small size by 20\% while we are within 5\% for the large input size.
-%Given that CUBLAS is a proprietary library highly tuned for Nvidia GPUs, these results should offer some confidence that our technique is able to achieve high performance.
-%
-%On the AMD GPU, we are surprisingly up to 4.5$\times$ faster than the clBLAS implementation on \bench{gemv} small input size as shown in Figure~\ref{fig:results-amd}.
-%The reason for this is found in the way clBLAS is implemented.
-%For the \bench{gemv} benchmark, clBLAS performs automatic code generation using fixed templates.
-%In contrast to our approach they only generate one implementation since they do not explore different pattern compositions.
-%
-%For the CPU (Figure~\ref{fig:results-cpu}), we see that our approach beats ATLAS for all four benchmarks.
-%The reason we perform so well for the \bench{scal}, \bench{asum} and \bench{dot} is because the ATLAS implementations for these benchmarks are purely sequential.
-%So the speedups we observe are the results of our automatic parallelization strategy.
-%We did check that, when forcing our generator to produce purely sequential versions, the performance is on par or even better than the ATLAS sequential implementations.
-%However, the ATLAS implementation of the fourth benchmark, \bench{gemv}, is parallelised with OpenMP.
-%In this case, our automatically generated implementation is actually 1.7$\times$ and 1.5$\times$ faster for the small and large input sizes respectively.
-%Although ATLAS uses auto-tuning, it still generates code using a fixed template in the same way as clBLAS does, which explains this performance gap.
-%This illustrates once again the superiority of our approach based on pattern composition and rewrite-rules compared with parameter tuning in a template code.
-%
-%\subsection{Low-level Expressions Analysis}
-%
-%
-%\begin{figure*}[t]
-%\captionsetup[subfigure]{justification=justified,singlelinecheck=false}
-%
-%\begin{subfigure}[b]{\linewidth}
-%\vspace{.4em}
-%\begin{minipage}{.11\linewidth}
-%\caption{\hspace{-.2em}\parbox[t]{.7\linewidth}{\centering Nvidia\\ GPU}}
-%\label{fig:expr:autoNv}
-%\end{minipage}
-%\hfill
-%\begin{minipage}{.87\linewidth}
-%\begin{lstlisting}[mathescape, basicstyle=\scriptsize\ttfamily]
-%outerJoin $\circ$ outerJoin $\circ$ map-workgroup(
-%  asGlobal( map-local( iterate-7( map-seq(id) $\circ$ reduce-seq(+, 0) ) $\circ$ reduce-seq(absAnd+, 0) ) ) $\circ$ reorder-stride
-% ) $\circ$ outerSplit-128 $\circ$ outerSplit-2048
-%\end{lstlisting}
-%\end{minipage}
-%\end{subfigure}
-%
-%\begin{subfigure}[b]{\linewidth}
-%\vspace{0em}
-%\begin{minipage}{.11\linewidth}
-%\caption{\hspace{-.2em}\parbox[t]{.7\linewidth}{\centering AMD\\ GPU}}
-%\label{fig:expr:autoAmd}
-%\end{minipage}
-%\hfill
-%\begin{minipage}{.87\linewidth}
-%\begin{lstlisting}[mathescape, basicstyle=\scriptsize\ttfamily]
-%outerJoin $\circ$ innerJoin $\circ$ outerJoin $\circ$ map-workgroup(
-%   map-local( map-seq(vectorize-2(id)) $\circ$ reduce-seq(vectorize-2(absAnd+), vectorize-2(0)) ) $\circ$ reorder-stride
-% ) $\circ$ outerSplit-128 $\circ$ innerSplit-2 $\circ$ outerSplit-4096
-%\end{lstlisting}
-%\end{minipage}
-%\end{subfigure}
-%
-%\begin{subfigure}[b]{\linewidth}
-%\vspace{0em}
-%\begin{minipage}{.11\linewidth}
-%\caption{\hspace{-.2em}\parbox[t]{.7\linewidth}{\centering Intel\\ CPU}}
-%\label{fig:expr:autoCPU}
-%\end{minipage}
-%\hfill
-%\begin{minipage}{.87\linewidth}
-%\begin{lstlisting}[mathescape, basicstyle=\scriptsize\ttfamily]
-%outerJoin $\circ$ map-workgroup( outerJoin $\circ$ innerJoin $\circ$ map-local(
-%   map-seq(vectorize-4(id)) $\circ$ reduce-seq(vectorize-4(absAnd+), vectorize-4(0))
-% ) $\circ$ innerSplit-4 $\circ$ outerSplit-32768 ) $\circ$ outerSplit-32768
-%\end{lstlisting}
-%\end{minipage}
-%\end{subfigure}
-%
-%\caption{Low-level expressions performing the sum of absolute values.
-%         These expressions are automatically derived by our system from the high-level expression $reduce(+, 0) \circ map(abs)$.
-%       }
-%\label{fig:expr}
-%\end{figure*}
-%
-%
-%This section presents different possible low-level expression resulting from the automatic application of our rewrite rules.
-%We focus our evaluation on the sum of absolute values benchmark (\bench{asum}) since it is of low complexity and yet leads to a complex design space of implementations.
-%The low-level expressions for dot product and matrix vector multiplication are quite long and, therefore, not well suited to demonstrate the basic concepts of our approach.
-%
-%We start with \pat{reduce(+, 0) $\circ$ map(abs)} as our high-level expression.
-%As we saw in Section~\ref{sec:example}, this expression can be automatically rewritten at the algorithmic level following our rules.
-%The rewritten expression can then be lowered to an expression amenable for code generation by continuing to apply our rules.
-%
-%Figure~\ref{fig:expr} shows several lowerings of the high-level expression found by applying the automatic search technique described in Section~\ref{sec:search}.
-%We can make several important observations.
-%First, in all the expressions the rule merging the sequential \pat{map(abs)} followed by the sequential \pat{reduce(+, 0)} into a single \pat{reduce(absAnd+, 0)} was applied.
-%The function \pat{absAnd+} is automatically derived from \pat{abs} and \pat{+} as described by the rule and corresponds to the lambda expression shown at the bottom of Figure~\ref{fig:derivation}.
-%By applying this rule, the allocation of a temporary buffer storing the results of the \pat{map} can be avoided, which is always beneficial.
-%The second observation is, that none of the versions make use of the local memory (although our systems fully support it).
-%It is common wisdom that using local memory on the GPU enables high
-%performance.
-%But in this case, this is not true as each data item is only read once and not reused.
-%The third key observation is, that each thread performs a large sequential reduction independent of all other threads.
-%The key advantage of this type of implementation is that they do not require thread synchronization.
-%
-%While these observations are the same for all platforms, there are also crucial differences between the different low-level expressions.
-%Both GPU versions make use of the \pat{reorder-stride} pattern, while the CPU version does not.
-%On the GPU, this pattern allows for achieving coalesced memory accesses when reading from memory.
-%The AMD and Intel versions are vectorized with a vector length of two and four respectively.
-%The Nvidia version does not use vectorization since this platform does not benefit from vectorized code.
-%On the CPU the automatic search picked the numbers for partitioning into work groups and then into work items in such a way, that inside of each work group only a single work item is active.
-%This corresponds to the fact, that there is less parallelism available on a CPU compared to GPUs.
-%
-%Interestingly, the results of our search have some artifacts in the expressions.
-%For example, we iterate seven times on a function that always produces one element since there is a \pat{reduce-seq} inside.
-%While this does not seem to affect performance much, a better search strategy could probably get rid of these artifacts and achieve a slightly better performance.
-%
-%\subsection{Summary}
-%
-%This section has shown how our approach can generate \emph{performance portable} code that is competitive with highly-tuned platform specific implementations.
-%In addition, we have shown that our automatic rewriting system can derive different specialized low-level expression for each target platform.
-%\from{PACT end}
 

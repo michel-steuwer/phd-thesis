@@ -1,8 +1,8 @@
-\section{A Case Study of OpenCL Optimizations}
+\section{A Case Study of \OpenCL Optimizations}
 \label{sec:reduce:case-study}
 \label{section:reduce:case-study}
 To understand the problems of performance and portability in the context of modern parallel processors, we will study a simple application example: parallel reduction.
-This discussion is based on the presentation \emph{``Optimizing Parallel Reduction in CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing the parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
+This discussion is based on the presentation \emph{``Optimizing Parallel Reduction in \CUDA''} by \citeauthor{Harris2007}~\cite{Harris2007} where optimizations for implementing the parallel reduction using \CUDA and targeting Nvidia \GPUs are presented.
 Optimization guidelines like this exist from almost every hardware vendor, including AMD~\cite{AMDProgrammingGuide}, Intel~\cite{IntelGPUProgrammingGuide, IntelXeonProgrammingGuide}, and Nvidia~\cite{CUDAProgrammingGuide}, giving developers advice on how to most efficiently exploit their hardware.
 
 In \autoref{chapter:skelcl} we saw that we can express a parallel reduction using a single algorithmic skeleton: \reduce.
@@ -268,7 +268,7 @@ void reduce4(global float* g_idata, global float* g_odata,
       barrier(CLK_LOCAL_MEM_FENCE); }
 
   // unroll for last 32 active work-items
-  // no synchronization required on NVIDIA GPUs
+  // no synchronization required on Nvidia GPUs
   // this is not protable OpenCL code!
   $\strut$@if (tid < 32) {@$\label{lst:reduce4:warp:start}$
   $\strut$@  if (WG_SIZE >= 64) { l_data[tid] += l_data[tid+32]; }@
@@ -434,8 +434,8 @@ To do so, we did run the code shown in \autoref{lst:reduce0}--\autoref{lst:reduc
 Nvidia's GTX 480 (Fermi \GPU architecture~\cite{CUDAFermi2009}) which we have used in our analysis in the previous section, AMD's Radeon HD7970 (Graphics Core Next \GPU architecture~\cite{AMDGCN2012}), and Intel's E5530 \CPU (Nehalem \CPU architecture~\cite{IntelNehalem2008}).
 \autoref{fig:reduce:overview} shows the performance numbers for each device.
 We use, as before, the memory bandwidth as our performance metric and show the hardware memory bandwidth limit of each respective hardware architecture at the top.
-As a practical comparison we also show performance numbers for the parallel reduction using highly tuned, architecture specific implementations of the BLAS library.
-We use the CUBLAS library~\cite{cuBLAS} for the Nvidia \GPU, the clBLAS library~\cite{clBLAS} for the AMD \GPU, and the MKL library~\cite{MKL} for the Intel \CPU.
+As a practical comparison we also show performance numbers for the parallel reduction using highly tuned, architecture specific implementations of the \BLAS library.
+We use the \CUBLAS library~\cite{cuBLAS} for the Nvidia \GPU, the \clBLAS library~\cite{clBLAS} for the AMD \GPU, and the \MKL library~\cite{MKL} for the Intel \CPU.
 Each library is implemented and provided by the corresponding hardware vendor.
 
 \begin{figure}[p]
@@ -475,25 +475,25 @@ Possible metrics for measuring the theoretical performance are number of floatin
 
 The best practical performance is measured by comparison with the best possible implementation available for a particular hardware platform.
 It is not always possible to determine which implementation is the best.
-Here we consider the BLAS library implementations tuned by the respective hardware vendors as the best available.
+Here we consider the \BLAS library implementations tuned by the respective hardware vendors as the best available.
 
 By investigating relative performance we can compare how well optimizations apply across different hardware architectures.
 The \emph{relative performance} shown in \autoref{fig:reduce:overview} differs widely across architectures. %, as we can see in \autoref{fig:reduce:overview}.
 
-On the Nvidia \GPU, the best optimized implementation achieves 83.3\% of the performance of the vendor-provided CUBLAS implementation utilizing 65.4\% of the theoretical memory bandwidth limit.
+On the Nvidia \GPU, the best optimized implementation achieves 83.3\% of the performance of the vendor-provided \CUBLAS implementation utilizing 65.4\% of the theoretical memory bandwidth limit.
 
 On the AMD \GPU, the gap between the manual and library implementation is much larger:
-the manually optimized implementation achieves only 41.3\% of the clBLAS library implementation.
+the manually optimized implementation achieves only 41.3\% of the \clBLAS library implementation.
 Only 32.4\% of the theoretical memory bandwidth limit is achieved.
 
-On the Intel \CPU, implementation~4 achieves only 16.6\% of the MKL performance.
-That means, that MKL is over 5 times faster than the best of the discussed implementations.
+On the Intel \CPU, implementation~4 achieves only 16.6\% of the \MKL performance.
+That means, that \MKL is over 5 times faster than the best of the discussed implementations.
 The hardware bandwidth limit is only utilized to 8.6\%.
-Interestingly, the MKL implementation also only provides 43.8\% of the maximum memory bandwidth.
-This is due to the combination of the implementation of the parallel reduction in MKL and the particular machine used in this experiment.
+Interestingly, the \MKL implementation also only provides 43.8\% of the maximum memory bandwidth.
+This is due to the combination of the implementation of the parallel reduction in \MKL and the particular machine used in this experiment.
 The test machine used is configured as a dual-socket machine, \ie, two E5530 \CPUs each with their own memory controller are available.
 Therefore, the hardware bandwidth available is doubled as compared to a single E5530 \CPU.
-While the implementation of the parallel reduction in the MKL library is optimized using vector instructions, it does not exploit thread-level parallelism.
+While the implementation of the parallel reduction in the \MKL library is optimized using vector instructions, it does not exploit thread-level parallelism.
 Therefore, the second E5530 \CPU can not be used by the implementation, thus, limiting the available bandwidth by half.
 
 \paragraph{Conclusions}
@@ -503,7 +503,7 @@ Second, the relative performance achieved with optimizations on one architecture
 This let us conclude that performance is \emph{not} portable when using \OpenCL or similar low-level approaches.
 
 As a positive result we can see from \autoref{fig:reduce:overview} that there exist implementations on the other hardware architectures which offer similar relative performance as the most optimized implementation on the Nvidia \GPU.
-For the AMD \GPU, the clBLAS implementation achieves 78.5\% of the hardware bandwidth limit and Intel's MKL implementation achieves 87.6\% of the hardware limit, considering just the bandwidth of a single \CPU socket.
+For the AMD \GPU, the \clBLAS implementation achieves 78.5\% of the hardware bandwidth limit and Intel's \MKL implementation achieves 87.6\% of the hardware limit, considering just the bandwidth of a single \CPU socket.
 
 We aim at developing an approach which can systematically apply optimizations and generate code matching the performance on all three architectures, thus, offering performance portability.
 

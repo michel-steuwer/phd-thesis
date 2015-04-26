@@ -84,10 +84,10 @@ Therefore, we reuse the definitions of \code{mult} and \code{sumUp} as used in \
 \subsubsection*{Implementations used for comparison}
 We compare six different implementations of matrix multiplication:
 \begin{enumerate}
-  \item the OpenCL implementation from~\cite{KirkHw2010} without optimizations,
-  \item the optimized OpenCL implementation from~\cite{KirkHw2010} using \GPU local memory,
-  \item the optimized BLAS implementation by AMD~\cite{APPML} written in OpenCL,
-  \item the optimized BLAS implementation by Nvidia~\cite{cuBLAS} written in CUDA,
+  \item the \OpenCL implementation from~\cite{KirkHw2010} without optimizations,
+  \item the optimized \OpenCL implementation from~\cite{KirkHw2010} using \GPU local memory,
+  \item the optimized \BLAS implementation by AMD~\cite{APPML} written in \OpenCL,
+  \item the optimized \BLAS implementation by Nvidia~\cite{cuBLAS} written in \CUDA,
   \item the \SkelCL implementation using the generic \allpairs skeleton shown in \autoref{lst:skelcl:mm:generic},
   \item the \SkelCL implementation using the specialized \allpairs skeleton shown in \autoref{lst:skelcl:mm:special}.
 \end{enumerate}
@@ -111,7 +111,7 @@ kernel void mm(global float* A, global float* B,        global float* C, int m, 
 
 \vspace{-.5em}
 \paragraph{2. Optimized OpenCL implementations}
-The kernel of the optimized OpenCL implementation from~\cite{KirkHw2010} using local memory is shown in \autoref{lst:local_mem_opencl}.
+The kernel of the optimized \OpenCL implementation from~\cite{KirkHw2010} using local memory is shown in \autoref{lst:local_mem_opencl}.
 \begin{lstlisting}[%                                                             
 postbreak=\space, breakautoindent=true, breakindent=78pt, breaklines,
 caption={[\OpenCL kernel of the optimized matrix multiplication usgin local memory.]\OpenCL kernel of the optimized matrix multiplication using local memory~\cite{KirkHw2010}.},%
@@ -141,16 +141,16 @@ Matrix multiplication is carried out in the loop starting in \autoref{lst:local_
 In each iteration, data is loaded into the local memory (\autoref{lst:local_mem_opencl:loadA} and \autoref{lst:local_mem_opencl:loadB}) before it is used in the computation in \autoref{lst:local_mem_opencl:comp}.
 Note that two synchronization barriers are required (\autoref{lst:local_mem_opencl:barrier1} and \autoref{lst:local_mem_opencl:barrier2}) to ensure that the data is fully loaded into the local memory and that the data is not overwritten while other work-items are still using it.
 
-Both OpenCL implementations 1. and 2. from~\cite{KirkHw2010} are restrictive:
+Both \OpenCL implementations 1. and 2. from~\cite{KirkHw2010} are restrictive:
 they are only capable of performing matrix multiplication for square matrices.
 
 \vspace{-.5em}
 \paragraph{3. BLAS implementation by AMD}
-The implementation offered by AMD is called clBLAS, written in OpenCL and is part of their Accelerated Parallel Processing Math Libraries (APPML)~\cite{APPML}.
+The implementation offered by AMD is called \clBLAS, written in \OpenCL and is part of their Accelerated Parallel Processing Math Libraries (APPML)~\cite{APPML}.
 
 \vspace{-.5em}
-\paragraph{4. BLAS implementation by NVIDIA}
-CUBLAS~\cite{cuBLAS} is implemented using CUDA and, therefore, can only be used on GPUs built by NVIDIA.
+\paragraph{4. BLAS implementation by Nvidia}
+\CUBLAS~\cite{cuBLAS} is implemented using \CUDA and, therefore, can only be used on \GPUs built by Nvidia.
 
 \subsubsection*{Programming effort}
 \autoref{fig:mat_mult_loc} shows the comparison regarding the number of lines of code (LOCs) required for each of the six implementations.
@@ -180,8 +180,8 @@ For every implementation, we distinguish between \CPU (host) code and \GPU (kern
     \midrule
     \OpenCL           & 77 &  7 & 84 \\[.5em]
     Optimized \OpenCL & 77 & 17 & 94 \\[.5em]
-    CUBLAS            & 81 & -- & 81\\[.5em]
-    clBLAS            & 65 & -- & 65\\[.5em]
+    \CUBLAS           & 81 & -- & 81\\[.5em]
+    \clBLAS           & 65 & -- & 65\\[.5em]
     Generic \allpairs skeleton & 5 & 5 & 10\\[.5em]
     Specialized \allpairs skeleton & 7 & 2 & 9\\[.5em]
     \bottomrule
@@ -197,14 +197,14 @@ For every implementation, we distinguish between \CPU (host) code and \GPU (kern
 In the \OpenCL implementations, the \GPU code includes the kernel definition, as shown in \autoref{lst:naive_opencl} and \autoref{lst:local_mem_opencl};
 the \CPU code includes the initialization of \OpenCL, memory allocations, explicit data transfer operations, and management of the execution of the kernel.
 
-In the BLAS implementations, the \CPU code contains the initialization of the corresponding BLAS library, memory allocations, as well as a library call for performing the matrix multiplication;
+In the \BLAS implementations, the \CPU code contains the initialization of the corresponding \BLAS library, memory allocations, as well as a library call for performing the matrix multiplication;
 no separate definition of \GPU code is necessary, as the \GPU code is defined inside the library function calls.
 
 For the implementation based on the generic \allpairs skeleton (\autoref{lst:skelcl:mm:generic}), we count \autoref{lst:skelcl:mm:generic:CPU:start}---\autoref{lst:skelcl:mm:generic:CPU:stop} and \autoref{lst:skelcl:mm:generic:CPU:call} as the \CPU code, and the definition of the customizing function in \autoref{lst:skelcl:mm:generic:GPU:start}---\autoref{lst:skelcl:mm:generic:GPU:stop} as the \GPU code.
 For the implementation based on the specialized \allpairs skeleton (\autoref{lst:skelcl:mm:special}), \autoref{lst:skelcl:mm:special:zipGPU} and \autoref{lst:skelcl:mm:special:reduceGPU} are the \GPU code, while all other lines constitute the \CPU code.
 
 Both skeleton-based implementations are clearly the shortest, with 10 and 9 LOCs.
-The next shortest implementation is the CUBLAS implementation with 65 LOCs -- 7 times longer than the \SkelCL-based implementations.
+The next shortest implementation is the \CUBLAS implementation with 65 LOCs -- 7 times longer than the \SkelCL-based implementations.
 The other implementations using \OpenCL require even 9 times more LOCs than the \SkelCL-based implementations.
 
 Besides their length, the \OpenCL-based implementations require the application developer to explicitly implement many low-level, error-prone tasks, like dealing with pointers and offset calculations.
@@ -213,18 +213,18 @@ Furthermore, the skeleton-based implementations are more general, as they can be
 \FloatBarrier
 
 \subsubsection*{Performance experiments}
-We performed our experiments with the six different implementations 1. -- 6. of matrix multiplication on two different computer systems with GPUs:
+We performed our experiments with the six different implementations 1. -- 6. of matrix multiplication on two different computer systems with \GPUs:
 \begin{itemize}[leftmargin=50pt]
   \item[System A:] Our general testing system already described in~\autoref{sec:skelcl:experimental_setup}:
-    an NVIDIA S1070 equipped with four Nvidia Tesla \GPUs, each with 240 streaming processors and 4 GByte memory.
+    an Nvidia S1070 equipped with four Nvidia Tesla \GPUs, each with 240 streaming processors and 4 GByte memory.
   \item[System B:] An AMD Radeon HD 6990 graphics card containing two \GPUs, each with 1536 streaming processors and 1 GByte memory.
 \end{itemize}
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_sizes_gtx480}
-  \caption[Runtime of different matrix multiplication implementations on an NVIDIA system.]%
-          {Runtime of different matrix multiplication implementations on the NVIDIA system for different sizes of the matrices.}
+  \caption[Runtime of different matrix multiplication implementations on an Nvidia system.]%
+          {Runtime of different matrix multiplication implementations on the Nvidia system for different sizes of the matrices.}
   \label{fig:mat_mult_single}
 \end{figure}
 \begin{table}[tb]
@@ -238,16 +238,16 @@ We performed our experiments with the six different implementations 1. -- 6. of 
     \midrule
     \OpenCL            & 0.122 & 0.791 & 5.778 & 48.682 & 472.557 \\
     Optimized \OpenCL  & 0.017 & 0.105 & 0.752 &  5.683 &  51.337 \\
-    CUBLAS             & 0.012 & 0.059 & 0.387 &  2.863 &  22.067 \\
-    clBLAS             & 0.061 & 0.246 & 1.564 & 11.615 &  90.705 \\
+    \CUBLAS            & 0.012 & 0.059 & 0.387 &  2.863 &  22.067 \\
+    \clBLAS            & 0.061 & 0.246 & 1.564 & 11.615 &  90.705 \\
     Generic \allpairs  & \multirow{2}{*}{0.121} & \multirow{2}{*}{0.792} & \multirow{2}{*}{5.782} & \multirow{2}{*}{48.645} & \multirow{2}{*}{471.235} \\
     skeleton\\
     Specialized \allpairs & \multirow{2}{*}{0.024} & \multirow{2}{*}{0.156} & \multirow{2}{*}{1.134} & \multirow{2}{*}{8.742} & \multirow{2}{*}{68.544} \\
     skeleton\\
     \bottomrule
   \end{tabular}
-  \caption[Runtime results for all tested implementations of matrix multiplication on an NVIDIA system.]
-          {Runtime results for all tested implementations on the NVIDIA system.}
+  \caption[Runtime results for all tested implementations of matrix multiplication on an Nvidia system.]
+          {Runtime results for all tested implementations on the Nvidia system.}
   \label{tab:mat_mult_single}
 \end{table}
 
@@ -284,7 +284,7 @@ However, the latter implementation can only be used for square matrices and, the
     \midrule
     \OpenCL            & 0.008 & 0.046 & 0.284 & 2.178 & 17.098 \\
     Optimized \OpenCL  & 0.006 & 0.023 & 0.111 & 0.743 &  5.569 \\
-    clBLAS             & 0.113 & 0.120 & 0.143 & 0.329 &  2.029 \\
+    \clBLAS            & 0.113 & 0.120 & 0.143 & 0.329 &  2.029 \\
     Generic \allpairs  & \multirow{2}{*}{0.007} & \multirow{2}{*}{0.038} & \multirow{2}{*}{0.278} & \multirow{2}{*}{2.151} & \multirow{2}{*}{16.983} \\
     skeleton\\
     Specialized \allpairs & \multirow{2}{*}{0.005} & \multirow{2}{*}{0.023} & \multirow{2}{*}{0.141} & \multirow{2}{*}{1.025} & \multirow{2}{*}{7.842} \\
@@ -296,23 +296,23 @@ However, the latter implementation can only be used for square matrices and, the
   \label{tab:mat_mult_single_amd}
 \end{table}
 
-Not surprisingly, CUBLAS by Nvidia is the fastest of all implementations, as it is highly tuned specifically for Nvidia \GPUs using CUDA.
-The clBLAS implementation by AMD using \OpenCL performs not as well:
+Not surprisingly, \CUBLAS by Nvidia is the fastest of all implementations, as it is highly tuned specifically for Nvidia \GPUs using \CUDA.
+The \clBLAS implementation by AMD using \OpenCL performs not as well:
 presumably, it is optimized for AMD \GPUs and performs poorly on other hardware.
-Our optimized \allpairs skeleton implementation outperforms the clBLAS implementation for all matrix sizes tested.
+Our optimized \allpairs skeleton implementation outperforms the \clBLAS implementation for all matrix sizes tested.
 
 \paragraph{System B (one \GPU)}
 \autoref{fig:mat_mult_single_amd} shows the measured runtime in seconds for five of the six implementations for different sizes of the matrices.
 Detailed numbers can be found in \autoref{tab:mat_mult_single_amd}.
-We could not use the Nvidia-specific CUBLAS implementation as it does not work on the AMD \GPU.
+We could not use the Nvidia-specific \CUBLAS implementation as it does not work on the AMD \GPU.
 
 For bigger matrices, the slowest implementations are, again, the unoptimized \OpenCL implementation and the implementation using the generic \allpairs skeleton.
 
 The optimized \OpenCL implementation and the specialized \allpairs skeleton perform similarly.
 For matrices of size $8192\times 8192$, the optimized \OpenCL implementation is about 30\% faster.
 
-The clBLAS implementation performs very poorly for small matrices, but is clearly the fastest implementation for bigger matrices.
-Similar to the CUBLAS implementation on the Nvidia hardware, it is not surprising that the implementation by AMD performs very well on their own hardware.
+The \clBLAS implementation performs very poorly for small matrices, but is clearly the fastest implementation for bigger matrices.
+Similar to the \CUBLAS implementation on the Nvidia hardware, it is not surprising that the implementation by AMD performs very well on their own hardware.
 
 
 \begin{figure}[tb]
@@ -354,7 +354,7 @@ Similar to the CUBLAS implementation on the Nvidia hardware, it is not surprisin
 \paragraph{System A (multiple \GPUs)}
 \autoref{fig:mat_mult_devices} shows the runtime behavior for both \allpairs skeleton-based implementations when using up to four \GPUs of our multi-\GPU system.
 The other four implementations are not able to handle multiple \GPUs and would have to be specially rewritten for such systems.
-Newer versions of Nvidia's CUBLAS implementation support the execution on multiple \GPUs as well.
+Newer versions of Nvidia's \CUBLAS implementation support the execution on multiple \GPUs as well.
 We observe a good scalability for both of our skeleton-based implementations, achieving speedups between 3.09 and 3.93 when using four \GPUs.
 Detailed numbers can be found in \autoref{tab:mat_mult_devices}.
 For the matrices of size $16384\times 16384$, performance is also provided in GFlops;

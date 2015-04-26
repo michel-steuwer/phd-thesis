@@ -7,8 +7,8 @@ In this section we are going to evaluate \SkelCL using two basic linear algebra 
   \item the dot product of two vectors.
 \end{itemize}
 
-Both applications are included in BLAS~\cite{Dongarra2002,Dongarra2002a}, the well known library of basic linear algebra functions.
-The BLAS functions are used as basic building blocks by many high-performance computing applications.
+Both applications are included in \BLAS~\cite{Dongarra2002,Dongarra2002a}, the well known library of basic linear algebra functions.
+The \BLAS functions are used as basic building blocks by many high-performance computing applications.
 % Especially dense matrix multiplication is an important operation found in numerous scientific applications.
 
 Here we want to investigate how easily these applications can be expressed with skeletons in \SkelCL.
@@ -104,17 +104,17 @@ float dotProduct(const Vector<float>& x,                  const Vector<float>& y
 
 \bigskip
 
-We now compare the \SkelCL implementations shown in \autoref{lst:skelcl:asum} and \autoref{lst:skelcl:dot} against na{\"i}ve OpenCL implementations and implementations using the CUBLAS library respectively.
+We now compare the \SkelCL implementations shown in \autoref{lst:skelcl:asum} and \autoref{lst:skelcl:dot} against na{\"i}ve \OpenCL implementations and implementations using the \CUBLAS library respectively.
 
 
 \subsection*{Programming effort}
 \autoref{fig:skelcl:sum:dot:loc} shows the lines of code for the \emph{asum} application on the left and for the dot product application on the right.
-The CUBLAS implementations requires 58 respectively 65 lines in total, whereby no \GPU code is written directly.
+The \CUBLAS implementations requires 58 respectively 65 lines in total, whereby no \GPU code is written directly.
 The code contains a lengthy setup, memory allocations, memory transfers and launching the computation on the \GPU including all necessary error checks.
 The na{\"i}ve \OpenCL implementations require over 90 lines each (\emph{asum}: 91, dot product: 96) for managing the \GPU execution and 20 lines of \GPU code.
 By far the shortest implementations are the \SkelCL implementations with 7 lines each, as shown in \autoref{lst:skelcl:asum} and \autoref{lst:skelcl:dot}.
 Here we count the lambda expressions customizing the algorithmic skeletons as \GPU code and all other lines as \CPU code.
-The code is not just shorter but each single line is clear and straightforward to understand, where, \eg,  the CUBLAS API call for launching the dot product computation alone expects 7 arguments requiring the programmer to look up the documentation for using it correctly.
+The code is not just shorter but each single line is clear and straightforward to understand, where, \eg,  the \CUBLAS \API call for launching the dot product computation alone expects 7 arguments requiring the programmer to look up the documentation for using it correctly.
 
 \begin{figure}
   \centering
@@ -128,15 +128,15 @@ The code is not just shorter but each single line is clear and straightforward t
 The figure uses a logarithmic scale on the vertical axis and shows the runtime for different sizes of the input vectors: from 4 megabyte to 512 megabyte.
 These results include data transfers to and from the \GPU as well as the computation performed on the \GPU.
 
-The results clearly show that the \SkelCL version is the slowest, followed by the na{\"i}ve \OpenCL implementation, and, finally, the implementation using CUBLAS which is the fastest.
+The results clearly show that the \SkelCL version is the slowest, followed by the na{\"i}ve \OpenCL implementation, and, finally, the implementation using \CUBLAS which is the fastest.
 For both applications the performance difference between the versions is roughly similar independent of the input size.
-For \emph{asum} \SkelCL is between $2$ and $3.2$ times slower than the na{\"i}ve \OpenCL version and up to $7$ times slower than the CUBLAS version.
-For dot product \SkelCL is on average about $2.25$ times slower than the na{\"i}ve \OpenCL version and between $3.5$ and $4$ times slower than CUBLAS.
+For \emph{asum} \SkelCL is between $2$ and $3.2$ times slower than the na{\"i}ve \OpenCL version and up to $7$ times slower than the \CUBLAS version.
+For dot product \SkelCL is on average about $2.25$ times slower than the na{\"i}ve \OpenCL version and between $3.5$ and $4$ times slower than \CUBLAS.
 We will discuss the reasons for the bad performance of the \SkelCL implementation in the next subsection.
 
-The CUBLAS version is about $2$ times faster than the na{\"i}ve \OpenCL version for \emph{asum} and $1.7$ times for the dot product application.
+The \CUBLAS version is about $2$ times faster than the na{\"i}ve \OpenCL version for \emph{asum} and $1.7$ times for the dot product application.
 One has to keep in mind, that these benchmark are mostly dominated by the memory transfers moving data between \CPU and \GPU which are the same in both version.
-This explains the rather small difference in runtime between the na{\"i}ve \OpenCL version and the optimized CUBLAS version.
+This explains the rather small difference in runtime between the na{\"i}ve \OpenCL version and the optimized \CUBLAS version.
 
 \begin{figure}[tb]
   \centering
@@ -150,7 +150,7 @@ This explains the rather small difference in runtime between the na{\"i}ve \Open
 \begin{figure}[tb]
   \centering
   \includegraphics[width=.9\textwidth]{Plots/Reduce/reduce.pdf}
-  \caption{Runtime of the na{\"i}ve \OpenCL and \SkelCL versions of \emph{asum} and \emph{sum} compared to CUBLAS.}
+  \caption{Runtime of the na{\"i}ve \OpenCL and \SkelCL versions of \emph{asum} and \emph{sum} compared to \CUBLAS.}
   \label{fig:skelcl:reduce}
 \end{figure}
 As discussed in \autoref{chapter:skelcl} the \SkelCL library implementation generates one \OpenCL kernel for each skeleton (and two for the \reduce skeleton).
@@ -164,14 +164,14 @@ This is similar to the \emph{asum} benchmark, but without applying the \map skel
 \end{equation}
 For comparison we also modified the na{\"i}ve \OpenCL implementation of \emph{asum} to not apply the absolute value function to every element of the input vector.
 \autoref{fig:skelcl:reduce} shows the performance results of the na{\"i}ve \OpenCL version and the \SkelCL version for \emph{asum} on the left and \emph{sum} on the right.
-The plots show the performance relative to the performance of the CUBLAS implementation of \emph{asum}.
+The plots show the performance relative to the performance of the \CUBLAS implementation of \emph{asum}.
 We can see, that the performance difference for \emph{asum} and \emph{sum} it is very small (only up to $4$\%) for the na{\"i}ve \OpenCL version.
 This makes sense, as the most part of the computation is spend for reducing the elements and not for applying a simple function to each element in parallel.
 For the \SkelCL implementations the difference between the two benchmarks is very large.
 This is due to the fact that for \emph{asum} a separate \OpenCL kernel is launched which reads each value from the global memory, applies the absolute value function to it, and stores the result back to global memory.
 The reduction kernel then starts by reading each element back from global memory.
 This leads to a huge performance penalty, where the \emph{asum} benchmark is up to $6.2$ times slower than the \emph{sum} benchmark.
-Furthermore, we can see that for the \emph{sum} benchmark the \SkelCL implementation outperforms the na{\"i}ve \OpenCL implementation and is only between $16$\% and $37$\% slower than the CUBLAS \emph{asum} implementation.
+Furthermore, we can see that for the \emph{sum} benchmark the \SkelCL implementation outperforms the na{\"i}ve \OpenCL implementation and is only between $16$\% and $37$\% slower than the \CUBLAS \emph{asum} implementation.
 
 In \autoref{ch:fifth}, we will discuss a novel compilation technique which addresses this drawback of \SkelCL.
 This technique supports the generation of a single efficient \OpenCL kernel for applications like the \emph{asum} and dot product examples.

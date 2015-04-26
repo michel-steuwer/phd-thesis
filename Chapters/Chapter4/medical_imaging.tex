@@ -94,7 +94,7 @@ The \SkelCL program in \autoref{lst:em_skelcl} reflects the described five phase
 The subset \code{s}, the error image \code{cl}, and the reconstruction image \code{f} are declared as \SkelCL vectors which enables an easy and automatic data transfer between \GPUs.
 As data transfers are performed implicitly by \SkelCL, the upload phase is implemented by simply setting vector distributions (\autoref{lst:em:skelcl:upload:start}---\autoref{lst:em:skelcl:upload:end}), while the download phase is performed implicitly when the \SkelCL containers are accessed or redistributed.
 \begin{lstlisting}[%
-  caption={SkelCL code of the LM OSEM algorithm},%
+  caption={\SkelCL code of the LM OSEM algorithm},%
   numbers=left,%
 float,%
 label={lst:em_skelcl}]

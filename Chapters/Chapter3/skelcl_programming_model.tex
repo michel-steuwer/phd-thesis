@@ -1,4 +1,4 @@
-\section{The SkelCL Programming Model}
+\section{The \SkelCL Programming Model}
 \label{section:skelcl-programming-model}
 \SkelCL (Skeleton Computing Language) is a high-level programming model targeting multi-\GPU systems.
 It is developed as an extension of the standard \OpenCL programming model~\cite{OpenCL}.
@@ -294,7 +294,7 @@ It allows the application developer to abstract from the challenges of managing 
     \caption{\emph{block}}
     \label{fig:distributions:block}
   \end{subfigure}
-  \caption{Distributions of a vector in SkelCL.}
+  \caption{Distributions of a vector in \SkelCL.}
   \label{fig:distributions}
   \bigskip
 \end{figure}
@@ -339,7 +339,7 @@ this results in a lot of low-level code which becomes completely hidden when usi
     \caption{\emph{block}}
     \label{fig:distributions_matrix:block}
   \end{subfigure}
-  \caption{Distributions of a matrix in SkelCL.}
+  \caption{Distributions of a matrix in \SkelCL.}
   \label{fig:distributions_matrix}
 \end{figure}
 
@@ -422,7 +422,7 @@ The definition for matrices is similar:
 \end{definition}
 
 
-SkelCL currently supports a fixed set of choices for the out-of-bound handling function $h$ motivated by common cases of of bound handling in image processing applications.
+\SkelCL currently supports a fixed set of choices for the out-of-bound handling function $h$ motivated by common cases of of bound handling in image processing applications.
 This restriction could easily be lifted in the future.
 The \stencil skeleton can currently be configured to handle out-of-bound accesses in two possible ways:
 \begin{enumerate}
@@ -463,7 +463,7 @@ It computes a new value for every pixel of an image by weighting and summing up 
     \caption{\emph{overlap}}
     \label{fig:overlap_distribution:matrix}
   \end{subfigure}
-  \caption{Overlap distribution of a vector and matrix in SkelCL.}
+  \caption{Overlap distribution of a vector and matrix in \SkelCL.}
   \label{fig:overlap_distribution}
   \bigskip
 \end{figure}

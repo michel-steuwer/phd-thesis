@@ -68,7 +68,7 @@ This has led to architectures which particularly focus on their energy efficienc
 Originally developed for accelerating the rendering of complex graphics and 3D scenes, \GPU architectures have been recently generalized to support more types of computations.
 Some people refer to this development using the term general-purpose computing on graphics processing units (\GPGPU).
 
-Technically \GPU architectures are multi-core architectures like modern multi-core \CPUs, but each individual core on a \GPU typically has dozens or hundreds of functional units which can perform computations in parallel following the \emph{Single Instruction, Multiple Data} (SIMD) principle.
+Technically \GPU architectures are multi-core architectures like modern multi-core \CPUs, but each individual core on a \GPU typically has dozens or hundreds of functional units which can perform computations in parallel following the \emph{Single Instruction, Multiple Data} (\SIMD) principle.
 These types of architectures are optimized towards a high throughput of computations, therefore, they focus on performing a large amount of operations in parallel and feature no, or only small, caches to prevent or mitigate latencies of the memory:
 if a thread stalls waiting for the memory, another thread takes over and keeps the core busy.
 For multi-core \CPUs switching between threads is more expensive, therefore, \CPUs are instead optimized to avoid long latencies when accessing the memory with a deep cache hierarchy and advanced architectural features, like long pipelines and out-of-order execution, all of which are designed to keep each core busy.

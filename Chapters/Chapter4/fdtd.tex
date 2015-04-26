@@ -69,15 +69,15 @@ for (...) { // for each iteration
 We implemented a two-dimensional version using \SkelCL as well as a manually tuned \OpenCL implementation.
 To solve the PDEs in \autoref{eq:rot_h} and \autoref{eq:rot_d}, two separated three-point stencil computations are performed and one map computation for the gain-model is necessary.
 \autoref{eq:div_e} and \autoref{eq:div_h} are implicitly solved by the \FDTD method~\cite{Yee1966}.
-\autoref{lst:fdtd} shows the SkelCL code of the application:
+\autoref{lst:fdtd} shows the \SkelCL code of the application:
 in every iteration first the energy distribution is updated (\autoref{lst:fdtd:energy}) using a map skeleton (defined in \autoref{lst:fdtd:map});
 then the first stencil (defined in \autoref{lst:fdtd:stencil1}) updates the electric field $\vec{E}$ by combining a single element of $\vec{E}$ with three elements of the magnetic field $\vec{H}$ (\autoref{lst:fdtd:efield});
 and finally the second stencil (defined in \autoref{lst:fdtd@stencil2}) updates $\vec{H}$ by combining a single element of $\vec{H}$ with three elements of $\vec{E}$ (\autoref{lst:fdtd:hfield}).
 
 Please note that the two stencil computations require both fields ($\vec{E}$ and $\vec{H}$) as input.
-To implement this, we use the \emph{additional argument} feature of SkelCL which allows the additional field to be passed to skeletons on execution (see \autoref{lst:fdtd:efield} and \autoref{lst:fdtd:hfield}).
+To implement this, we use the \emph{additional argument} feature of \SkelCL which allows the additional field to be passed to skeletons on execution (see \autoref{lst:fdtd:efield} and \autoref{lst:fdtd:hfield}).
 The additional arguments are passed unchanged to the customizing function of the skeleton, therefore, the function customizing the stencil in line 4 now accepts $\vec{H}$ as a second parameter.
-This feature greatly increases the flexibility of applications written in SkelCL.
+This feature greatly increases the flexibility of applications written in \SkelCL.
 
 % \subsubsection*{Programming effort}
 
@@ -96,13 +96,11 @@ The Stencil skeleton in \SkelCL provides sufficient functionality to allow for s
     \label{fig:fdtd_eval}
 \end{figure}
 
-We compared our SkelCL based implementation to a handwritten, fine-tuned OpenCL implementation which is based on \cite{Knitter2013} and was initially developed and described in~\cite{Haidl2011}.
-The OpenCL version is specifically designed for modern Nvidia GPUs.
+We compared our \SkelCL based implementation to a handwritten, fine-tuned \OpenCL implementation which is based on \cite{Knitter2013} and was initially developed and described in~\cite{Haidl2011}.
+The \OpenCL version is specifically designed for modern Nvidia \GPUs.
 In particular, it exploits the L1 and L2 caches of the Nvidia Fermi and Kepler architecture and does not explicitly make use of the local memory.
-We performed the experiments on a system with a modern Nvidia K20c Kepler GPU with 5GB memory and 2496 compute cores.
+We performed the experiments on a system with a modern Nvidia K20c Kepler \GPU with 5GB memory and 2496 compute cores.
 \autoref{fig:fdtd_eval} shows the median runtimes of a simulation time of $1\,ps$ equal to $60\, 000$ iterations.
 The \SkelCL version slightly outperforms the \OpenCL version by $2\%$.
 The two stencil skeletons achieve ${\sim}10\%$ faster runtimes than the corresponding \OpenCL kernels but the map skeleton is ${\sim}20\%$ slower, because it reads and writes all elements exactly once, while the customized \OpenCL kernel does not write back all elements.
 For this application it seems beneficial to make explicit usage of the local memory as our implementation of the Stencil skeleton does, instead of relying on the caches of the hardware, as the \OpenCL implementation does.
-
-% This application study shows that real-world applications written in SkelCL can achieve the performance competitive with manually written OpenCL code.

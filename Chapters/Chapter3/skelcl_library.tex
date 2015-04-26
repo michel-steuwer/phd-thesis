@@ -1,4 +1,4 @@
-\section{The SkelCL Library}
+\section{The \SkelCL Library}
 \label{section:skelcl-library}
 In this section we discuss the \SkelCL library -- our implementation of the \SkelCL programming model.
 It provides a \Cpp~\API that implements the features of the \SkelCL programming model, and thus liberates the application developer from writing low-level code.
@@ -94,7 +94,7 @@ Finally, we will look at issues regarding the integration with \Cpp like sharing
 To allow a deep integration of \SkelCL code with \Cpp, we implemented a custom compiler: \code{skelclc}.
 We leverage the LLVM infrastructure~\cite{Lattner2004} for building this compiler.
 LLVM and the related Clang project offer well-defined application programming interfaces for writing C and \Cpp related compiler tools.
-In particular the \emph{LibTooling} API allows for writing tools which search for particular patterns in the abstract syntax tree (AST) which is representing the source code and perform actions on the found code fragments.
+In particular the \emph{LibTooling} \API allows for writing tools which search for particular patterns in the abstract syntax tree (AST) which is representing the source code and perform actions on the found code fragments.
 The \code{skelclc} custom compiler does exactly this.
 For example, the custom compiler searches for an expression like this:
 \begin{lstlisting}[numbers=none,label={lst:skelclc:before},caption={\SkelCL code snippet before transformation.}]
@@ -155,9 +155,9 @@ In real-world applications (\eg, the LM OSEM discussed in detail in \autoref{sec
 With only a fixed number of input arguments, traditional skeletons would not be applicable for the implementation of such applications.
 In \SkelCL, skeletons can accept an arbitrary number of additional arguments which are passed to the skeleton's customizing function.
 
-\autoref{lst:saxpy:addArgs} shows an example implementation in \SkelCL of the \emph{single-precision real-alpha x plus y} ($saxpy$) computation -- a commonly used BLAS routine.
+\autoref{lst:saxpy:addArgs} shows an example implementation in \SkelCL of the \emph{single-precision real-alpha x plus y} ($saxpy$) computation -- a commonly used \BLAS routine.
 \begin{lstlisting}[%
-  caption={The BLAS $saxpy$ computation using the \zip skeleton with additional arguments},%
+  caption={The \BLAS $saxpy$ computation using the \zip skeleton with additional arguments},%
   float=tbp,%
   label={lst:saxpy:addArgs}]
 float a = initScalar();
@@ -179,7 +179,7 @@ Besides scalar values, like shown in the example, vectors and matrices can also 
 When vectors or matrices are used as additional arguments, the user is responsible to ensure that no race conditions occur when writing to or reading from the container.
 If the container is only used for reading, it is guaranteed that no race conditions will occur.
 
-The additional argument feature is implemented in SkelCL using the variadic template feature from \Cpp.
+The additional argument feature is implemented in \SkelCL using the variadic template feature from \Cpp.
 
 \paragraph{Lambda captures:}
 In \Cpp, lambda expressions can make use of variables which have been accessible at the time the lambda expression is created.
@@ -192,12 +192,12 @@ Capturing a variable by reference allows the user to change the content of the v
 In \SkelCL, the customizing function can be expressed as a lambda expression capturing variables.
 The by-value capturing of variables is fully supported by the \code{skelclc} compiler and the capturing by-reference is supported with the following restrictions:
 by-reference capturing is only allowed if the reference is used to read from the variable only, and writing to the captured variable is forbidden.
-The reason for these restrictions is that when executing the lambda expression on the \GPU, a write to a by-reference captured variable requires a costly data transfer to ensure that the variable stored in CPU memory is modified.
+The reason for these restrictions is that when executing the lambda expression on the \GPU, a write to a by-reference captured variable requires a costly data transfer to ensure that the variable stored in \CPU memory is modified.
 Furthermore, as the lambda expression will be executed multiple times in parallel as part of the skeletons execution, it is likely that race conditions occur when writing to the captured reference.
 We can rewrite the $saxpy$ example using a lambda expression capturing the variable $a$ as shown in \autoref{lst:saxpy:capture}.
 \begin{lstlisting}[%
-  caption={[The BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing a variable.]
-           The BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing the variable $a$.},%
+  caption={[The \BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing a variable.]
+           The \BLAS $saxpy$ computation using a \zip skeleton customized with a lambda expression capturing the variable $a$.},%
   float=tbp,%
   label={lst:saxpy:capture}]
 float a = initScalar();
@@ -413,8 +413,8 @@ This produces the final result, as shown in the bottom line.
     \centering
     \includegraphics[width=.9\textwidth]{ASHES/scan}
     \caption[Implementation of the \scan skeleton.]%
-            {Implementation of the \scan skeleton visualized for four GPUs:
-            (1) All GPUs scan their parts independently.
+            {Implementation of the \scan skeleton visualized for four \GPUs:
+            (1) All \GPUs scan their parts independently.
             (2) \map skeletons are created automatically and
              executed to produce the result.}
     \label{fig:scan:impl}
@@ -478,7 +478,7 @@ auto gauss = mapOverlap($\label{lst:mapoverlap:factory}$
 
 
 \begin{lstlisting}[%
-caption={OpenCL kernel created by the \code{MapOverlap} implementation for the Gaussian blur application.},%
+caption={\OpenCL kernel created by the \code{MapOverlap} implementation for the Gaussian blur application.},%
 float={tb},
 label={lst:mapoverlap:impl}]
 #define RANGE (1)   #define NEUTRAL (0)
@@ -569,7 +569,7 @@ up, right, down, and left.
 In the example in \autoref{lst:stencil:first}, the heat flows from left to right, therefore, no accesses to the elements to the right are necessary and the stencil space's extents are specified accordingly (note the $0$ in \autoref{lst:stencil:first:shape} representing the extent to the right).
 \autoref{fig:stencil:first:shape} illustrates this situation: the dark gray element is updated by using the values from the left.
 The specified stencil shape's extent is highlighted in light gray.
-In our current implementation, the user has to explicitly specify the stencil shape's extents, which is necessary for performing the out-of-bound handling on the GPU.
+In our current implementation, the user has to explicitly specify the stencil shape's extents, which is necessary for performing the out-of-bound handling on the \GPU.
 In future work, the stencil shape could be inferred from the customizing function using source code analysis in many common cases.
 This would help to avoid inconsistencies and free the user from specifying this information explicitly.
 
@@ -683,7 +683,7 @@ After performing a boundary check, the customizing function is called in \autore
 This \OpenCL kernel is executed once for every element of the output matrix $C$.
 
 \begin{lstlisting}[%
-caption={OpenCL kernel used in the implementation of the generic \allpairs skeleton.},%
+caption={\OpenCL kernel used in the implementation of the generic \allpairs skeleton.},%
 float=t,%
 numbers=left,%
 label={lst:allpairs:generic:kernel}]
@@ -709,9 +709,9 @@ kernel void allpairs(const global float* Ap,
 \end{lstlisting}
 
 This generic implementation makes no assumption about the order in which the customizing function (\texttt{USER\_FUNC}) accesses the elements of its two input vectors.
-In this generic case, we cannot assume that the two vectors fit entirely into the fast but restricted GPU local memory.
+In this generic case, we cannot assume that the two vectors fit entirely into the fast but restricted \GPU local memory.
 Therefore, we have to use only the slower global memory in the generic implementation.
-On modern GPUs, accesses to the global memory are very expensive, taking up to 800 processor cycles, as compared to only few cycles required to access the local memory~\cite{CUDAProgrammingGuide}.
+On modern \GPUs, accesses to the global memory are very expensive, taking up to 800 processor cycles, as compared to only few cycles required to access the local memory~\cite{CUDAProgrammingGuide}.
 
 Let us assume targeting \GPU architectures and estimate the number of global (and, therefore, expensive) memory accesses required for computing an element of the matrix multiplication in the generic case.
 One global memory read access for every element of both input vectors is performed, and a single global memory write access is required to write the result into the output matrix.
@@ -791,7 +791,7 @@ Matrix $B$ is \emph{copy} distributed, \ie, it is copied entirely to all \GPUs i
 Matrix $A$ and $C$ are \emph{block} distributed, \ie, they are row-divided into as many equally-sized blocks as \GPUs are available;
 each block is copied to its corresponding \GPU.
 Following these distributions, each \GPU computes one block of the result matrix $C$.
-In the example with two GPUs shown in \autoref{fig:multi_gpu}, the first two rows of $C$ are computed by \GPU 1 and the last two rows by \GPU 2.
+In the example with two \GPUs shown in \autoref{fig:multi_gpu}, the first two rows of $C$ are computed by \GPU 1 and the last two rows by \GPU 2.
 The \allpairs skeleton automatically selects these distributions, therefore, the same source code can be used when using a single \GPU or multiple \GPUs.
 
 

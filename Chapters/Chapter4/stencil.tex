@@ -13,7 +13,7 @@ The Gaussian blur applies a single stencil computation, possibly iterated multip
 The Sobel edge detection applies a stencil computation once to detect edges in images.
 The more advanced Canny edge detection algorithm consists of a sequence of stencil operations which are applied to obtain the final result.
 For each of the three applications, we compare the performance using our two implementations of the \stencil skeleton:
-\code{MapOverlap} and \code{Stencil} with native OpenCL implementations using an input image of size $4096 \times 3072$.
+\code{MapOverlap} and \code{Stencil} with native \OpenCL implementations using an input image of size $4096 \times 3072$.
 
 
 
@@ -99,12 +99,12 @@ Matrix<char> gaussianBlur(const Matrix<char>& image) {
 	\centering
 	\includegraphics[width=\columnwidth]{Plots/gauss/gauss_loc.pdf}
 	\caption[Lines of code of different implementation of the Gaussian blur]%
-          {Lines of code of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an optimized OpenCL version using local memory, and \SkelCL's \code{MapOverlap} and \code{Stencil} implementations of the \stencil skeleton.}
+          {Lines of code of the Gaussian blur using a na{\"i}ve \OpenCL implementation with global memory, an optimized \OpenCL version using local memory, and \SkelCL's \code{MapOverlap} and \code{Stencil} implementations of the \stencil skeleton.}
 	\label{fig:gaussLOCs}
 \end{figure} 
 
 \autoref{fig:gaussLOCs} shows the program sizes (in lines of code) for the four implementations of the Gaussian blur. 
-The application developer needs $57$ lines of OpenCL host code and 13 LOCs for performing a Gaussian blur only using global memory. 
+The application developer needs $57$ lines of \OpenCL host code and 13 LOCs for performing a Gaussian blur only using global memory. 
 When using local memory, some more arguments are passed to the kernel, thus, increasing the host-LOCs to $65$, while the LOCs for the kernel function, which copies all necessary elements for a work-group's calculation into local memory, requires $88$ LOCs including explicit out-of-bounds handling and complex index calculations.
 The \code{MapOverlap} and \code{Stencil} versions are similar and both require only $15$ LOCs host code and $9$ LOCs kernel code to perform a Gaussian blur. 
 The support for multi-\GPU systems is implicitly provided when using \SkelCL's skeletons, such that the kernel remains the same as for single-\GPU systems.
@@ -116,19 +116,19 @@ This is an important advantage of \SkelCL over the \OpenCL implementations of th
 	\centering
 	\includegraphics[width=.9\columnwidth]{Plots/gauss/gauss_runtime.pdf}
 	\caption[Runtime of the Gaussian blur using different implementations.]%
-          {Runtime of the Gaussian blur using a na{\"i}ve OpenCL implementation with global memory, an OpenCL version using local memory and SkelCL's MapOverlap and Stencil skeletons.}
+          {Runtime of the Gaussian blur using a na{\"i}ve \OpenCL implementation with global memory, an \OpenCL version using local memory and \SkelCL's MapOverlap and Stencil skeletons.}
 	\label{fig:gaussAbs}
 \end{figure} 
 
 \autoref{fig:gaussAbs} shows the measured total runtime including data transfers of the Gaussian blur using:
 \begin{itemize}
-  \item[1)] a na{\"i}ve OpenCL implementation using global memory,
-  \item[2)] an optimized OpenCL version using local memory,
+  \item[1)] a na{\"i}ve \OpenCL implementation using global memory,
+  \item[2)] an optimized \OpenCL version using local memory,
   \item[3)] the \code{MapOverlap}-based implementation, and
   \item[4)] the \code{Stencil}-based implementation, correspondingly.
 \end{itemize}
-We can observe that for larger stencil shape sizes, the \code{MapOverlap} and \code{Stencil}-based versions outperform the na{\"i}ve OpenCL implementation by $65\%$ and $62\%$, respectively.
-The optimized OpenCL version, which copies all necessary elements into local memory prior to calculation, is $5\%$ faster than \code{MapOverlap} and $10\%$ faster than \code{Stencil} for small stencil shapes.
+We can observe that for larger stencil shape sizes, the \code{MapOverlap} and \code{Stencil}-based versions outperform the na{\"i}ve \OpenCL implementation by $65\%$ and $62\%$, respectively.
+The optimized \OpenCL version, which copies all necessary elements into local memory prior to calculation, is $5\%$ faster than \code{MapOverlap} and $10\%$ faster than \code{Stencil} for small stencil shapes.
 When increasing the stencil shape size, this disadvantage is reduced to $3\%$ for \code{MapOverlap} and $5\%$ for \code{Stencil} with stencil shape's extent of $10$ in each direction.
 
 The \code{Stencil} implementation is slower for small stencil shapes than the \code{MapOverlap} implementation, up to $32\%$ slower for an stencil shape size of $1$.
@@ -251,7 +251,7 @@ The implementation is straightforward and very similar to the formula in \autore
 \subsubsection*{Programming effort}
 
 \begin{lstlisting}[%
-caption={Additional boundary checks and index calculations for Sobel algorithm, necessary in the standard OpenCL implementation.},%
+caption={Additional boundary checks and index calculations for Sobel algorithm, necessary in the standard \OpenCL implementation.},%
 float=tb,
 numbers=left,
 label={lst:sobel:opencl}]

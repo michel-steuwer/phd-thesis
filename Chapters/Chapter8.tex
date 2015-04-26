@@ -1,16 +1,16 @@
 % Chapter 8: Conclusion
 
-\chapter{Conclusion and Comparison to Related Work}
+\chapter{Conclusion and Comparison with Related Work}
 
 \label{ch:eighth} % For referencing the chapter elsewhere, use \autoref{ch:name}
 
-In this chapter we compare the approaches presented in this thesis to related work and draw a short final conclusion.
+\lettrine[lines=3, loversize=0.1]{I}{n this final chapter} we compare the approaches presented in this thesis with related work and draw a short final conclusion.
 
 \section{Related Work}
-Here we will discuss related projects which also aim to simplify parallel programming in general or of GPU systems in particular.
+Here we will discuss related projects which also aim to simplify parallel programming in general or programming of \GPU systems in particular.
 We also include projects aiming for performance portability, as our approach does.
 We will start by looking at algorithmic skeleton libraries in general and then focus on more recent projects targeting \GPU systems, like \SkelCL does.
-Next, we will cover other structured parallel programming approaches, including the famous \emph{MapReduce} framework.
+Next, we will cover other structured parallel programming approaches, including the well known \emph{MapReduce} framework.
 We will then discuss the broad range of \GPU programming approaches proposed in recent years, before looking at domain specific approaches, including projects particular focus on stencil computations.
 We will end with a discussion of related projects using rewrite rules for program optimizations.
 
@@ -22,10 +22,10 @@ Numerous algorithmic skeleton libraries have been proposed since the introductio
 A good and extensive overview reflecting the state of the art at the time when the work on this thesis was started in 2010 can be found in~\cite{Gonzalez-VelezL10}.
 We will discuss here some representative examples of algorithmic skeleton libraries targeting different types of computer architectures.
 
-Prominent algorithmic skeleton libraries targeting distributed systems are \emph{Muesli}~\cite{Kuchen02} and \emph{eSkel}~\cite{Cole04} which are both implemented using MPI~\cite{MPI}.
-There has also been work especially dedicated towards grids~\cite{AltG03a, Alt2007} leading to the development of the \emph{Higher Order Components (HOC)}~\cite{DunnweberG04,DuennweberG09} which are implemented in Java.
+Prominent algorithmic skeleton libraries targeting distributed systems are \emph{Muesli}~\cite{Kuchen02} and \emph{eSkel}~\cite{Cole04} which are both implemented using \MPI~\cite{MPI}.
+There has also been work especially dedicated towards grids~\cite{AltG03a, Alt2007} leading to the development of the \emph{Higher Order Components ({\small HOC})}~\cite{DunnweberG04,DuennweberG09} which are implemented in Java.
 
-Skeleton libraries for multicore \CPUs include \emph{Skandium}~\cite{LeytonP10} which uses Java threads, \emph{FastFlow}~\cite{AldinucciDaKiTo2011,AldinucciDKMT11} which is implemented in \Cpp and has recently be extended towards distributed systems as well~\cite{AldinucciCDKT12}, and an extended version of \emph{Muesli}~\cite{CiechanowiczK10} which uses OpenMP~\cite{OpenMP}.
+Skeleton libraries for multi-core \CPUs include \emph{Skandium}~\cite{LeytonP10} which uses Java threads, \emph{FastFlow}~\cite{AldinucciDaKiTo2011,AldinucciDKMT11} which is implemented in \Cpp and has recently be extended towards distributed systems as well~\cite{AldinucciCDKT12}, and an extended version of \emph{Muesli}~\cite{CiechanowiczK10} which uses \OpenMP~\cite{OpenMP}.
 
 \bigskip
 
@@ -42,29 +42,29 @@ This makes the integration with the existing infrastructure in Muesli and FastFl
 
 \bigskip
 
-\emph{SkePU}~\cite{EnmyrenKe10,DastgeerEnKe2011,DastgeerKe14} is a skeleton library implemented in \Cpp and specifically targeted towards \GPU systems, similar to \SkelCL.
+\emph{\SkePU}~\cite{EnmyrenKe10,DastgeerEnKe2011,DastgeerKe14} is a skeleton library implemented in \Cpp and specifically targeted towards \GPU systems, similar to \SkelCL.
 Both approaches have been developed independently but implement very similar concepts and even a similar set of data-parallel algorithmic skeletons.
 Nevertheless, both projects have been implemented with emphasis on different areas and are implemented in different ways.
-SkePU implements multiple backends for targeting different hardware devices.
-Currently, there exists an OpenMP backend for multicore \CPUs, OpenCL and CUDA backends for \GPUs, and separate backends written in OpenCL and CUDA for multi-\GPU execution.
+\SkePU implements multiple backends for targeting different hardware devices.
+Currently, there exists an \OpenMP backend for multi-core \CPUs, \OpenCL and \CUDA backends for \GPUs, and separate backends written in \OpenCL and \CUDA for multi-\GPU execution.
 
 The approach of developing multiple backends is contradictory to the idea of code and performance portability advocated in this thesis.
-\SkelCL uses only a single \OpenCL backend which will be combined in the future with our novel compiler technique to optimize code for different platforms.
+\SkelCL uses only a single \OpenCL backend which could be combined in the future with our novel compiler technique to optimize code for different platforms.
 
-Recently SkePU has implemented a similar scheme as SkelCL for managing data transfers~\cite{DastgeerKe14}, by using a similar lazy copying strategy then SkelCL does since its first implementation.
-SkePU now also supports to automatically overlap data transfer with computations, which is currently not supported in \SkelCL.
+Recently \SkePU has implemented a similar scheme as \SkelCL for managing data transfers~\cite{DastgeerKe14}, by using a similar lazy copying strategy then \SkelCL does since its first implementation.
+\SkePU now supports to automatically overlap data transfer with computations, which is currently not supported in \SkelCL.
 
-A version of SkePU exists, which is integrated in the StarPU runtime system~\cite{AugonnetTNW09} and allows for hybrid \CPU and \GPU execution with an dynamic load balancing system provided by StarPU.
-Furthermore, SkePU allows to specify \emph{plans} which determine the backend to be used for a particular data size of the problem, \eg, the OpenMP backend for small data size, but the CUDA multi-\GPU backend for larger data sizes.
-While SkelCL also fully support the execution on multicore \CPUs, single \GPUs, and  multi-\GPU systems, there is currently no comparable mechanism to determine which hardware should be used for different data sizes.
+A version of \SkePU exists, which is integrated with the \StarPU runtime system~\cite{AugonnetTNW09} and allows for hybrid \CPU and \GPU execution with an dynamic load balancing system provided by \StarPU.
+Furthermore, \SkePU allows to specify \emph{execution plans} which determine the backend to be used for a particular data size of the problem, \eg, the \OpenMP backend for small data size, but the \CUDA multi-\GPU backend for larger data sizes.
+While \SkelCL also fully support the execution on multi-core \CPUs, single \GPUs, and  multi-\GPU systems, there is currently no comparable mechanism to determine which hardware should be used for different data sizes.
 
 \SkelCL introduces data distributions to give users control over the execution in multi-\GPU systems.
-SkePU does not offer such a feature and always splits the data across \GPUs, therefore, complicated multi-\GPU applications like the LM OSEM presented and evaluated in \autoref{chapter:skelcl-evaluation} are not easily supported by SkePU.
+\SkePU does not offer such a feature and always splits the data across \GPUs, therefore, complicated multi-\GPU applications like the LM OSEM presented and evaluated in \autoref{chapter:skelcl-evaluation} are not easy to implement in \SkePU.
 
 \bigskip
 
-\emph{JPAI}~\cite{FumeroStDu2014} is a recent skeleton library for seamlessly programming \GPU systems from Java.
-JPAI offers an object oriented API which makes use of the new Java lambda expressions.
+\emph{\JPAI}~\cite{FumeroStDu2014} is a recent skeleton library for seamless programming of \GPU systems from Java.
+\JPAI offers an object oriented \API which makes use of the new Java lambda expressions.
 At runtime before execution on the \GPU the customizing functions of the skeletons are compiled to \OpenCL using the Graal~\cite{DuboscqStWuSiWiMo2013} compiler and virtual machine.
 There is currently no support for multi-\GPU systems, as there is in \SkelCL.
 
@@ -76,10 +76,10 @@ There are other projects advocating structured parallel programming, even though
 
 \emph{Delite}~\cite{ChafiSBLAO11,LeeBSCROO11,BrownSLRCOO11} is a framework for building domain specific languages which automatically exploit parallelism.
 To achieve this Delite offers a set of basic parallel operators, very similar to algorithmic skeletons, which can be used as fundamental building blocks by the designer of a domain specific language.
-The domain specific language is compiled by Delite where \Cpp code is generated for multicore \CPUs and \CUDA code for \GPUs.
-For performing the compilation Delite uses a project called \emph{Lightweight Modular Staging  (LMS)}~\cite{RompfO12} which is a runtime code generation approach implemented as a library in the Scala programming language~\cite{Odersky06,OderskyR14}.
-LMS exploits the rich type system of Scala to give fine grained control over which expressions should be evaluated in Scala at compile time and for which expressions code should be generated.
-Neither Delite nor LMS address the performance portability issue we identified in this thesis and address with our novel compilation technique.
+The domain specific language is compiled by Delite where \Cpp code is generated for multi-core \CPUs and \CUDA code for \GPUs.
+For performing the compilation Delite uses a project called \emph{Lightweight Modular Staging  ({\small LMS})}~\cite{RompfO12} which is a runtime code generation approach implemented as a library in the Scala programming language~\cite{Odersky06,OderskyR14}.
+{\small LMS} exploits the rich type system of Scala to give fine grained control over which expressions should be evaluated in Scala at compile time and for which expressions code should be generated.
+Neither Delite nor {\small LMS} address the performance portability issue we identified in this thesis and address with our novel compilation technique.
 
 \bigskip
 
@@ -90,7 +90,7 @@ Computations are divided into two steps called map and reduce.
 In the map step a user provided function is applied to each data item, usually represented as a key-value pair, in a possibly large collection of data.
 After the map step all matching values with the same key are grouped together and then in the reduce step all values for a given key can be aggregated by a second user provided function.
 These concepts are closely related to algorithmic skeletons, even though a slightly different terminology is used and only computations fitting this one computational pattern can be expressed.
-L{\"a}mmel discusses extensively MapReduce from a functional programming persecutive and explores its foundations in skeleton programming~\cite{Laemmel2007}.
+L{\"a}mmel discusses extensively MapReduce from a functional programming persecutive and explores its foundations in skeletal programming~\cite{Laemmel2007}.
 The generic algorithmic skeleton approach discussed in this thesis allows for implementing a broad range of applications, as shown in \autoref{chapter:skelcl-evaluation} and \autoref{chapter:codeGeneration-evaluation}, and is not fixed to one particular application domain as MapReduce is.
 
 Since its introduction MapReduce has found widespread use and several projects providing implementations on different architectures have been presented.
@@ -99,25 +99,25 @@ Other work has targeted single- and multi-\GPU systems~\cite{StuartO11,FangHLG11
 
 \bigskip
 
-\emph{Threading Building Blocks (TBB)}~\cite{Reinders2007} is a software library developed by Intel.
-TBB offers parallel patterns, like \code{parallel\_for} or \code{parallel\_reduce}, as well as concurrent data structures, including \code{concurrent\_queue}, \code{concurrent\_vector}, and \code{concurrent\_hash\_map}.
-TBB can be used for programming of Intels multicore \CPUs and has recently been enabled for the Xeon Phi accelerators as well.
-In a separate book~\cite{McCoolRoRe2012} three authors from Intel discuss how TBB, among other technologies advocated by Intel, can be used for structured parallel programming.
+\emph{Threading Building Blocks (\TBB)}~\cite{Reinders2007} is a software library developed by Intel.
+\TBB offers parallel patterns, like \code{parallel\_for} or \code{parallel\_reduce}, as well as concurrent data structures, including \code{concurrent\_queue}, \code{concurrent\_vector}, and \code{concurrent\_hash\_map}.
+\TBB can be used for programming of Intel's multi-core \CPUs and has recently been enabled for the Xeon Phi accelerators as well.
+In a separate book~\cite{McCoolRoRe2012} three authors from Intel discuss how \TBB, among other technologies advocated by Intel, can be used for structured parallel programming.
 The \emph{\Cpp Extensions for Parallelism}~\cite{CppParallelism} is a set of proposed extensions to the \Cpp standard adding parallel algorithms, similar to algorithmic skeletons, to \Cpp.
-TBB as well as existing skeleton libraries, including \SkelCL, could implemented the proposed specification in the future and, thus, conform to a unified and standardized programming interface.
+\TBB as well as existing skeleton libraries, including \SkelCL, could implemented the proposed specification in the future and, thus, conform to a unified and standardized programming interface.
 
-\SkelCL currently is not optimized for multicore \CPUs as TBB is.
-When combined with our novel compilation approach \SkelCL will aim for generating highly efficient code for multicore \CPUs in the future as well.
+\SkelCL currently is not optimized for multi-core \CPUs as \TBB is.
+When combined with our novel compilation approach \SkelCL will aim for generating highly efficient code for multi-core \CPUs in the future as well.
 
-\subsection{Related GPU Programming Approaches}
-We already discussed some closely related approaches which can be used for program \GPU systems, including \emph{SkePU}, \emph{Muesli}, \emph{FastFlow}, and \emph{JPAI}.
-Here we are going to discuss additional approach which are especially targeted towards \GPU programming.
+\subsection{Related \GPU Programming Approaches}
+We already discussed some closely related approaches which can be used for program \GPU systems, including \emph{\SkePU}, \emph{Muesli}, \emph{FastFlow}, and \emph{\JPAI}.
+Here we are going to discuss additional approaches which are especially targeted towards \GPU programming.
 
 \bigskip
 
 \emph{Thrust}~\cite{BellHo2011} and \emph{Bolt}~\cite{Thrust} are \Cpp libraries developed by Nvidia and AMD respectively for simplify the programming of their \GPUs.
-Both libraries offer a similar set of parallel patterns and interface to TBB and \SkelCL.
-Thrust is implemented using \CUDA and Bolt uses \OpenCL, similar as \SkelCL does.
+Both libraries offer a similar set of parallel patterns and interfaces similar to \TBB and \SkelCL.
+Thrust is implemented using \CUDA and Bolt uses \OpenCL, as \SkelCL does.
 For data management both libraries offer separate data structures for the \CPU and \GPU.
 The programmer has explicit control, but also the additional burden, to move data between \CPU and \GPU.
 This is different to \SkelCL's implementation where a unified data structure is provided which automatically and lazily manages the data transfers in the system.
@@ -137,7 +137,7 @@ Obsidian offers low-level primitives to the programmer for achieving competitive
 \emph{Accelerate}~\cite{ChakravartyKLMG11,McDonellCKL13} is also a domain specific languages for data-parallel programming embedded in Haskell.
 Accelerate makes use of Obsidian for generating \GPU code and offers a higher level interface to the programmer than Obsidian does.
 Parallel combinators, like map, fold, or scan, are used to express programs at the algorithmic level.
-This is very similar to how functional programmers usually express in ordinary Haskell code which will be executed sequentially.
+This is very similar to how functional programmers usually program in ordinary, sequential Haskell.
 This is also similar to our skeleton library \SkelCL, but the use of Haskell makes Accelerate hard to use for programmers coming from more traditional imperative and object-oriented languages like C and \Cpp.
 Furthermore, \SkelCL has specific features, like the support of additional arguments, which enhance the flexibility in which it is used, allowing to efficiently implement real-world examples, \eg, the LM OSEM application discussed in \autoref{chapter:skelcl-evaluation}.
 
@@ -145,29 +145,29 @@ Accelerate uses high-level optimizations~\cite{McDonellCKL13} for fusing multipl
 This is different from \SkelCL which always generates an \OpenCL kernel for each skeleton.
 Therefore, Accelerate is able to generate efficient code for benchmarks where \SkelCL performs badly, including \emph{asum} and the dot product.
 As discussed in \autoref{ch:seventh} we intend to address this drawback of \SkelCL in the future by incorporating our novel compilation technique which is able to perform this type of optimization as well.
-Furthermore, Accelerate is a project specialized for \GPUs and its implementation is not portable across architectures, as our compilation technique is.
+Furthermore, Accelerate generated \CUDA code specialized for \GPUs and its implementation is not portable across architectures, as our compilation technique is.
 
 \bigskip
 
-Many projects following the tradition of \emph{OpenMP}~\cite{OpenMP} working with annotations of sequential code have been proposed for \GPU programming as well.
+Many projects following the tradition of \emph{\OpenMP}~\cite{OpenMP} working with annotations of sequential code have been proposed for \GPU programming as well.
 Directives are used by the programmer to annotate sequential code, usually loops, which can be executed in parallel.
-A compiler supporting then reads the directives and generates parallel code automatically.
+A compiler supporting them reads the directives and generates parallel code automatically.
 
 Early projects generating \GPU code include \emph{HMPP}~\cite{DolbeauBiBo2007}, the \emph{PGI Accelerator Compilers} (PGI has since been acquired by Nvidia), and \emph{hiCUDA}~\cite{HanA11}.
-All these projects contributed into a new unified standard called \emph{OpenACC}~\cite{OpenACC}.
+All these projects contributed into a new unified standard called \emph{\OpenACC}~\cite{OpenACC}.
 
-\emph{OmpSs}~\cite{ElangovanBP12,DuranABLMMP11} is a project using directives with a particular focus on task parallelism.
+\emph{\OmpSs}~\cite{ElangovanBP12,DuranABLMMP11} is a project using directives with a particular focus on task parallelism.
 Sequential code can be declared as a task via annotations and dependencies between tasks are specified by the programmer as well.
 A runtime system can exploit parallelism by executing independent tasks simultaneously.
 Data-parallel computations can also be executed on \GPUs using \OpenCL~\cite{ElangovanBP12}.
-OmpSs influenced the development of the latest standard of \emph{OpenMP} 4.0~\cite{OpenMP} which now also includes directives for offloading computations to \GPUs.
+\OmpSs influenced the development of the latest standard of \emph{\OpenMP} 4.0~\cite{OpenMP} which now also includes directives for offloading computations to \GPUs.
 
-In OpenACC and OpenMP 4.0 directives for specifying the parallel computation in loops are provided as well as directives for explicitly specifying the data regions involved in the computation.
+In \OpenACC and \OpenMP 4.0 directives for specifying the parallel computation in loops are provided as well as directives for explicitly specifying the data regions involved in the computation.
 After each computation data is copied back to the \CPU and many \GPU features can currently not be exploited with this approach, \eg, the usage of local memory.
-Instead \SkelCL as well as our code generation technique fully exploit all features provided by \GPUs which are crucial for achieving high performance.
+\SkelCL as well as our code generation technique fully exploit all features provided by \GPUs which are crucial for achieving high performance.
 All these approaches using directives promise minimal source code change for existing sequential code.
 \SkelCL requires programmers to express their programs in a well structured way using algorithmic skeletons, which might force programmers to reimplement parts of their programs.
-We conceder this actually a benefit of \SkelCL, as restructuring the code using skeletons will likely increase its maintainability in the future.
+We conceder this actually a benefit of \SkelCL, as restructuring the code using skeletons will likely increase its maintainability.
 
 \bigskip
 
@@ -176,7 +176,7 @@ Some existing programming languages have been extended to support \GPU programmi
 
 \bigskip
 
-\emph{HiDP}~\cite{ZhangM13} is a language for expressing hierarchical data-parallel programs.
+\emph{{\small HiDP}}~\cite{ZhangM13} is a language for expressing hierarchical data-parallel programs.
 Fundamental data-parallel building blocks like map are pre-defined in the language and used by programmers.
 Patterns can be nested, where this is not possible in \SkelCL but fully supported in our novel compilation technique.
 
@@ -189,9 +189,9 @@ Data-parallelism is also supported with skeleton-like patterns, including map an
 
 \bigskip
 
-\emph{Single Assignment C (SAC)}~\cite{GrelckS06} is a functional programming language supporting \GPUs programming by compiling SAC programs to CUDA~\cite{GuoTS11}.
-The compiler automatically detects loops which can be offloaded to the \GPU, generated the necessary CUDA code and performs the data management automatically.
-SAC has a special loop (\code{with}-loops) which are guaranteed to be free of dependencies, similar to \SkelCL's map skeleton.
+\emph{Single Assignment C (SAC)}~\cite{GrelckS06} is a functional programming language supporting \GPUs programming by compiling SAC programs to \CUDA~\cite{GuoTS11}.
+The compiler automatically detects loops which can be offloaded to the \GPU, generates the necessary \CUDA code and performs the data management automatically.
+SAC has a special loop (\code{with}-loops) which is guaranteed to be free of dependencies, similar to \SkelCL's map skeleton.
 
 \bigskip
 
@@ -202,8 +202,8 @@ Our code generation approach allows to systematically explore different implemen
 
 \bigskip
 
-\emph{NOVA}~\cite{CollinsGGLS14} is a recent functional \GPU programming language developed at Nvidia.
-It is intended to be used as an intermediate language produces by a domain specific programming interface.
+\emph{{\small NOVA}}~\cite{CollinsGGLS14} is a recent functional \GPU programming language developed at Nvidia.
+It is intended to be used as an intermediate language produced by a domain specific programming interface.
 Programs are implemented in a Lisp-style notation where function application is written using prefix notation.
 Built-in parallel operations include map, reduce, and scan.
 
@@ -230,10 +230,10 @@ All these approaches are, by design, focused on one particular domain of applica
 
 \bigskip
 
-\emph{PATUS}~\cite{ChristenSB11} is a code generation and autotuning framework for stencil computations.
+\emph{{\small PATUS}}~\cite{ChristenSB11} is a code generation and autotuning framework for stencil computations.
 The stencil computation is expressed in a domain specific language and separated from the execution strategy which is also written by the programmer in a second domain specific language but independent of the stencil executed.
-The PATUS compiler combines a stencil and a strategy to generate \OpenCL code.
-PATUS focuses on single-\GPU performance and does not support multi-\GPU systems as \SkelCL does.
+The {\small PATUS} compiler combines a stencil and a strategy to generate \OpenCL code.
+{\small PATUS} focuses on single-\GPU performance and does not support multi-\GPU systems as \SkelCL does.
 An autotuning component is used to experimentally determine and optimize implementation parameters and to choose the best execution strategy.
 
 Different execution strategies can be used on different architectures to achieve some degree of performance portability, as the application-specific stencil code does not change.
@@ -241,16 +241,16 @@ Our novel code generation approach goes further, where different implementation 
 
 \bigskip
 
-\emph{PARTANS}~\cite{LutzFC13} is a software framework for stencil computations implemented in \Cpp with a focus on autotuning of stencil applications for multi-\GPU systems.
-Stencils are expressed using a \Cpp API in a style similar to our \SkelCL \Cpp implementation of the stencil skeleton formally defined in this thesis.
+\emph{{\small PARTANS}}~\cite{LutzFC13} is a software framework for stencil computations implemented in \Cpp with a focus on autotuning of stencil applications for multi-\GPU systems.
+Stencils are expressed using a \Cpp \API in a style similar to our \SkelCL \Cpp implementation of the stencil skeleton formally defined in this thesis.
 Autotuning is applied to determine the best parameters in the implementation.
-PARTANS pays particular attention on the communication in multi-\GPU systems and detects different PCIe layouts which affect the data transfer rates between different \GPUs in the system.
+{\small PARTANS} pays particular attention on the communication in multi-\GPU systems and detects different PCIe layouts which affect the data transfer rates between different \GPUs in the system.
 
-Overall PARTANS is much more focused on optimizing the communication in a multi-\GPU system than \SkelCL is and does not consider particular optimizations on single \GPUs nor does it formally define skeleton computations as an algorithmic skeleton as this thesis does.
+Overall {\small PARTANS} is much more focused on optimizing the communication in a multi-\GPU system than \SkelCL is and does not consider particular optimizations on single \GPUs nor does it formally define skeleton computations as an algorithmic skeleton as this thesis does.
 
 \bigskip
 \emph{Impala}~\cite{KosterLHMS14} is a domain specific language developed at Saarland University supporting stencil applications.
-Similar to the LMS project discussed earlier code is generated at runtime and it can be precisely specified which part of the computation is executed at compile time and which part is executed in parallel by the \GPU.
+Similar to the {\small LMS} project discussed earlier code is generated at runtime and it can be precisely specified which part of the computation is executed at compile time and which part is executed in parallel by the \GPU.
 This technique allows, for example, to generate \GPU code where runtime checks for the boarder handling can be limited to the particular memory areas where boarder handling is actually required and avoided elsewhere.
 
 \bigskip
@@ -262,7 +262,7 @@ As applications are organized in a pipeline processing images in multiple stages
 The decision how the functions are executed in Halide are defined in a \emph{schedule} independent of the individual image processing operations performed.
 
 Autotuning is used for automatically searching for good schedules~\cite{Ragan-KelleyBAPDA13}.
-Different from PATUS, Halide can automatically generate schedules, but they are restricted to image processing applications, \eg, assuming that pipelining is always possible.
+Different from {\small PATUS}, Halide can automatically generate schedules, but they are restricted to image processing applications, \eg, assuming that pipelining is always possible.
 Our code generation approach is more general and can applied to other types of application domains as well.
 
 \subsection{Related Approaches using Rewrite Rules}
@@ -273,7 +273,7 @@ The has been related work on using rewrite rules for program optimizations, espe
 The Bird-Meertens formalism~\cite{Bird88} used as our notation in this thesis already defines equations which allow to transform programs at an algorithmic level.
 \cite{Gorlatch96}~shows a detailed case study of this technique.
 Targeting distributed systems, formal rules have been proposed for optimizing collective operations in message passing systems~\cite{GorlatchWL99,Gorlatch00,Gorlatch04}.
-For the functional programming language Haskell \cite{JonesToHo2001}~discusses how rewriting can be used as an optimization technique and how the Glasgow Haskell Compiler (GHC)~\cite{HudakHJW07} supports the definition of rewrite rules.
+For the functional programming language Haskell \cite{JonesToHo2001}~discusses how rewriting can be used as an optimization technique and how the Glasgow Haskell Compiler ({\small GHC})~\cite{HudakHJW07} supports the definition of rewrite rules.
 
 Our rewrite rules can be seen in the same tradition as this work.
 
@@ -295,7 +295,7 @@ This thesis has presented our work for addressing two key challenges of programm
 The \SkelCL programming model and its implementation as a \Cpp library address the programmability challenge by greatly simplifying programming without scarifying performance, as we showed in \autoref{chapter:skelcl-evaluation}.
 \SkelCL introduces two new algorithmic skeletons with their formal definitions as well as their efficient implementations on single- and multi-\GPU systems.
 
-The novel code generation technique addresses the performance portability challenge with its formal foundations enabling the rewriting of pattern-based programs and the code generator implementation generating highly efficient \OpenCL code on three different hardware architectures, as shown in \autoref{chapter:codeGeneration-evaluation}.
+A novel code generation technique addresses the performance portability challenge with its formal foundations enabling the rewriting of pattern-based programs and the code generator implementation generating highly efficient \OpenCL code on three different hardware architectures, as shown in \autoref{chapter:codeGeneration-evaluation}.
 
 These two projects can be combined in the future, as described in \autoref{ch:seventh}, to obtain a holistic, structured approach for programming and optimizing programs which combines their advantages.
 
