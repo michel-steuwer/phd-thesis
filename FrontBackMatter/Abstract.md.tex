@@ -1,46 +1,26 @@
 \chapter*{Abstract}\label{abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Short summary of the contents\dots
+Computer processors have radically changed in the last 20 years with multi- and many-core architectures emerging to address the increasing demand for performance and energy efficiency.
+Muli-core \CPUs and graphics processing units (\GPUs) are examples of modern parallel processor architectures which are currently widely programmed with low-level, ad-hoc, and unstructured programming models, like multi-threading or \OpenCL.
+Developing functional correct applications using these approaches is challenging as they do not shield programmers from issues of parallelism, like deadlocks or non-determinism.
+Developing optimized parallel programs is an even more demanding task -- even for experienced programmers.
+Optimizations are often applied ad-hoc and exploit specific hardware features making them non portable.
 
-% \begin{lstlisting}[language=C++, numbers=left, firstnumber=100, label=mycode]
-% qsort []     = []
-% qsort (x:xs) = qsort (filter (< x) xs) ++ [x] ++
-%                qsort (filter (>= x) xs)
-% \end{lstlisting}
+In this thesis we address these two challenges of programming and optimizing for modern parallel processors.
+%We particular focus on single- and multi-\GPU systems and their programming.
 
-% \begin{enumerate}
-% \def\labelenumi{\arabic{enumi}.}
-% \item
-%   First
+In the first part of the thesis, we present the \SkelCL programming model which addresses the \emph{programmability} challenge.
+\SkelCL introduces three main high-level features which simplify \GPU programming:
+1) parallel container data types simplify the data management in \GPU systems;
+2) regular patterns of parallel programming (\aka, algorithmic skeletons) simplify the programming by expressing the parallel computation in a structured way;
+3) data distributions simplify the programming of multi-\GPU systems by automatically making data available to all \GPUs in the system.
+We present a \Cpp library implementation of our programming model and we will see in our evaluation that \SkelCL greatly simplifies \GPU programming without sacrificing performance.
 
-%   \begin{enumerate}
-%   \def\labelenumii{\roman{enumii})}
-%   \setcounter{enumii}{1}
-%   \itemsep1pt\parskip0pt\parsep0pt
-%   \item
-%     First.1
-%   \item
-%     First.2
-%   \end{enumerate}
-% \item
-%   Second
-% \item
-%   Third
-% \end{enumerate}
+In the second part of the thesis, we present a novel compilation technique which addresses the \emph{performance portability} challenge.
+We introduce a novel system comprising a set of high-level and low-level parallel patterns along with a set of rewrite rules.
+The rewrite rules systematically express high-level algorithmic implementation choices as well as low-level hardware-specific optimizations.
+By applying the rewrite rules pattern-based expressions are transformed from a single portable high-level representation into hardware-specific low-level expressions from which efficient \OpenCL code is generated.
+We formally prove the soundness of our approach by showing that the rewrite rules do not change the program semantics.
+Furthermore, we present performance results which show that our approach can transform a single portable expressions into highly efficient code on three different parallel processors, thus, providing performance portability.
 
-% \begin{longtable}[c]{@{}rlcl@{}}
-% \toprule\addlinespace
-% Right & Left & Center & Default
-% \\\addlinespace
-% \midrule\endhead
-% 12 & 12 & 12 & 12
-% \\\addlinespace
-% 123 & 123 & 123 & 123
-% \\\addlinespace
-% 1 & 1 & 1 & 1
-% \\\addlinespace
-% \bottomrule
-% \addlinespace
-% \caption{Demonstration of simple table syntax.}
-% \end{longtable}
