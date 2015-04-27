@@ -40,11 +40,11 @@ The same code is shown in \autoref{eq:reduce11}.
   frame=none,
   label={eq:reduce11:again}
   ]
-$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce11:1}$
-    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\label{eq:reduce11:2}$
-    $\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2)\ \circ\label{eq:reduce11:3}$
-    $\join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\label{eq:reduce11:4}$
-  $\big) \circ \splitN\ 128\label{eq:reduce11:5}$
+$vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce11:again:1}$
+    $\join \circ \toGlobal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\ \circ\label{eq:reduce11:again:2}$
+    $\iterateN\ 7\ (\join \circ \mapLocal\ (\reduceSeq\ (+)\ 0) \circ \splitN\ 2)\ \circ\label{eq:reduce11:again:3}$
+    $\join \circ \toLocal\ (\mapLocal\ (\mapSeq\ \id)) \circ \splitN\ 1\label{eq:reduce11:again:4}$
+  $\big) \circ \splitN\ 128\label{eq:reduce11:again:5}$
 \end{lstlisting}
 
 \vspace{1em}
