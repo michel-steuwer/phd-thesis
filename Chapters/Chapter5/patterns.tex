@@ -6,7 +6,7 @@ As we saw in the previous section there exist two type of patterns: high-level a
 Some of the high-level algorithmic patterns directly correspond to algorithmic skeletons we have introduced in \autoref{chapter:skelcl}.
 As we will also introduce patterns which we have not seen so far and which do not oblige to the common definition of algorithmic skeletons, we will use the more generic term \emph{pattern} throughout this and the next chapter.
 
-The key idea of our approach is to expose algorithmic choices and hardware-specific program optimizations as patterns that are systematically derivable using a rule rewriting system (discussed later in \autoref{section:rules}).
+The key idea of our approach is to expose algorithmic choices and hardware-specific program optimizations as rewrite rules (discussed later in \autoref{section:rules}) which systematically transform pattern-based expressions.
 The high-level algorithmic patterns represent structured parallelism.
 They can either be used by the programmer directly as a stand-alone language, but could also be used as a domain specific language embedded in a general purpose programming language, or used as an intermediate representation targeted by the compiler of another programming language.
 Once a program is represented with our high-level patterns, we systematically transform the program into low-level patterns.
@@ -31,7 +31,8 @@ As in \autoref{chapter:skelcl} we use the Bird-Meertens formalism~\cite{Bird88} 
 For full details on the notation see~\autoref{par:notation} on page~\pageref{par:notation}.
 Here is a short reminder of our notation:
 we write function application using a space and functions are often curried;
-binary operators (\eg, $\oplus$) are written using infix notation and can be written using prefix notation when being sectioned by using parenthesis: $(\oplus)$.
+binary operators (\eg, $\oplus$) are written using infix notation and can be written using prefix notation when being sectioned by using parenthesis, \ie,:
+$a\ \oplus\ b = (\oplus)\ a\ b$.
 For an array $xs$ of length $n$ with elements $x_i$ we write $[x_1, \ldots, x_n]$.
 
 In this chapter we are especially interested in how patterns can be composed and nested.
@@ -44,11 +45,11 @@ Tuple types are written as $\langle\alpha, \beta\rangle$.
 Finally, arrays have their length denoted as part of their type:
 for an array with elements of type $\alpha$ and length $n$, we write $[\alpha]_n$.
 
-A more formal description of a core subset of the patterns described in this section can be found in our technical report~\cite{SteuwerFeLiDu2015}, where formal syntax, typing rules, and formal semantics are given.
+A formal description of a core subset of the patterns described in this section can also be found in our paper~\cite{SteuwerFeLiDu2015}, where formal syntax, typing rules, and formal semantics using a denotational style are given.
 
 \begin{table}[t]
 \centering
-\begin{tabular}{p{.1\textwidth}p{.85\textwidth}}
+\begin{tabular}{p{.125\textwidth}p{.75\textwidth}}
 \toprule
 \tabhead{Pattern} & \tabhead{Description}\\
 \midrule
@@ -131,6 +132,7 @@ We repeat it here for completeness and we add the type information:
   \end{align*}
 \end{definition}
 
+This definition is unambiguous and well-defined even without explicit parenthesis as we require the binary operator to be associative and commutative.
 
 \paragraph{Zip}
 The \zip pattern and the \splitN/\join patterns transform the shape of the data. %which we store in the type system, \ie, number of dimensions and size of each dimension.
@@ -154,7 +156,7 @@ The \zip pattern fuses two arrays into a single array of pairs.
 
 \noindent
 This definition significantly differs from the definition of the \zip skeleton in \autoref{chapter:skelcl}:
-While in \autoref{definition:zip}, \zip applies a given function to a pair of elements, there is no function to be applied in \autoref{definition:pattern:zip} of the \zip pattern.
+While in \autoref{definition:zip}, \zip applies a given function to pairs of elements, there is no function to be applied in \autoref{definition:pattern:zip} of the \zip pattern.
 The behavior of the \zip skeleton from \SkelCL can be achieved by composing the \zip pattern with the \map pattern:
 \begin{align*}
   zipWith\ f\ xs\ ys &= \map\ f\ (\zip\ xs\ ys)
@@ -209,7 +211,7 @@ it reassembles an array of arrays by merging dimensions.
 \end{definition}
 
 \noindent
-We will almost always omit the subscript, as $n$ can be inferred from the input array.
+We will almost always omit the subscript, as $n$ can be inferred from the length of the input array.
 From these definitions it follows, that the compositions of \splitN and \join: $\join_n \circ \splitN\ n$ and $\splitN\ n \circ \join_n$ for any value $n$ yields the same type and also does not change any element in the array, \ie, it is equivalent to the identify function \emph{id}.
 
 % These two patterns used together are similar to the split-join concept from data-flow languages such as StreamIt~\cite{ThiesKaAm2002}.
@@ -251,7 +253,8 @@ The type of the \iterateN pattern is interesting as its result type depends on t
 The index function $F$ describes the effect the function $f$ has on the length of its input array.
 This index function is used to compute the effect the \iterateN function has when applying $f$ $n$ times on its input array.
 Please note, that the length of the input array of $f$, \ie, $k$, possibly changes every time $f$ is applied by \iterateN.
-A more formal treatment of the topic can be found in our technical report~\cite{SteuwerFeLiDu2015}.
+% A more formal treatment of the topic can be found in our technical report~\cite{SteuwerFeLiDu2015}.
+A formal treatment of the topic using a denotational semantics can be found in our paper~\cite{SteuwerFeLiDu2015}.
 
 %\begin{align}
 %  n : int,\ F : (int \rightarrow int),\ f : (\forall k\ .\ [\alpha]_k \rightarrow [\alpha]_{F(k)}),\ xs : [\alpha]_m\ %
@@ -289,13 +292,13 @@ This definition allows to pick any permutation, \ie, a bijective function mappin
 In order to achieve the highest performance, programmers often use a set of intuitive ``rules of thumb'' to optimize their applications.
 We extensively discussed one application example in \autoref{section:reduce:case-study}.
 Each hardware vendor provides own optimization guides~\cite{CUDAProgrammingGuide,AMDProgrammingGuide,IntelGPUProgrammingGuide,IntelXeonProgrammingGuide} that extensively cover vendor's hardware particularities and optimizations.
-The main idea behind our approach is to identify common optimization patterns and express them systematically rather than intuitively, using low-level patterns coupled with a rewrite-rule system.
+The main idea behind our approach is to identify common optimizations and express them systematically rather than intuitively, using low-level patterns coupled with a rewrite-rule system.
 
 \autoref{tab:llskel} gives an overview of the \OpenCL-specific patterns we have identified.
 
 \begin{table}[p]
 \centering
-\begin{tabular}{p{.25\textwidth}p{.7\textwidth}}
+\begin{tabular}{p{.225\textwidth}p{.7\textwidth}}
 \toprule
 \tabhead{Pattern} & \tabhead{Description}\\
 \midrule
@@ -332,9 +335,9 @@ The main idea behind our approach is to identify common optimization patterns an
 \end{table}
 
 \paragraph{Parallel Maps}
-The different low-level \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploit thread-level parallelism in \OpenCL.
+The different low-level \OpenCL \map patterns represent possible ways of mapping computations to the hardware and exploiting thread-level parallelism in \OpenCL.
 The execution semantics and types of all these low-level \OpenCL \map patterns are the same as of the high-level \map pattern shown in \autoref{definition:pattern:map}.
-In fact, these patterns can be viewed as \emph{instantiations} of the \emph{interface} the high-level \map pattern defines, as the low-level \OpenCL patterns provide different possibilities to implement the \map pattern.
+% In fact, these patterns can be viewed as \emph{instantiations} of the \emph{interface} the high-level \map pattern defines, as the low-level \OpenCL patterns provide different possibilities to implement the \map pattern.
 
 \begin{figure}[t]
   \centering
@@ -342,22 +345,24 @@ In fact, these patterns can be viewed as \emph{instantiations} of the \emph{inte
   \caption{The \OpenCL thread hierarchy and the corresponding parallel \map patterns.}
   \label{fig:openclThreads}
 \end{figure}
-\autoref{fig:openclThreads} shows the \OpenCL thread hierarchy together with the corresponding parallel \map patterns.
+\autoref{fig:openclThreads} shows the \OpenCL thread hierarchy together with the corresponding parallel \map patterns:
 
-The \mapGlobal pattern can be used to assign work to work-items independent of their work-group, as shown on the left in \autoref{fig:openclThreads}.
-Following the definition of \map each \OpenCL work-item executes its customizing function on a different part of the input array.
+\begin{itemize}
+  \item The \mapGlobal pattern assigns work to work-items independent of their work-group, as shown on the left in \autoref{fig:openclThreads}.
+        Following the definition of \map, each \OpenCL work-item executes its customizing function on a different part of the input array.
 
-The \mapWorkgroup pattern assigns work to an \OpenCL work-group and the \mapLocal pattern assigns work to a local work-item inside a work-group.
-This is shown in the middle of \autoref{fig:openclThreads}.
-The \mapLocal pattern only makes sense in the context of a work-group and is, therefore, only correctly used when nested inside a \mapWorkgroup pattern, \eg, $\mapWorkgroup\ (\mapLocal\ f)$.
+  \item The \mapWorkgroup pattern assigns work to an \OpenCL work-group and the \mapLocal pattern assigns work to a local work-item inside a work-group.
+        This is shown in the middle of \autoref{fig:openclThreads}.
+        The \mapLocal pattern only makes sense in the context of a work-group and is, therefore, only correctly used when nested inside a \mapWorkgroup pattern, \eg, $\mapWorkgroup\ (\mapLocal\ f)$.
 
-There are two additional patterns which are only valid when generating code for Nvidia \GPUs:
-\mapWarp and \mapLane.
-These are shown on the right of \autoref{fig:openclThreads}.
-These two patterns capture the notion of \emph{warps} present in Nvidia's \GPU architectures, \ie, 32 work-items are grouped and executed together (see \autoref{chapter:background} for details).
-Barrier synchronizations between work-items in the same warp can be avoided because a warp executes in a lock step manner.
-To exploit this optimization we provide the \mapWarp pattern which assigns work to a warp, \ie, a group of 32 work-items.
-The \mapLane pattern is used to assign work to an individual work-item inside a warp.
+  \item There are two additional patterns which are only valid when generating code for Nvidia \GPUs:
+        \mapWarp and \mapLane.
+        These are shown on the right of \autoref{fig:openclThreads}.
+        These two patterns capture the notion of \emph{warps} present in Nvidia's \GPU architectures, \ie, 32 work-items are grouped and executed together (see \autoref{chapter:background} for details).
+        Barrier synchronizations between work-items in the same warp can be avoided because a warp executes in a lock-step manner.
+        To exploit this optimization we provide the \mapWarp pattern which assigns work to a warp, \ie, a group of 32 work-items.
+        The \mapLane pattern is used to assign work to an individual work-item inside a warp.
+\end{itemize}
 
 %The code generation for all these map patterns is similar; we describe it using \pat{map-workgroup} as an example.
 %A loop is generated, where the iteration variable is determined by the \emph{workgroup-id} function provided by \OpenCL.
@@ -401,7 +406,7 @@ As the \reduceSeq pattern performs a sequential reduction, we can relax these re
 The \reorderStride pattern enforces a special reordering of an array.
 In our code generator (see \autoref{section:opencl:code:generator}) no code is produced for this pattern, but instead it affects how the following patterns reads it input from memory.
 This pattern, therefore, indirectly produces a strided-access pattern which ensures that when each work-item accesses multiple elements two consecutive work-items access consecutive memory elements at the same time.
-This corresponds to the \emph{coalesce memory accesses}, which are beneficial on modern \GPUs as discussed in \autoref{chapter:background}.
+This corresponds to the \emph{coalesced memory accesses}, which are beneficial on modern \GPUs as discussed in \autoref{chapter:background}.
 \begin{definition}
   \label{definition:pattern:reorderStride}
   Let $s$ be an integer value.
@@ -412,7 +417,7 @@ This corresponds to the \emph{coalesce memory accesses}, which are beneficial on
     \reorderStride\ s\ [x_1, x_2, \dots, x_m] &\eqdef [y_1, y_2, \dots, y_m], \text{ where}\\
     y_i &\eqdef x_{((i-1)\ \text{\normalfont div } n + s \times ((i-1) \bmod{n}))+1}
   \end{align*}
-  Where $x\ \text{\normalfont div}\ y$ is integer division and $x \bmod{y}$ is the modulo operation.
+  Where $\text{\normalfont div}$ is integer division and $\bmod{}$ is the modulo operation.
   The types of $s$, $xs$, and \reorderStride are as follows:
   \begin{align*}
     s &: int,\\
@@ -444,7 +449,7 @@ The \toLocal and \toGlobal patterns are used to specify where the result of a gi
 As explained in more detail in \autoref{chapter:background}, \OpenCL defines two distinct address spaces: global and local.
 Global memory is the commonly used large but slow memory.
 On \GPUs, the comparatively small local memory has a high bandwidth with low latency and is used to store frequently accessed data.
-With these two patterns, we can in effect exploit the memory hierarchy defined in \OpenCL.
+With these two patterns, we can exploit the memory hierarchy defined in \OpenCL.
 
 First, we define \toLocal:
 \begin{definition}
@@ -503,13 +508,13 @@ The definition of \toGlobal is correspondent:
 
 \paragraph{{\footnotesize as}Vector, {\footnotesize as}Scalar, and Vectorize}
 The \OpenCL programming model supports vector data types such as \code{float4} where operations on this type will be executed in the hardware vector units.
-In the absence of vector units in the hardware, the \OpenCL compiler generates a version of the code using scalar data types automatically.
+In the absence of vector units in the hardware, the \OpenCL compiler generates automatically a version of the code using scalar data types.
 
 The \asVector and \asScalar patterns change the data type into vector elements and scalar elements, correspondingly.
 For instance, an array of \code{float} is transformed into an array of \code{float4} as seen in the motivation example (\autoref{fig:codeex}).
-The \vect pattern vectorizes simple functions by converting all the operations that apply to vector types into vectorized operations.
+%The \vect pattern vectorizes simple functions by converting all the operations that apply to vector types into vectorized operations.
+%External tools~\cite{KarrenbergHa2011} have been developed for vectorizing more complex functions.
 %Our current implementation can only vectorize functions containing simple arithmetic operations such as $+$ or $-$.
-External tools~\cite{KarrenbergHa2011} have been developed for vectorizing more complex functions.
 %These tools are not required to performing further analysis to find opportunities for vectorization.
 %The rewrite rules presented in \autoref{section:rules} ensure that vectorization is only applied to patterns where vectorization is a legal optimization.
 

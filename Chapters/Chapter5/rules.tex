@@ -4,13 +4,13 @@
 This section introduces our set of rewrite rules that transform high-level expressions written using our algorithmic patterns into semantically equivalent expressions.
 One goal of our approach is to keep each rule as simple as possible and only express one fundamental concept at a time.
 For instance the vectorization rule, as we will see, is the only rule expressing the vectorization concept.
-This is different from most previous library or compiler approaches which provide or produce a special vectorized version of different algorithmic patterns such as map or reduce.
+This is different from most previous library or compiler approaches which provide or produce special vectorized versions of different algorithmic patterns such as map or reduce.
 The advantage of our approach lies in the power of composition:
 many rules can be applied successively to produce expressions that compose hardware concepts or optimizations and that are provably correct by construction.
 
 Similarly to our patterns, we distinguish between algorithmic and \OpenCL-specific rules.
 Algorithmic rules produce derivations that represent different algorithmic choices.
-Our \OpenCL-specific rules map expressions to \OpenCL patterns.
+Our \OpenCL-specific rules transform expressions to \OpenCL patterns.
 Once the expression consists only of \OpenCL patterns, it is possible to produce \OpenCL code for each single pattern straightforwardly with our code generator as described in the following section.
 
 We write $a \rightarrow b$ for a rewrite rule which allows to replace the occurrence of term $a$ in an expression with term $b$.
@@ -74,8 +74,12 @@ The proof for the second option is shown in \autoref{chapter:proofs}.
     (f \circ \map\ \textit{id})\ xs
       &= f\ (\map\ \textit{id}\ xs)\\
       &\begin{aligned}[t]
-        & \comment{definition of \map}                                         && \comment{definition of \textit{id}}\\
-        &= f\ ([\textit{id}\ x_1, \textit{id}\ x_2, \ldots, \textit{id}\ x_n]) &&= f\ xs
+        & \comment{definition of \map}\\
+        &= f\ [\textit{id}\ x_1, \textit{id}\ x_2, \ldots, \textit{id}\ x_n]\\
+        & \comment{definition of \textit{id}}\\
+        &= f\ [ x_1, x_2, \ldots, x_n]\\
+        & \comment{definition of \map}\\
+        &= f\ xs
       \end{aligned}
   \end{align*}
 \end{proof}
@@ -150,7 +154,7 @@ From the algorithmic point of view, we first define a partial reduction pattern 
   Let $xs$ be an array of size $m$ with elements $x_i$ where $0 < i \leq m$.
   Let $\oplus$ be an associative and commutative binary customizing operator with the identity element $\id_\oplus$.
   Let $n$ be an integer value where $m$ is evenly divisible by $n$.
-  Let $\sigma$ be an permutation of $[1,\ldots, m]$.
+  Let $\sigma$ be a permutation of $[1,\ldots, m]$.
   The \partRed pattern is then defined as follows:
   \begin{align*}
     &\partRed\ (\oplus)\ \id_\oplus\ n\ [x_1, x_2, \dots, x_m] \eqdef\\
@@ -210,7 +214,7 @@ The third option is actually the only place where parallelism is expressed in th
 This rule expressed the fact that it is valid to partition the input elements first and then reduce them independently.
 This exploits the associativity property we require from the reduction operator.
 
-Finally, the last option expresses the notion that it is possible to reduce the input array in multiple steps, by performing an iterative process where in each step a partial reduction is performed.
+Finally, the last option expresses the fact that it is possible to reduce the input array in multiple steps, by performing an iterative process where in each step a partial reduction is performed.
 This concept is very important when considering how the reduction function is typically implemented on \GPUs, as we saw in our discussion of the parallel reduction implementations shown in \autoref{lst:reduce0}--\autoref{lst:reduce6}.
 
 All options can be proven using the definitions of \reduce and \partRed as well as the commutativity and associativity of $\oplus$.
@@ -252,7 +256,7 @@ Finally, our rules for fusing consecutive patterns are shown in \autoref{eq:algo
 \end{rerule}
 %
 The first rule fuses the functions applied by two consecutive maps.
-The second rule fuses the map-reduce pattern by creating a lambda function that is the result of merging functions $f$ and $g$ from the original reduction and map, respectively.
+The second rule fuses the map-reduce pattern by creating a lambda function that is the result of merging functions $f$ and $(\oplus)$ from the original reduction and map, respectively.
 This rule only applies to the sequential \reduce pattern since this is the only implementation not requiring the associativity property required by the more generic \reduce pattern.
 % When generating code, these rules in effect allow us to fuse the implementation of the different functions and avoid having to store temporary results.
 The functional programming community has studied more generic rules for fusion~\cite{CouttsLeSt2007,JonesToHo2001}.
@@ -286,7 +290,7 @@ This eventually enables different parallel implementations which we can express 
 The rules presented here are by no means complete and can easily be extended to express more possible implementations.
 When adding new patterns to the system, the rules have to be extended as well.
 
-In the next subsection we will discuss \OpenCL specific rewrite rules which allow us to map patter implementations to the low-level \OpenCL concepts.
+In the next subsection we will discuss \OpenCL-specific rewrite rules which allow us to map patter implementations to the low-level \OpenCL concepts.
 
 \newlength{\ruleSpace}
 \setlength{\ruleSpace}{1em}
@@ -472,7 +476,7 @@ As described earlier, the major use case for the stride reorder is to enable coa
 The implementation of the code generator could be easily extended to support other kinds of reordering functions, \eg, for reversing an array, or transposing a matrix.
 
 The proof for the \textit{id} function is trivial.
-For the other option we have to show, that the \reorderStride pattern is a valid reordering.
+For the other option we have to show, that the \reorderStride pattern is a valid reordering, \ie, that it mapping of indices defines a permutation.
 We do this by showing that the mapping of indices as defined in the \reorderStride definition is a bijective function and, therefore, defines a permutation.
 The details can be found in \autoref{chapter:proofs}.
 
@@ -485,11 +489,11 @@ The details can be found in \autoref{chapter:proofs}.
   \label{eq:low:mem}
 \end{rerule}
 %
-They express the fact that the result of a \mapLocal can always be stored in local memory or back in global memory.
+They express the fact that the result of a \mapLocal can always be stored either in local memory or back in global memory.
 This holds since a \mapLocal always exists within a \mapWorkgroup for which the local memory is defined in \OpenCL.
 These rules allow us to describe how the data is mapped to the \GPU memory hierarchy.
 
-As discussed earlier, the implementation of the code generator ensures that the \OpenCL hierarchy is respected by only allowing well-defined nestings of \map patterns.
+As discussed earlier, the implementation of the code generator ensures that the \OpenCL hierarchy is respected by only allowing corresponding nestings of \map patterns.
 
 \begin{proof}[Proof of \autoref{eq:low:mem}]
   These rules follow directly from the definition of \toGlobal and \toLocal, as these have no effect on the computed value, \ie, they behave like the \id function.
@@ -497,7 +501,7 @@ As discussed earlier, the implementation of the code generator ensures that the 
 
 
 \paragraph{Vectorization}
-\autoref{eq:algo:vect} shows the vectorization rule.
+\autoref{eq:algo:vect} expresses the vectorization rule.
 %
 \begin{rerule}{lcl}
   \map\ f
@@ -513,7 +517,7 @@ This rule is only allowed to be applied once to a given $\map\ f$ pattern.
 This constrain can easily be checked by looking at the function's $f$ type, \ie, if it is a vector type, the rule cannot be applied.
 % Another set of rules, not shown here for space reason, is used to propagate the \vect function recursively within $f$.
 The \vect pattern is used to produce a vectorized version of the customizing function $f$.
-Note that the vector width $n$ has to match for the vectorization of the function and the modification of the array.
+Note that the vector width $n$ of the \asVector pattern has to match with the factor used for the vectorization of the function.
 
 The proof is straightforward given the definitions of all involved patterns and can be found in \autoref{chapter:proofs}.
 
@@ -661,7 +665,7 @@ The expression shown here directly corresponds to \autoref{fig:codeex:map}.
   \label{eq:vectorScal:impl}
 \end{align}
 The application developer uses the algorithmic pattern \map together with the customizing function $mul3$ which multiplies every element with the number $3$.
-\autoref{eq:vectorScal:rules} shows how this implementation can be systematically rewritten using the rewrite rules introduced in this section.
+The following \autoref{eq:vectorScal:rules} shows how this implementation can be systematically rewritten using the rewrite rules introduced in this section.
 The numbers above the equal signs refer to \autoref{fig:algoRules} and \autoref{fig:lowRules} indicating which rule was used in the step.
 \begin{align}
   &vectorScal = \map\ mul3\nonumber\\
@@ -700,7 +704,7 @@ But first we will discuss possible derivations for the parallel reduction.
 \subsubsection{Systematic Deriving Implementations of Parallel Reduction}
 \label{sec:deriving:reduce}
 
-In \autoref{section:reduce:case-study} we looked at implementations of the parallel reduction manually optimized for an Nvidia \GPU.
+In \autoref{section:reduce:case-study} we looked at several implementations of the parallel reduction manually optimized for an Nvidia \GPU.
 In this subsection we want to resemble these implementations with corresponding expressions comprised of the patterns presented in \autoref{section:patterns}.
 The implementations presented earlier in \autoref{lst:reduce0}--\autoref{lst:reduce6} are manual implementations where optimizations have been applied ad-hoc.
 The key difference to the implementations presented in this section is, that these are systematically derived from a single high-level expression using the rewrite rules introduced in this section.
@@ -713,14 +717,14 @@ Each \OpenCL low-level expression presented in this subsection is derived from t
   \label{eq:reduceSum}
 \end{align}
 %
-The formal derivations showing which rules to apply to reach an expression from the high-level expression shown here are shown in \autoref{chapter:derivations} for all expressions in this subsection.
+The formal derivations defining which rules to apply to reach an expression from the high-level expression shown here are presented in \autoref{chapter:derivations} for all expressions in this subsection.
 
 \paragraph{First Pattern-Based Expression}
 \autoref{eq:reduce11} shows our first expression implementing parallel reduction.
 \begin{lstlisting}[
   float,
   basicstyle=\normalsize\rmfamily,%\onehalfspacing,
-  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.},
+  caption={Expression resembling the first two implementations of parallel reduction presented in \autoref{lst:reduce0} and \autoref{lst:reduce1}.},
   label={eq:reduce11}
   ]
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce11:1}$
@@ -734,9 +738,9 @@ This expression closely resembles the structure of the first two implementations
 First the input array is split into chunks of size 128 (\autoref{eq:reduce11:5}) and each work-group processes such a chunk of data.
 128 corresponds to the work-group size we assumed for our implementations in \autoref{section:reduce:case-study}.
 Inside of a work-group in \autoref{eq:reduce11:4} each work-item first copies a single data item (indicated by $\splitN\ 1$) into the local memory using the \textit{id} function nested inside the $\toLocal$ pattern to perform a copy.
-Afterwards, in \autoref{eq:reduce11:3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into pairs of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
+Afterwards, in \autoref{eq:reduce11:3} the entire work-group performs an iterative reduction where in 7 steps (this equals $log_2(128)$ following rule~\ref{fig:algo:red}) the data is further divided into chunks of two elements (using $\splitN\ 2$) which are reduced sequentially by the work-items.
 This iterative process resembles the for-loops from \autoref{lst:reduce0} and \autoref{lst:reduce1} where in every iteration two elements are reduced.
-Finally, in \autoref{eq:reduce11:2} the computed result is copied back to the global memory.
+Finally, the computed result is copied back to the global memory (\autoref{eq:reduce11:2}).
 
 The first two implementations discussed in \autoref{section:reduce:case-study} are very similar and the only difference is which work-item remains active in the parallel reduction tree.
 Currently, we do not model this subtle difference with our patterns, therefore, we cannot create an expression which distinguishes between these two implementations.
@@ -765,7 +769,7 @@ Therefore, our code generator always generates code matching the second implemen
 \begin{lstlisting}[
   float,
   basicstyle=\normalsize\rmfamily,%\onehalfspacing,
-  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce2}.},
+  caption={Expression resembling the third implementation of parallel reduction presented in \autoref{lst:reduce2}.},
   label={eq:reduce12}
   ]
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce12:1}$
@@ -807,7 +811,7 @@ We use a lambda expression to name the input array ($xs$), use a $size$ function
 \begin{lstlisting}[
   float,
   basicstyle=\normalsize\rmfamily,%\onehalfspacing,
-  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce3}.},
+  caption={Expression resembling the fourth implementation of parallel reduction presented in \autoref{lst:reduce3}.},
   label={eq:reduce13}
   ]
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce13:1}$
@@ -824,7 +828,7 @@ By replacing the copy operation into the local memory with a reduction of two el
 The first $\reorderStride$ pattern is used to ensure the coalesced memory access when accessing the global memory.
 As now each work-group processes twice the amount of elements, we split the input data in twice the size of a work-group: $2\times 128$.
 By choosing the numerical parameters we can shift the granularity and amount of work between a single and multiple work items.
-Here we choose a larger parameter for \splitN to increase the amount of work a work-group processes.
+Here we choose a larger parameter then previously for \splitN to increase the amount of work a work-group processes.
 
 \paragraph{Avoid Synchronization Inside a Warp}
 \autoref{eq:reduce14} shows our fourth expression implementing parallel reduction.
@@ -863,7 +867,7 @@ Here we choose a larger parameter for \splitN to increase the amount of work a w
 \begin{lstlisting}[
   float,
   basicstyle=\normalsize\rmfamily,%\onehalfspacing,
-  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce4}.},
+  caption={Expression resembling the fifth implementation of parallel reduction presented in \autoref{lst:reduce4}.},
   label={eq:reduce14}
   ]
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce14:1}$
@@ -936,7 +940,7 @@ The strides of the \reorderStride pattern are computed based on the size of the 
 \begin{lstlisting}[
   float,
   basicstyle=\normalsize\rmfamily,%\onehalfspacing,
-  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce5}.},
+  caption={Expression resembling the sixth implementation of parallel reduction presented in \autoref{lst:reduce5}.},
   label={eq:reduce15}
   ]
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce15:1}$
@@ -956,7 +960,7 @@ $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce15:1}$
 \end{lstlisting}
 %
 This expression closely resembles the sixth implementation of the parallel reduction shown in \autoref{lst:reduce5}.
-The change to the previous expression in \autoref{eq:reduce14} is small:
+The difference to the previous expression in \autoref{eq:reduce14} is small:
 we replace the \iterateN pattern with the individual iteration steps.
 As we assume a fixed work-group size of 128 work-items, it is known at compile time that only a single iteration step is required.
 If a larger work-group size would be chosen, then the expression shown in \autoref{eq:reduce15} would reflect this by including additional iteration steps.
@@ -1000,7 +1004,7 @@ If a larger work-group size would be chosen, then the expression shown in \autor
 \begin{lstlisting}[
   float,
   basicstyle=\normalsize\rmfamily,%\onehalfspacing,
-  caption={Expression resembling the implementation of parallel reduction presented in \autoref{lst:reduce6}.},
+  caption={Expression resembling the seventh implementation of parallel reduction presented in \autoref{lst:reduce6}.},
   label={eq:reduce16}
   ]
 $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce16:1}$
@@ -1019,14 +1023,14 @@ $vecSum = \reduce \circ \join \circ \mapWorkgroup\ \big(\label{eq:reduce16:1}$
   $\big) \circ \splitN\ blockSize$
 \end{lstlisting}
 %
-This expression resembles the seventh and finally optimized implementation of the parallel reduction shown in \autoref{lst:reduce6}.
-As in the original \OpenCL implementation, we increase the computational intensity by increasing the number of elements processed by a single work-group.
+This expression resembles the seventh, \ie, ultimately optimized implementation of the parallel reduction shown in \autoref{lst:reduce6}.
+As in the original \OpenCL implementation, we increase the computational intensity compared to the previous implementations by increasing the number of elements processed by a single work-group.
 We express this by choosing a larger $blockSize$ when splitting the input array the first time.
 The first \reorderStride expression ensures that memory accesses to the global memory are coalesced.
 
 
 \paragraph{Conclusions}
-In this subsection, we presented implementations of the parallel reduction purely composed of our patterns.
+In this subsection, we presented implementations of the parallel reduction exclusively composed of our patterns.
 These implementations resemble the \OpenCL implementations presented in \autoref{section:reduce:case-study}.
 The presented expressions are all derivable from a simple high-level expression describing the parallel summation.
 The derivations are a bit lengthy and thus not shown here, but instead in \autoref{chapter:derivations}.
@@ -1056,7 +1060,7 @@ Before we look at how \OpenCL code is generated, we discuss one additional optim
 
 \subsubsection{Systematic Fusion of Patterns}
 Back in \autoref{chapter:skelcl-evaluation} in \autoref{section:skelcl:evaluation:linearAlgebra} we discussed how the sum of absolute values (\emph{asum}) can be implemented in \SkelCL.
-Two algorithmic skeletons, \reduce and \map, where composed to express this application as shown in \autoref{eq:asum:patterns}.
+Two algorithmic skeletons, \reduce and \map, were composed to express this application as shown in \autoref{eq:asum:patterns}.
 \begin{align}
   asum\ \vec{x} &= \reduce\ (+)\ 0\ \big(\ \map\ (|\, .\, |)\ \vec{x}\ \big)\label{eq:asum:patterns}\\
   \text{where:} \qquad | a | &=
@@ -1069,11 +1073,11 @@ Two algorithmic skeletons, \reduce and \map, where composed to express this appl
 \end{align}
 %
 When evaluating the performance of the \SkelCL implementation, we identified a problem:
-\SkelCL treats each algorithmic skeleton separately, thus, forcing the \map skeleton to write a temporary array back to global memory and then read it again for the next computation, which greatly limits performance.
+\SkelCL treats each algorithmic skeleton separately, thus, forcing the \map skeleton to write a temporary array back to global memory and then read it again for the next computation, which greatly reduces performance.
 The temporary array could be avoided, but in the library approach followed by \SkelCL it is difficult to implement a generic mechanism for fusing algorithmic skeletons.
 
 
-By using our pattern-based approach presented in this chapter together with the rewrite rules, we are now able to address this issue.
+By using our pattern-based code generation approach presented in this chapter together with the rewrite rules, we are now able to address this issue.
 Our fusion rule (shown in \autoref{fig:algo:fusion}) allows to fuse two patterns into one, thus, avoiding intermediate results.
 \autoref{fig:derivation} shows how we can derive a fused version for calculating \emph{asum} from the high-level expression written by the programmer.
 
@@ -1146,7 +1150,7 @@ No temporary storage is required for the intermediate result in this expression.
 One interesting observation is that in the final expression the two customizing functions $+$ and $|\, .\,|$ are merged and a lambda expression has been created which is defined in terms of these functions: $\lambda\ a, b\ .\ a+|\, b\, |$.
 The generated lambda expression is not associative, as $a+|\, b\, | \neq b+|\, a\, |$.
 Therefore, a sequential implementation of reduction is used.
-Nevertheless, the final expression implements a parallel reduction, as the \map pattern is used with the \splitN and \join patterns to split the array in a divide-and-conquer style and the \map pattern is followed by a \reduce pattern customized with addition which can be implemented in parallel, as we know.
+Nevertheless, the final expression implements a parallel reduction, as the \map pattern is used with the \splitN and \join patterns to split the array in a divide-and-conquer style and the last pattern executed is a \reduce pattern customized with addition which can be implemented in parallel, as we know.
 
 
 \FloatBarrier
@@ -1161,15 +1165,15 @@ which rules should be applied in which order to obtain the best possible impleme
 
 The system presented in this chapter constitutes the foundational work necessary to be able to raise this question in the first place and is, therefore, just an initial step towards a fully automated compiler generating the most optimized parallel implementation possible for a given hardware device from a single high-level program.
 
-In \autoref{sec:codeGeneration-evaluation:automatic} we will present an prototype implementation of a search toll, which applies the rules completely automatically.
+In \autoref{sec:codeGeneration-evaluation:automatic} we will present an prototype implementation of a search tool, which applies the rules completely automatically.
 Our early tests with the parallel reduction program as an example suggest, that it is possible to automatically find good implementations on three different hardware architectures.
 
-We intend to research techniques for efficiently searching the implementation space in the future, as will discuss in more detail in \autoref{section:future-work}.
+We intend to study techniques for efficiently searching the implementation space in the future, as will discuss in more detail in \autoref{section:future-work}.
 
 
 
 \subsection{Conclusion}
-In this section, we have introduced a set of rewrite rules which allow to systematically rewrite expressions written using the patterns introduced earlier in \autoref{section:patterns}.
+In this section, we have introduced a set of rewrite rules which can systematically rewrite expressions written using the patterns introduced earlier in \autoref{section:patterns}.
 The power of our approach lies in the composition of the rules that produce complex low-level \OpenCL-specific expressions from simple high-level algorithmic expressions.
 
 We have seen how the rules can be used to transform simple expressions written by an application developer into highly specialized and optimized low-level \OpenCL expressions.

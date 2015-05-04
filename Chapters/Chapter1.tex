@@ -12,7 +12,7 @@ Parallelism and specialization are seen by many as two crucial answers to the ch
 % computer architects 
 
 % The development of mainstream programming languages and models have not kept pace with the hardware development.
-The modern multi- and many-core processors are often still programmed with programming languages developed in the 1980s and 1990s, like \Cpp or Java, or even older languages like C (from the 1970s) or Fortran (from the 1950s).
+The modern multi- and many-core processors are still programmed with programming languages developed in the 1980s and 1990s, like \Cpp or Java, or even older languages like C (from the 1970s) or Fortran (from the 1950s).
 These languages have a simplified view of the underlying hardware, often more or less directly resembling the Von Neumann architecture.
 Multi-core processors are programmed with low-level libraries providing \emph{threads} where the programmer explicitly controls the computations on each core executing in parallel with the other cores.
 This style of programming has turned out to be extremely difficult, as threads running concurrently on distinct cores can modify shared data leading to serious problems like deadlocks, race conditions, and non-determinism.
@@ -149,7 +149,7 @@ This thesis makes the following four major contributions:
   \item[Two novel algorithmic skeletons]\hfill\\[.25em]
     We introduce two novel algorithmic skeletons specialized towards \emph{allpairs} and \emph{stencil} computations.
     We present their formal definitions and discuss possible use cases in real-world applications.
-    For the allpairs skeleton we identify and formally define an optimization rule, which enables an optimized implementation on \GPUs.
+    For the allpairs skeleton we identify and formally define an optimization rule which enables an optimized implementation on \GPUs.
     We discuss and evaluate efficient implementations for both skeletons on a multi-\GPU system.
 \end{description}
 
@@ -164,7 +164,7 @@ This thesis makes the following four major contributions:
   \item[A code generator offering performance portability]\hfill\\[.25em]
     Based on our formal system of rewrite rules, we present a novel code generator which generates from a single pattern-based program highly efficient \OpenCL code for three different hardware platforms:
     one multi-core \CPU and two different \GPU architectures.
-    We discuss the design of our code generator and evaluate the performance of the generated \OpenCL code as compared against highly optimized library codes.
+    We discuss the design of our code generator and evaluate the performance of the generated \OpenCL code as compared against highly optimized hand-written library codes.
 \end{description}
 
 \section{Outline of this Thesis}

@@ -1,13 +1,13 @@
 \chapter*{Abstract}\label{abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Computer processors have radically changed in the last 20 years with multi- and many-core architectures emerging to address the increasing demand for performance and energy efficiency.
-Muli-core \CPUs and graphics processing units (\GPUs) are currently widely programmed with low-level, ad-hoc, and unstructured programming models, like multi-threading or \OpenCL.
-Developing functional correct applications using these approaches is challenging as they do not shield programmers from complex issues of parallelism, like deadlocks or non-determinism.
+Computer processors have radically changed in the recent 20 years with multi- and many-core architectures emerging to address the increasing demand for performance and energy efficiency.
+Multi-core \CPUs and Graphics Processing Units (\GPUs) are currently widely programmed with low-level, ad-hoc, and unstructured programming models, like multi-threading or \OpenCL /\CUDA.
+Developing functionally correct applications using these approaches is challenging as they do not shield programmers from complex issues of parallelism, like deadlocks or non-determinism.
 Developing optimized parallel programs is an even more demanding task -- even for experienced programmers.
 Optimizations are often applied ad-hoc and exploit specific hardware features making them non portable.
 
-In this thesis we address these two challenges of programming and optimizing for modern parallel processors.
+In this thesis we address these two challenges of programmability and performance portability for modern parallel processors.
 %We particular focus on single- and multi-\GPU systems and their programming.
 
 In the first part of the thesis, we present the \SkelCL programming model which addresses the \emph{programmability} challenge.
@@ -15,12 +15,11 @@ In the first part of the thesis, we present the \SkelCL programming model which 
 1) parallel container data types simplify the data management in \GPU systems;
 2) regular patterns of parallel programming (\aka, algorithmic skeletons) simplify the programming by expressing the parallel computation in a structured way;
 3) data distributions simplify the programming of multi-\GPU systems by automatically making data available to all \GPUs in the system.
-We present a \Cpp library implementation of our programming model and we will see in our evaluation that \SkelCL greatly simplifies \GPU programming without sacrificing performance.
+We present a \Cpp library implementation of our programming model and we demonstrate in an experimental evaluation that \SkelCL greatly simplifies \GPU programming without sacrificing performance.
 
 In the second part of the thesis, we present a novel compilation technique which addresses the \emph{performance portability} challenge.
-We introduce a novel system comprising of a set of high-level and low-level parallel patterns along with a set of rewrite rules.
-The rewrite rules systematically express high-level algorithmic implementation choices as well as low-level hardware-specific optimizations.
+We introduce a novel set of high-level and low-level parallel patterns along with a set of rewrite rules which systematically express high-level algorithmic implementation choices as well as low-level, hardware-specific optimizations.
 By applying the rewrite rules pattern-based programs are transformed from a single portable high-level representation into hardware-specific low-level expressions from which efficient \OpenCL code is generated.
 We formally prove the soundness of our approach by showing that the rewrite rules do not change the program semantics.
-Furthermore, we present performance results which show that our approach can transform a single portable expressions into highly efficient code on three different parallel processors, thus, providing performance portability.
+Furthermore, we experimentally confirm that our approach can transform a single portable expression into highly efficient code for three different parallel processors, thus, providing performance portability.
 

@@ -13,7 +13,7 @@ We will see that there are patterns for which it is not possible to generate \Op
 These expressions do not specify the \OpenCL implementation detailed enough.
 We can use the rewrite rules presented in \autoref{section:rules} to transform these expression further until, finally, the expression is precise enough for the code generator.
 
-We will then shift our focus to the implementation of the type system and how this helps to implement our static memory allocator.
+We will then shift our focus to the implementation of the type system and how this helps to implement the static memory allocator inside our code generator.
 
 Finally, we will provide some details about the software infrastructure we used in our implementation.
 
@@ -187,7 +187,7 @@ The \OpenCL codes for the other parallel reduction implementations are similar, 
 the expression is traversed following the data flow.
 For each visited pattern, \OpenCL code is emitted, or they influence the code generation by changing the type and, thus, encode information for the following patterns.
 
-In the following, section we study the \OpenCL code generated for each pattern individually.
+In the following section, we study the \OpenCL code generated for each pattern individually.
 
 
 
@@ -275,7 +275,7 @@ For the \mapLocal and \mapWarp patterns, a \code{barrier} is emitted to synchron
 For the work-items organized inside a warp no synchronization is required, therefore, the \mapLane emits no synchronization statement.
 
 When the code generator knows statically that a for-loop will be iterated at most once, an if statement is emitted instead.
-If it is even clear that the loop will be iterated exactly once, the loop can be avoided completely.
+If it is furthermore clear that the loop will be iterated exactly once, the loop can be avoided completely.
 We saw both of these cases in \autoref{lst:reduce11} in the previous section.
 The code generator uses the array size information from the type system for this.
 
@@ -359,7 +359,7 @@ No code is emitted for the $\reorderStride$ pattern, rather it influences the ge
 When visiting the \reorderStride pattern an information about the stride used ($s$) is stored on a stack which is consumed the next time an input index is generated.
 The index generation then emits an index which controls which element is read by which thread.
 
-The formula for $\reorderStride\ s$ (see \autoref{definition:pattern:reorderStride}) is defines as: $(j-1) / n + s \times ((j-1) \bmod{n}) + 1$, where $j$ is the $1$-based index to be changed and $n = size / s$.
+The formula for $\reorderStride\ s$ (see \autoref{definition:pattern:reorderStride}) is defined as: $(j-1) / n + s \times ((j-1) \bmod{n}) + 1$, where $j$ is the $1$-based index to be changed and $n = size / s$.
 In the $0$-based indexing in \OpenCL the formula simplifies to: $j / n + s \times (j \bmod{n})$.
 
 The second expression implementing parallel reduction shown in \autoref{eq:reduce12} added a $\reorderStride\ size/2$ pattern as compared to the first expression for which we showed the compiled \OpenCL code in \autoref{lst:reduce11}.
@@ -372,7 +372,7 @@ Together with the array length, this gives us:
     s = size/2
     n = 2
 \end{lstlisting}
-When we now apply the $\reorderStride$ formula, we get:
+After applying the $\reorderStride$ formula, we get:
 \begin{lstlisting}[numbers=none, frame=none]
     (l_id * 2 + i) / 2 + (size/2) * ((l_id * 2 + i) % 2)
 \end{lstlisting}
@@ -400,7 +400,7 @@ The \vect pattern is used to vectorize functions.
 Our current strategy is quite simplistic.
 When emitting the \OpenCL code for a vectorized function, the data types of the input and output arguments are changed appropriately and the body of the function is checked if it contains operations which are supported on vector data types in \OpenCL, \eg, the usual arithmetic operators.
 If the body contains other operations, our process fails and no \OpenCL code can be generated.
-In the future, we plan to incorporate a more advanced approach for vectorization of functions, \eg, like presented in~\cite{KarrenbergHa2011}.
+In the future, we plan to incorporate a more advanced approach for vectorization of functions, \eg, like the one presented in~\cite{KarrenbergHa2011}.
 
 
 \subsection{The Type System and Static Memory Allocation}
@@ -413,11 +413,11 @@ Our $\splitN\ n$ pattern splits an array in chunks of a fixed size $n$.
 As this size is stored in the type system, it is naturally available when processing the next patterns, by investigating their input type.
 Therefore, there is no need to pass this information explicitly inside the code generator, it is rather implicitly available through the types involved.
 
-When computing the amount of memory required to store the result of a pattern, we can look at the result type of the pattern and easily infer the amount of memory from it.
+When computing the amount of memory required to store the result of a pattern application, we can look at the result type of the pattern and easily infer the amount of memory from it.
 Using this approach, no dynamic memory allocation is required so far.
 
 We currently do not perform any analysis to reuse memory objects, \ie, each pattern is assigned a newly allocated output array, even though arrays could be reused.
-In \autoref{lst:reduce11} three local memory arrays (\code{sdata1}, \code{sdata2}, and \code{sdata3}) are used, where only a single array was used in the original \OpenCL implementation.
+In \autoref{lst:reduce11} three local memory arrays (\code{sdata1}, \code{sdata2}, and \code{sdata3}) are used, while only a single array was used in the original \OpenCL implementation.
 In the future, we intend to develop strategies to reuse memory and, thus, reduce the overall memory footprint.
 We want to adopt well-understood algorithms which are used for register allocation in compilers, like graph coloring~\cite{CooperTo2004}.
 
