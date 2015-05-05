@@ -132,6 +132,15 @@ Based on this model the runtime system could select the appropriate implementati
 %The described enhancements are representative for similar possible enhancements throughout the current \SkelCL library implementation.
 %Overall these type of enhancements have only minor effects on the main features of \SkelCL instead they refine the current \SkelCL implementation.
 
+\paragraph{Optimizing Data Transfer}
+The memory management is completely hidden from the user in \SkelCL.
+Data stored in \SkelCL's container data types is made automatically accessible on \CPU and \GPUs.
+Currently \SkelCL performs a single data transfer in \OpenCL to copy a container's data to or from a \GPU.
+When the data transfer time is large compared to the computational time it is often beneficial to upload the data in several chunks and start the computation on the first chunk while simultaneously uploading the next chunk.
+Using this strategy the data transfer can be overlapped with the computational time and the overall runtime is reduced.
+This optimization is not always valid as it must be possible to compute several chunks independent of each other.
+Fortunately, for the \map and \zip skeleton this is always true, therefore, this optimization could be added to \SkelCL while preserving its completely transparent memory management.
+
 \paragraph{Allow Nesting of Skeletons and Container Data Types}
 Due to \SkelCL's current implementation, the nesting of skeletons is not allowed in the library, therefore, it is not possible to express nested parallelism.
 Similarly, it is not possible to nest container data types in each other.
