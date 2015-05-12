@@ -44,6 +44,7 @@ This cache is often several megabytes large, for Intel's Haswell architecture th
 % describe core: branch prediction, out-of-order execution, SIMD units
 Each \CPU core performs computations completely independently of the other cores, and it consists itself of multiple execution units which can perform computations in parallel.
 This happens transparently to the programmer even when executing a sequential program.
+\CPUs use advanced branch prediction techniques to perform aggressive speculative execution for increased performance.
 The \CPU core exploits \emph{instruction level parallelism} (ILP) by performing out-of-order execution which re-orders instructions prior to execution while still respecting their dependencies:
 \eg, if two or more instructions have no dependencies then they can be executed in parallel.
 In the Intel Haswell architecture, 4 arithmetic operations and 4 memory operations can be performed in parallel in one clock cycle on every core.
@@ -82,7 +83,7 @@ While the overall design looks fairly similar to the design of the multi-core \C
 The lightweight \GPU cores are grouped together into what Nvidia calls a \emph{Streaming Multiprocessor} (SM).
 In the Kepler architecture, an SM features 192 single-precision cores, 64 double-precision units, 32 special function units, and 32 memory units.
 The 192 single-precision cores are very lightweight compared to the complex \CPU cores we discussed in the previous subsection.
-A single \GPU core does not support \SIMD vectorization:
+A single Nvidia \GPU core does not support \SIMD vectorization:
 it performs the straightforward in-order execution, and does not perform complex branch prediction.
 This design makes the implementation of such a core in hardware cheap and enables the grouping of hundreds of cores in a single SM.
 
@@ -124,7 +125,7 @@ Threads in the same warp taking different branches in the code can substantially
 \paragraph{GPU Memory Accesses}
 Accessing the main memory of a \GPU, called \emph{global memory}, is an expensive operation.
 The \GPU can optimize accesses when the global memory is accessed in certain fixed patterns.
-If the threads organized in a warp access a contiguous area of the memory, the hardware can \emph{coalesce} the memory access, \ie, perform a single memory request instead of issuing individual requests for every thread.
+If the threads organized in a warp access a contiguous area of the memory which fits in a cache line, the hardware can \emph{coalesce} the memory access, \ie, perform a single memory request instead of issuing individual requests for every thread.
 Several similar access patterns exist which are detected by the hardware to coalesce the memory accesses by multiple threads.
 
 This is a major optimization opportunity for many \GPU programs, as the available memory bandwidth can only be utilized properly if memory accesses are coalesced.
@@ -187,7 +188,7 @@ We will study the \OpenCL programming approach in more detail, as it is the tech
 \OpenCL was created in 2008 and has since been refined multiple times.
 In this thesis, we will use the \OpenCL standard version 1.1 which was ratified in June 2010.
 This is the most commonly supported version of the standard with support from all major hardware vendors: AMD, ARM, Intel, and Nvidia.
-The newer \OpenCL standards version 2.0 and 2.1 are currently not supported on Nvidia \GPUs.
+For example, are the newer \OpenCL standards version 2.0 and 2.1 currently not supported on Nvidia \GPUs at the time of writing this thesis.
 
 \OpenCL is defined in terms of four theoretical models: platform model, memory model, execution model, and programming model.
 We will briefly discuss all four models.
@@ -305,7 +306,7 @@ This programming model is not well suited for exploiting the capabilities of mod
 Back then (and still today) programs were often poorly designed, hard to maintain, and complicated to reason about.
 Dijkstra identified the low-level \code{goto} statement as a major reason for programmers writing ``spaghetti code''.
 In his famous letter~\cite{Dijkstra68a}, he argued that programs should organize code more structurally in procedures and using higher-level control structures like \code{if} and \code{while}.
-Dijkstra's letter helped to eventually overcome unstructured sequentiell programming and to establish structured programming~\cite{DahlDiHo1972}.
+Dijkstra's letter helped to eventually overcome unstructured sequential programming and to establish structured programming~\cite{DahlDiHo1972}.
 The new structures proposed to replace \code{goto} where suggested based on observations of common use cases -- or \emph{patterns} of use -- of the \code{goto} statement in sequential programming.
 By capturing an entire pattern of usage, these patterns raise the abstraction level and make it easier to reason about them.
 An \code{if A then B else C} statement has a clear semantic which is easy to understand and reason about, for example is it clear to the programmer -- and the compiler -- that \code{B} and \code{C} cannot both be executed.
@@ -409,4 +410,14 @@ In this thesis, we will investigate the performance of programs expressed with d
 The high-level semantic of algorithmic skeletons enable high-level optimizations like the rewrite rules presented in~\cite{Gorlatch00}.
 These optimizations exploit information about the algorithmic structure of a program which is often hard or impossible to extract from unstructured programs.
 In this thesis, we will present a system for encoding and systematically applying such high-level optimizations to generate highly optimized code from a high-level, skeleton-based program representation.
+
+
+\section{Summary}
+In this chapter we have discussed the technical background of this thesis.
+We first introduced the design of modern parallel processors and discussed the differences between multi-core \CPUs and \GPUs.
+Then, we looked at how these processors are currently programmed identifying some problems of parallel programming, including non-determinism, race conditions, and deadlocks.
+We particular looked at the \OpenCL programming approach and how it can be used for programming multi-core \CPUs and \GPUs.
+Finally, we introduced structured parallel programming as an alternative approach which avoids many drawbacks of traditional parallel programming techniques.
+
+In the next part of the thesis we introduce a novel structured parallel programming model for single- and multi-\GPU systems addressing the \emph{programmability} challenge.
 

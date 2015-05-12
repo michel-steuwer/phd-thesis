@@ -8,11 +8,11 @@
 from mobile devices and desktop computers to high-performance computing systems.
 % data centers and 
 Furthermore, recently novel types of specialized architectures, especially \emph{Graphics Processing Units} (\GPUs), have been developed featuring large amounts of processing units for accelerating computational intensive applications.
-Parallelism and specialization are seen by many as two crucial answers to the challenge of increasing performance and at the same time improving the energy efficiency~\cite{OlukotunH05,GarlandK10}.
+Parallelism and specialization are seen by many as two crucial answers to the challenge of increasing performance and at the same time improving energy efficiency~\cite{OlukotunH05,GarlandK10}.
 % computer architects 
 
 % The development of mainstream programming languages and models have not kept pace with the hardware development.
-The modern multi- and many-core processors are still programmed with programming languages developed in the 1980s and 1990s, like \Cpp or Java, or even older languages like C (from the 1970s) or Fortran (from the 1950s).
+Modern multi- and many-core processors are still programmed with programming languages developed in the 1980s and 1990s, like \Cpp or Java, or even older languages like C (from the 1970s) or Fortran (from the 1950s).
 These languages have a simplified view of the underlying hardware, often more or less directly resembling the Von Neumann architecture.
 Multi-core processors are programmed with low-level libraries providing \emph{threads} where the programmer explicitly controls the computations on each core executing in parallel with the other cores.
 This style of programming has turned out to be extremely difficult, as threads running concurrently on distinct cores can modify shared data leading to serious problems like deadlocks, race conditions, and non-determinism.
@@ -110,7 +110,7 @@ Unfortunately, the development of high-performing optimized applications is even
 Applying optimizations often requires substantial restructuring of existing code.
 Optimizations are often applied ad-hoc, following certain ``rules of thumb'' derived from small-scale profiling and experiments as well as previously gained experience.
 There exists no widely established approach for performing optimizations more systematically.
-Especially, the performance implications of an assumed optimization are currently not predictable:
+Especially, the performance implications of optimizations are currently not predictable:
 sometimes supposed optimizations lead to actual slowdowns in certain circumstances.
 
 % compilers do a good job on low-level stuff, but fail for high-level optimizations
@@ -122,7 +122,8 @@ The state-of-the-art optimizing compilers are lacking the high-level semantic in
 
 % optimizations are hardware-specific
 Many optimizations exploit particular hardware-specific features of the target architecture and are, thus, inherently not portable.
-As in current low-level programing models the programmers often encode these optimizations directly, programmers are confronted with the trade-off of either fully optimize their code for performance -- at the expense of code portability -- or implement a portable version -- at the expense of missing out on the highest performance possible.
+In current low-level programing models the programmers often encode these optimizations directly.
+As a result programmers are confronted with the trade-off of either fully optimize their code for performance -- at the expense of code portability -- or implement a portable version -- at the expense of missing out on the highest performance possible.
 Nowadays, programmers often choose a middle ground by introducing conditionals and branches in their code to select optimizations for the given hardware, while maintaining portability.
 This, obviously, complicates the development process and decreases maintainability.
 

@@ -48,15 +48,15 @@ We will see later in \autoref{sec:opt_allpairs_skeleton} and \autoref{section:sk
 
 \subsection{Algorithmic Skeletons}
 \label{section:skelcl-programming-model:skeletons}
-In original \OpenCL, computations are expressed as compute \emph{kernels} which are executed in a parallel manner on an \OpenCL device, \eg, a \GPU.
-As seen earlier in \autoref{section:opencl-example} the application developer must explicitly specify the parallelism by indicating how many instances of a kernel (called \emph{work-items}) should be launched in parallel.
-We saw in \autoref{lst:lmosem:step_2} that the \code{local\_work\_size} (\autoref{lst:lmosem:step_2:env:start}) and \code{global\_work\_size} (\autoref{lst:lmosem:step_2:env:global}) specify the number of work-items and how they are organized into groups.
-The programmer must ensure that these numbers match, \ie, that the global size is evenly divisible by the local size.
-Communications between work-items are limited in \OpenCL and have to be implemented carefully to avoid race conditions and deadlocks.
-In addition, kernels take pointers to device memory as input and contain program code for reading/writing single data items from/to it.
-These pointers are unsafe as they have to be used carefully, because no boundary checks are performed by \OpenCL.
+% In original \OpenCL, computations are expressed as compute \emph{kernels} which are executed in a parallel manner on an \OpenCL device, \eg, a \GPU.
+% As seen earlier in \autoref{section:opencl-example} the application developer must explicitly specify the parallelism by indicating how many instances of a kernel (called \emph{work-items}) should be launched in parallel.
+% We saw in \autoref{lst:lmosem:step_2} that the \code{local\_work\_size} (\autoref{lst:lmosem:step_2:env:start}) and \code{global\_work\_size} (\autoref{lst:lmosem:step_2:env:global}) specify the number of work-items and how they are organized into groups.
+% The programmer must ensure that these numbers match, \ie, that the global size is evenly divisible by the local size.
+% Communications between work-items are limited in \OpenCL and have to be implemented carefully to avoid race conditions and deadlocks.
+% In addition, kernels take pointers to device memory as input and contain program code for reading/writing single data items from/to it.
+% These pointers are unsafe as they have to be used carefully, because no boundary checks are performed by \OpenCL.
 
-To shield the application developer from these low-level programming issues, \SkelCL extends \OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{Cole1991}.
+To shield the application developer from the low-level programming issues discussed in the previous section, \SkelCL extends \OpenCL by introducing high-level programming patterns, called \emph{algorithmic skeletons}~\cite{Cole1991}.
 Formally, a skeleton is a higher-order function that executes one or more user-defined (so-called \emph{customizing}) functions in a pre-defined parallel manner hiding the details of parallelism and communication from the user~\cite{GorlatchCo2011}.
 
 \SkelCL provides four basic data-parallel skeletons: \map, \zip, \reduce, and \scan,
@@ -82,6 +82,7 @@ Using parenthesis we can \emph{section} a binary operator which we write using p
   (x\ \oplus)\ y &=  x \oplus y\\
   (\oplus\ y)\ x &=  x \oplus y
 \end{align*}
+This is a helpful notation to treat a binary operator syntactically like an ordinary function.
 
 As our data structures we use vectors written as $\vec{x} = [x_1, x_2, \ldots, x_n]$ and matrices written as:
 \begin{align*}
@@ -219,7 +220,7 @@ A possible application of the \scan skeleton is the computation of the prefix su
   prefixSum\ \vec{x} = \scan\ (+)\ 0\ \vec{x}
 \end{align*}
 
-\paragraph{Parallel Programming with Algorithmic Skeletons}
+\subsubsection{Parallel Programming with Algorithmic Skeletons}
 In \SkelCL, rather than writing low-level kernels, the application developer customizes suitable skeletons by providing application-specific functions which are often much simpler than kernels as they specify an operation on basic data items rather than containers.
 
 Skeletons can be customized and composed to express complex algorithms.
