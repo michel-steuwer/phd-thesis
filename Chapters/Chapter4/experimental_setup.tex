@@ -8,7 +8,6 @@ We will also discuss the hardware used in the experiments.
 We want to evaluate programmability, \ie, the ease of programming, and the performance of the \SkelCL programming model and library.
 
 Measuring programmability is difficult.
-% TODO: find more metrics
 Various studies~\cite{HochsteinCSAB2005,HochsteinBVG2008} have been conducted and metrics~\cite{VanderwielNL1997} have been proposed to measure how convenient a certain style of programming or a certain programming model is.
 None of these metrics is widely established in the scientific or industrial communities.
 We chose to use one of the simples metrics possible to quantify programming effort: counting the \emph{Lines Of source Code} (LOC).
@@ -21,8 +20,10 @@ We will, therefore, alongside presenting the lines of code argue \emph{why} \Ske
 As the metric for performance we use absolute and relative runtime.
 %-- where possible --
 We only make comparisons using software executed on the same hardware.
-We perform comparisons using published software from researchers or officially provided by Nvidia or AMD.
-In addition, we use self developed and optimized \OpenCL code for comparisons versus the code written using the \SkelCL library.
+We perform comparisons using published application and benchmark software from researchers or officially provided by Nvidia or AMD.
+In addition, we compare self developed and optimized \OpenCL code versus code written using the \SkelCL library.
+
+For all measurements we performed 100 runs and report the median runtime.
 
 \subsection{Hardware Setup}
 For performing our runtime experiments we used a PC equipped with a quad-core \CPU (Intel Xeon E5520, 2.26\,GHz) and 12\,GB of main memory.

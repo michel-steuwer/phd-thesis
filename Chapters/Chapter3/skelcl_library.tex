@@ -74,11 +74,21 @@ We will now discuss how our implementation enables this comfortable level of int
 \subsection{Syntax and Integration with \Cpp}
 \label{section:skelcl-library:syntax}
 
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=.8\textwidth]{SkelCLOverview}
+  \caption{Overview of the \SkelCL implementation.
+    In the first step, the custom \code{skelclc} compiler transforms the initial source code into a representation where kernels are represented as strings.
+    In the second step, a traditional \Cpp compiler generates an executable by linking against the \SkelCL library implementation and \OpenCL.}
+  \label{fig:skelcl:impl:overview}
+\end{figure}
+
+
 The \SkelCL library is built on top of \OpenCL.
 This offers clear benefits as well as introduces technical challenges.
 One of the technical challenges is, that \OpenCL requires the kernel to be specified as a string in the host program.
 While this enables portability across different hardware architectures, it also introduces a burden on the application developer as strong typing cannot be guaranteed statically when the host program is compiled.
-For the implementation of \SkelCL, we choose to address this issue using a two-step implementation.
+For the implementation of \SkelCL, we choose to address this issue using a two-step implementation, which is visualized in \autoref{fig:skelcl:impl:overview}.
 In the first step, a custom compiler transforms the source code as seen in \autoref{lst:skelcl:dotproduct} to a representation where the kernel computations are represented as strings as required by \OpenCL.
 In the second step, the transformed program is compiled using a traditional \Cpp compiler to produce the final executable.
 
@@ -723,6 +733,8 @@ Therefore,
 global memory accesses are performed in total, where $n$ and $m$ are the height and width of matrix $C$ and $d$ is the width of $A$ and the height of $B$.
 By using the fast but small local memory, this number of global memory accesses can be reduced and, thus, performance can be improved, as we will see in the next paragraph.
 Using the local memory for matrix multiplication is a well-known optimization which we systematically apply to a generic skeleton, rather than to a particular application as usually done in the literature.
+
+\pagebreak
 
 \paragraph{The Specialized Allpairs Skeleton}
 \autoref{lst:allpairs:special:impl} shows matrix multiplication expressed using the specialized \allpairs skeleton.

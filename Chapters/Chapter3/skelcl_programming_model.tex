@@ -1,3 +1,4 @@
+\pagebreak
 \section{The \SkelCL Programming Model}
 \label{section:skelcl-programming-model}
 \SkelCL (Skeleton Computing Language) is a high-level programming model targeting multi-\GPU systems.
@@ -413,10 +414,18 @@ The definition for matrices is similar:
     \begin{split}
     & \stencil\ f\  d\ h\ \DottedMatrix{m_{1,1}}{m_{1,m}}{m_{n,1}}{m_{n,m}}
                \eqdef \DottedMatrix{n_{1,1}}{n_{1,m}}{n_{n,1}}{n_{n,m}}\\
-               &\text{where}\\[.5em]
+               &\text{where}
+    \end{split}
+  \end{equation*}
+  \begin{equation*}
+    \begin{split}
     &\qquad n_{i,j} = f\ \DottedMatrix{m_{i-d,j-d}}{m_{i-d,j+d}}{m_{i+d,j-d}}{m_{i+d,j+d}} \qquad \forall\ i,j
         \begin{array}{r} 0 < i \leq n,\\ 0 < j \leq m \end{array}\\
         &\text{and}\\
+    \end{split}
+  \end{equation*}
+  \begin{equation*}
+    \begin{split}
     &\qquad m_{i,j} = h\ i\ j \qquad \forall\ i,j \begin{array}{l} -d < j \leq 0\ \vee n < j \leq n+d,\\ -d < j \leq 0\ \vee m < j \leq m+d \end{array} .
     \end{split}
   \end{equation*}
@@ -451,6 +460,16 @@ It computes a new value for every pixel of an image by weighting and summing up 
 \subsubsection{The overlap data distribution}
 \label{section:overlap}
 
+Together with the \stencil skeleton we introduce a new advanced distribution called \emph{overlap} (\autoref{fig:overlap_distribution}).
+The overlap distribution splits the container into one chunk for each device, similarly to the \emph{block} distribution.
+In addition, each chunk consists of a number of continuous elements (in case of the vector) or rows (in case of the matrix) which are copied to the neighboring devices, similar to the \emph{copy} distribution.
+Therefore, the overlap distribution can be seen as a combination of the \emph{block} and \emph{copy} distribution.
+The number of elements or rows at the edges of a chunk which are copied to the neighboring devices are called the \emph{overlap size}.
+
+The \emph{overlap} distribution ensures that neighboring elements are always accessible even if the container is split across multiple devices.
+The \emph{overlap} distribution is, therefore, automatically selected as distribution by the \stencil skeleton automatically setting the overlap size to the skeleton parameter $d$, which ensures that every device has access to the necessary neighboring elements.
+
+
 \begin{figure}[tb]
   \centering
   \begin{subfigure}[b]{.3\textwidth}
@@ -468,16 +487,6 @@ It computes a new value for every pixel of an image by weighting and summing up 
   \label{fig:overlap_distribution}
   \bigskip
 \end{figure}
-
-Together with the \stencil skeleton we introduce a new advanced distribution called \emph{overlap} (\autoref{fig:overlap_distribution}).
-The overlap distribution splits the container into one chunk for each device, similarly to the \emph{block} distribution.
-In addition, each chunk consists of a number of continuous elements (in case of the vector) or rows (in case of the matrix) which are copied to the neighboring devices, similar to the \emph{copy} distribution.
-Therefore, the overlap distribution can be seen as a combination of the \emph{block} and \emph{copy} distribution.
-The number of elements or rows at the edges of a chunk which are copied to the neighboring devices are called the \emph{overlap size}.
-
-The \emph{overlap} distribution ensures that neighboring elements are always accessible even if the container is split across multiple devices.
-The \emph{overlap} distribution is, therefore, automatically selected as distribution by the \stencil skeleton automatically setting the overlap size to the skeleton parameter $d$, which ensures that every device has access to the necessary neighboring elements.
-
 
 
 

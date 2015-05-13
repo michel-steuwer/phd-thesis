@@ -82,7 +82,7 @@ Note that the two steps require different data distribution patterns:
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.6\textwidth]{ICCS/em_distribution}
+  \includegraphics[width=0.7\textwidth]{ICCS/em_distribution}
   \caption{Parallelization schema of the LM OSEM algorithm.}
   \label{fig:lmosem:em_distribution}
 \end{figure}
@@ -222,6 +222,7 @@ for (int gpu = 0; gpu < gpu_count; gpu++) {
 \paragraph{Download}
 The implementation of the download phase is similar to the upload phase as shown in \autoref{lst:lmosem:upload}.
 
+\newpage
 
 % ============================================================================ %
 \subsection[Requirements for a High-Level\\ Programming Model]{Requirements for a High-Level Programming Model}
