@@ -86,8 +86,8 @@ We compare six different implementations of matrix multiplication:
 \begin{enumerate}
   \item the \OpenCL implementation from~\cite{KirkHw2010} without optimizations,
   \item the optimized \OpenCL implementation from~\cite{KirkHw2010} using \GPU local memory,
-  \item the optimized \BLAS implementation by AMD~\cite{APPML} written in \OpenCL,
-  \item the optimized \BLAS implementation by Nvidia~\cite{cuBLAS} written in \CUDA,
+  \item the optimized \BLAS implementation by AMD~\cite{APPML} written in \OpenCL (\clBLAS version 1.10),
+  \item the optimized \BLAS implementation by Nvidia~\cite{cuBLAS} written in \CUDA (\CUBLAS version 5.0),
   \item the \SkelCL implementation using the generic \allpairs skeleton shown in \autoref{lst:skelcl:mm:generic},
   \item the \SkelCL implementation using the specialized \allpairs skeleton shown in \autoref{lst:skelcl:mm:special}.
 \end{enumerate}
@@ -210,19 +210,25 @@ The other implementations using \OpenCL require even 9 times more LOCs than the 
 Besides their length, the \OpenCL-based implementations require the application developer to explicitly implement many low-level, error-prone tasks, like dealing with pointers and offset calculations.
 Furthermore, the skeleton-based implementations are more general, as they can be used for arbitrary allpairs computations, while all other implementations can compute matrix multiplication only.
 
-\FloatBarrier
 
 \subsubsection*{Performance experiments}
-We performed our experiments with the six different implementations 1. -- 6. of matrix multiplication on two different computer systems with \GPUs:
+We performed experiments with the six different implementations of matrix multiplication on two different computer systems with \GPUs:
 \begin{itemize}[leftmargin=50pt]
   \item[System A:] Our general testing system already described in~\autoref{sec:skelcl:experimental_setup}:
     an Nvidia S1070 equipped with four Nvidia Tesla \GPUs, each with 240 streaming processors and 4 GByte memory.
-  \item[System B:] An AMD Radeon HD 6990 graphics card containing two \GPUs, each with 1536 streaming processors and 1 GByte memory.
+  \item[System B:] An AMD Radeon HD 6990 card containing two \GPUs, each with 1536 streaming processors and 1 GByte memory.
 \end{itemize}
+
+\noindent
+We include the data transfer times to and from the \GPU in the results. %, \ie the measured runtime consists of:
+% 1) uploading the two input matrices to the \GPU;
+% 2) performing the actual matrix multiplication;
+% 3) downloading the computed result matrix.
+
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_sizes_gtx480}
+  \includegraphics[width=0.8\textwidth]{Plots/MatMult/mat_mult_sizes_gtx480}
   \caption[Runtime of different matrix multiplication implementations on an Nvidia system.]%
           {Runtime of different matrix multiplication implementations on the Nvidia system for different sizes of the matrices.}
   \label{fig:mat_mult_single}
@@ -240,35 +246,51 @@ We performed our experiments with the six different implementations 1. -- 6. of 
     Optimized \OpenCL  & 0.017 & 0.105 & 0.752 &  5.683 &  51.337 \\
     \CUBLAS            & 0.012 & 0.059 & 0.387 &  2.863 &  22.067 \\
     \clBLAS            & 0.061 & 0.246 & 1.564 & 11.615 &  90.705 \\
-    Generic \allpairs  & \multirow{2}{*}{0.121} & \multirow{2}{*}{0.792} & \multirow{2}{*}{5.782} & \multirow{2}{*}{48.645} & \multirow{2}{*}{471.235} \\
+    Generic \allpairs  & \multirow{2}{*}{0.121} & \multirow{2}{*}{0.792} & \multirow{2}{*}{5.782} & \multirow{2}{*}{48.645} & \multirow{2}{*}{471.235} \\[-.5em]
     skeleton\\
-    Specialized \allpairs & \multirow{2}{*}{0.024} & \multirow{2}{*}{0.156} & \multirow{2}{*}{1.134} & \multirow{2}{*}{8.742} & \multirow{2}{*}{68.544} \\
+    Specialized \allpairs & \multirow{2}{*}{0.024} & \multirow{2}{*}{0.156} & \multirow{2}{*}{1.134} & \multirow{2}{*}{8.742} & \multirow{2}{*}{68.544} \\[-.5em]
     skeleton\\
     \bottomrule
   \end{tabular}
-  \caption[Runtime results for all tested implementations of matrix multiplication on an Nvidia system.]
-          {Runtime results for all tested implementations on the Nvidia system.}
+  \caption[Runtime results for matrix multiplication on an Nvidia system.]
+          {Runtime results for matrix multiplication on the Nvidia system.}
   \label{tab:mat_mult_single}
 \end{table}
 
-\noindent
-We include the data transfer times to and from the \GPU in the results. %, \ie the measured runtime consists of:
-% 1) uploading the two input matrices to the \GPU;
-% 2) performing the actual matrix multiplication;
-% 3) downloading the computed result matrix.
-
 \paragraph{System A (one \GPU)}
-\autoref{fig:mat_mult_single} shows the runtime in seconds of all six implementations for different sizes of the matrices (note that for readability reasons, all charts are scaled differently).
+\autoref{fig:mat_mult_single} shows the runtime of all six implementations for different sizes of the matrices (for readability reasons, all charts are scaled differently).
 For detailed numbers, see \autoref{tab:mat_mult_single}.
 
-Clearly, the naive \OpenCL-based implementation and the \SkelCL-based implementation using the generic \allpairs skeleton are the slowest, because both do not use the fast \GPU local memory, in contrast to all other implementations.
+Clearly, the naive \OpenCL implementation and the implementation using the generic \allpairs skeleton are the slowest, because both do not use local memory, in contrast to all other implementations.
 
-The implementation which uses the specialized \allpairs skeleton performs between 5.0 and 6.8 times faster than the implementation using the generic allpairs skeleton, but is 33\% slower on $16384\times 16384$ matrices than the optimized \OpenCL-based implementation using local memory.
+The implementation using the specialized \allpairs skeleton performs 5.0 to 6.8 times faster than the generic allpairs skeleton, but is 33\% slower on the largest matrices than the optimized \OpenCL-based implementation. % using local memory.
 However, the latter implementation can only be used for square matrices and, therefore, it benefits from omitting many conditional statements and boundary checks.
+
+
+\CUBLAS is the fastest of all implementations, as it is highly tuned specifically for Nvidia \GPUs using \CUDA.
+The \clBLAS implementation by AMD using \OpenCL performs not as well:
+presumably, it is optimized for AMD \GPUs and performs poorly on other hardware.
+Our optimized \allpairs skeleton implementation outperforms the \clBLAS implementation for all matrix sizes tested.
+
+
+\pagebreak
+
+\paragraph{System B (one \GPU)}
+\autoref{fig:mat_mult_single_amd} shows the measured runtime in seconds for five of the six implementations for different sizes of the matrices.
+Detailed numbers can be found in \autoref{tab:mat_mult_single_amd}.
+We could not use the Nvidia-specific \CUBLAS implementation as it does not work on the AMD \GPU.
+
+For bigger matrices, the slowest implementations are, again, the unoptimized \OpenCL implementation and the implementation using the generic \allpairs skeleton.
+
+The optimized \OpenCL implementation and the specialized \allpairs skeleton perform similarly.
+For matrices of size $8192\times 8192$, the optimized \OpenCL implementation is about 30\% faster.
+
+The \clBLAS implementation performs very poorly for small matrices, but is clearly the fastest implementation for bigger matrices.
+Similar to the \CUBLAS implementation on the Nvidia hardware, it is not surprising that the implementation by AMD performs very well on their own hardware.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.9\textwidth]{Plots/MatMult/mat_mult_sizes_hd6990}
+  \includegraphics[width=0.8\textwidth]{Plots/MatMult/mat_mult_sizes_hd6990}
   \caption[Runtime of different matrix multiplication implementations on an AMD ststem.]%
           {Runtime of all compared implementations for a matrix multiplication on the AMD system using one \GPU.}
   \label{fig:mat_mult_single_amd}
@@ -285,9 +307,9 @@ However, the latter implementation can only be used for square matrices and, the
     \OpenCL            & 0.008 & 0.046 & 0.284 & 2.178 & 17.098 \\
     Optimized \OpenCL  & 0.006 & 0.023 & 0.111 & 0.743 &  5.569 \\
     \clBLAS            & 0.113 & 0.120 & 0.143 & 0.329 &  2.029 \\
-    Generic \allpairs  & \multirow{2}{*}{0.007} & \multirow{2}{*}{0.038} & \multirow{2}{*}{0.278} & \multirow{2}{*}{2.151} & \multirow{2}{*}{16.983} \\
+    Generic \allpairs  & \multirow{2}{*}{0.007} & \multirow{2}{*}{0.038} & \multirow{2}{*}{0.278} & \multirow{2}{*}{2.151} & \multirow{2}{*}{16.983} \\[-.5em]
     skeleton\\
-    Specialized \allpairs & \multirow{2}{*}{0.005} & \multirow{2}{*}{0.023} & \multirow{2}{*}{0.141} & \multirow{2}{*}{1.025} & \multirow{2}{*}{7.842} \\
+    Specialized \allpairs & \multirow{2}{*}{0.005} & \multirow{2}{*}{0.023} & \multirow{2}{*}{0.141} & \multirow{2}{*}{1.025} & \multirow{2}{*}{7.842} \\[-.5em]
     skeleton\\
     \bottomrule
   \end{tabular}
@@ -296,24 +318,17 @@ However, the latter implementation can only be used for square matrices and, the
   \label{tab:mat_mult_single_amd}
 \end{table}
 
-Not surprisingly, \CUBLAS by Nvidia is the fastest of all implementations, as it is highly tuned specifically for Nvidia \GPUs using \CUDA.
-The \clBLAS implementation by AMD using \OpenCL performs not as well:
-presumably, it is optimized for AMD \GPUs and performs poorly on other hardware.
-Our optimized \allpairs skeleton implementation outperforms the \clBLAS implementation for all matrix sizes tested.
 
-\paragraph{System B (one \GPU)}
-\autoref{fig:mat_mult_single_amd} shows the measured runtime in seconds for five of the six implementations for different sizes of the matrices.
-Detailed numbers can be found in \autoref{tab:mat_mult_single_amd}.
-We could not use the Nvidia-specific \CUBLAS implementation as it does not work on the AMD \GPU.
+\pagebreak
 
-For bigger matrices, the slowest implementations are, again, the unoptimized \OpenCL implementation and the implementation using the generic \allpairs skeleton.
-
-The optimized \OpenCL implementation and the specialized \allpairs skeleton perform similarly.
-For matrices of size $8192\times 8192$, the optimized \OpenCL implementation is about 30\% faster.
-
-The \clBLAS implementation performs very poorly for small matrices, but is clearly the fastest implementation for bigger matrices.
-Similar to the \CUBLAS implementation on the Nvidia hardware, it is not surprising that the implementation by AMD performs very well on their own hardware.
-
+\paragraph{System A (multiple \GPUs)}
+\autoref{fig:mat_mult_devices} shows the runtime behavior for both \allpairs skeleton-based implementations when using up to four \GPUs of our multi-\GPU system.
+The other four implementations are not able to handle multiple \GPUs and would have to be specially rewritten for such systems.
+Newer versions of Nvidia's \CUBLAS implementation support the execution on multiple \GPUs as well.
+We observe a good scalability for both of our skeleton-based implementations, achieving speedups between 3.09 and 3.93 when using four \GPUs.
+Detailed numbers can be found in \autoref{tab:mat_mult_devices}.
+For the matrices of size $16384\times 16384$, performance is also provided in GFlops;
+to compute this value we excluded the data-transfer time (as usually done in related work) to enable better comparison with related work.
 
 \begin{figure}[tb]
   \centering
@@ -350,14 +365,5 @@ Similar to the \CUBLAS implementation on the Nvidia hardware, it is not surprisi
     For the matrices of size $16384\times 16384$ the results are also shown in GFlops.}
   \label{tab:mat_mult_devices}
 \end{table}
-
-\paragraph{System A (multiple \GPUs)}
-\autoref{fig:mat_mult_devices} shows the runtime behavior for both \allpairs skeleton-based implementations when using up to four \GPUs of our multi-\GPU system.
-The other four implementations are not able to handle multiple \GPUs and would have to be specially rewritten for such systems.
-Newer versions of Nvidia's \CUBLAS implementation support the execution on multiple \GPUs as well.
-We observe a good scalability for both of our skeleton-based implementations, achieving speedups between 3.09 and 3.93 when using four \GPUs.
-Detailed numbers can be found in \autoref{tab:mat_mult_devices}.
-For the matrices of size $16384\times 16384$, performance is also provided in GFlops;
-to compute this value we excluded the data-transfer time (as usually done in related work) to enable better comparison with related work.
 
 \FloatBarrier
