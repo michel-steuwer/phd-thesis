@@ -28,7 +28,7 @@ plot <- ggplot(data, aes(x = Platform, y = value, fill=Version)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,2.5)) +
   scale_x_discrete(labels= strwr(levels(data$Platform)), expand=c(0,0.5)) +
   geom_hline(yintercept=1) +
-  scale_fill_manual(values=c("#fb6a4a", "#de2d26", "#a50f15")) +
+  scale_fill_manual(values=c("#fc9272", "#de2d26")) +
   theme + labs
 
 # save plot to file

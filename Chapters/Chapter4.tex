@@ -27,6 +27,36 @@ For all source codes we only show the relevant code sections and omit implementa
 % TODO: Include Bio informatic
 % \input{Chapters/Chapter4/bio_info.tex}
 
+\section{Summary}
+
+\autoref{fig:skelcl:eval:summary:loc} and \autoref{fig:skelcl:eval:summary:runtime} summaries the findings of this chapter.
+
+\autoref{fig:skelcl:eval:summary:loc} shows the lines of code required for implementing five of the applications examples in \OpenCL (on the left) and \SkelCL (on the right).
+We scaled all graphs relative to the lines of code required by the \OpenCL implementation.
+The \SkelCL code is significant shorter in all cases, requiring less than 50\% of the lines of code of the \OpenCL-based implementation.
+For the linear algebra application, matrix multiplication, and image processing application even less than 15\% of lines of code are required when using \SkelCL.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{Plots/summary/summary_loc.pdf}
+    \caption{Relative lines of code for five application examples discussed in this chapter comparing \OpenCL code with \SkelCL code.}
+    \label{fig:skelcl:eval:summary:loc}
+\end{figure}
+
+\autoref{fig:skelcl:eval:summary:runtime} shows the runtime results for six of the application examples presented in this chapter.
+We compare the runtime of optimized \OpenCL implementations against \SkelCL-based implementations.
+For all shown application examples -- except the dot product application -- we can see that \SkelCL is close to the performance of the \OpenCL implementations.
+For most applications the runtime of the \SkelCL-based implementations are within 10\% of the \OpenCL implementations.
+For the matrix multiplication \SkelCL is 33\% slower than the optimized \OpenCL implementation which only operates on squared matrices.
+The dot product application is significantly slower, as \SkelCL generates two separate \OpenCL kernels instead of a single optimized kernel.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{Plots/summary/summary_runtime.pdf}
+    \caption{Relative runtime for six application examples discussed in this chapter comparing \OpenCL-based implementations with \SkelCL-based implementations.}
+    \label{fig:skelcl:eval:summary:runtime}
+\end{figure}
+
 \section{Conclusion}
 In this chapter we have thoroughly evaluated the \SkelCL programming model and its \Cpp library implementation.
 We have seen that \SkelCL successfully addresses the programmability challenge and indeed greatly simplifies \GPU programming as compared to \OpenCL. 

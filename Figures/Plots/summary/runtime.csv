@@ -1,0 +1,13 @@
+Program, Benchmark, Runtime
+OpenCL,mandelbrot,24.2
+SkelCL,mandelbrot,25.9329
+OpenCL,linear algebra|(dot product),388.597
+SkelCL,linear algebra|(dot product),876.000
+OpenCL,matrix|multiplication,51.337687
+SkelCL,matrix|multiplication,68.5438333333333
+OpenCL,image processing|(gaussian blur),1639.56
+SkelCL,image processing|(gaussian blur),1799.76
+OpenCL,medical imaging|(LM OSEM),3.746
+SkelCL,medical imaging|(LM OSEM),3.756
+OpenCL,physics simulation|(FDTD),4.170336
+SkelCL,physics simulation|(FDTD),4.128832

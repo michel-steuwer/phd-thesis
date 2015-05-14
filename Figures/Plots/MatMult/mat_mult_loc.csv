@@ -9,5 +9,5 @@ Generic allpairs|skeleton,CPU Code   ,5
 Generic allpairs|skeleton,GPU Code   ,5
 Allpairs skeleton|with zip-reduce,CPU Code   ,7
 Allpairs skeleton|with zip-reduce,GPU Code   ,2
-cuBLAS,CPU Code   ,81
-cuBLAS,GPU Code   ,0
+CUBLAS,CPU Code   ,81
+CUBLAS,GPU Code   ,0

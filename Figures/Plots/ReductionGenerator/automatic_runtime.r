@@ -77,7 +77,7 @@ nvidiaPlot <- ggplot(nvidia, aes(x = Version, y = value, fill=Version)) +
   geom_hline(yintercept=177.4) +
   annotate("text", x = 1.5, y = 185, label = "Hardware Bandwidth Limit", size = 5) +
   scale_x_discrete(expand=c(0,0.5)) +
-  scale_fill_manual(values=c("#de2d26", "#a50f15")) +
+  scale_fill_manual(values=c("#fc9272", "#de2d26")) +
   theme + labs
 
 amd <- data[data$Platform == "AMD",]
@@ -88,7 +88,7 @@ amdPlot <- ggplot(amd, aes(x = Version, y = value, fill=Version)) +
   geom_hline(yintercept=264) +
   annotate("text", x = 1.5, y = 275, label = "Hardware Bandwidth Limit", size = 5) +
   scale_x_discrete(expand=c(0,0.5)) +
-  scale_fill_manual(values=c("#de2d26", "#a50f15")) +
+  scale_fill_manual(values=c("#fc9272", "#de2d26")) +
   theme + labs(x = "", y = "")
 
 intel <- data[data$Platform == "Intel",]
@@ -99,7 +99,7 @@ intelPlot <- ggplot(intel, aes(x = Version, y = value, fill=Version)) +
   geom_hline(yintercept=25.6) +
   annotate("text", x = 1.5, y = 26.5, label = "Hardware Bandwidth Limit", size = 5.25) +
   scale_x_discrete(expand=c(0,0.5)) +
-  scale_fill_manual(values=c("#de2d26", "#a50f15")) +
+  scale_fill_manual(values=c("#fc9272", "#de2d26")) +
   theme + labs(x = "", y = "")
 
 # save plot to file

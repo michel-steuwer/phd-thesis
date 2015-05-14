@@ -5,5 +5,5 @@ OpenCL global memory;GPU code;13
 |OpenCL local memory;GPU code;88
 MapOverlap;CPU code;15
 MapOverlap;GPU code;9
-|Stencil;CPU code;15
-|Stencil;GPU code;9
+Stencil;CPU code;15
+Stencil;GPU code;9

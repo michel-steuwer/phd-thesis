@@ -29,7 +29,8 @@ plot <- ggplot(data, aes(x = Version, y = value, fill=Type)) +
   annotate("text", x = 2.5, y = 185, label = "Hardware Bandwidth Limit", size = 6) +
   scale_y_continuous(expand = c(0,0), limits = c(0,200)) +
   scale_x_discrete(labels= strwr(levels(data$Version)), expand=c(0,0.5)) +
-  scale_fill_manual(values=c("#fb6a4a", "#de2d26", "#a50f15")) +
+  #scale_fill_manual(values=c("#fb6a4a", "#de2d26", "#a50f15")) +
+  scale_fill_manual(values=c("#fee0d2", "#fc9272", "#de2d26")) +
   theme + labs
 
 # save plot to file

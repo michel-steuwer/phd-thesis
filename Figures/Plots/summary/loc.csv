@@ -1,0 +1,21 @@
+Program, Device, Benchmark, Lines
+OpenCL,CPU code,mandelbrot,90
+OpenCL,GPU code,mandelbrot,28
+SkelCL,CPU code,mandelbrot,31
+SkelCL,GPU code,mandelbrot,26
+OpenCL,CPU code,linear algebra|(dot product),96
+OpenCL,GPU code,linear algebra|(dot product),20
+SkelCL,CPU code,linear algebra|(dot product),5
+SkelCL,GPU code,linear algebra|(dot product),2
+OpenCL,CPU code,matrix|multiplication,77
+OpenCL,GPU code,matrix|multiplication,17
+SkelCL,CPU code,matrix|multiplication,7
+SkelCL,GPU code,matrix|multiplication,2
+OpenCL,CPU code,image processing|(gaussian blur),65
+OpenCL,GPU code,image processing|(gaussian blur),88
+SkelCL,CPU code,image processing|(gaussian blur),15
+SkelCL,GPU code,image processing|(gaussian blur),9
+OpenCL,CPU code,medical imaging|(LM OSEM),399
+OpenCL,GPU code,medical imaging|(LM OSEM),193
+SkelCL,CPU code,medical imaging|(LM OSEM),18
+SkelCL,GPU code,medical imaging|(LM OSEM),200

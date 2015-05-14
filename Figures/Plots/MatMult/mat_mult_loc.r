@@ -14,10 +14,10 @@ data$Program <- factor(data$Program, levels = my_levels)
 theme <- theme_bw() +
   theme(text = element_text(size = 14),
         axis.title = element_text(size = rel(1.125), vjust = 1),
-        axis.text.x = element_text(size = rel(0.9)),
+        axis.text.x = element_text(size = rel(0.8)),
         legend.text = element_text(size = rel(0.75)),
         panel.border = element_rect(linetype = "solid", colour = "black", size = 1.5),
-        plot.margin = unit(c(2,1.2,0,1), 'cm'),
+        plot.margin = unit(c(0,-0.5,0,0.5), 'cm'),
         legend.position="right",
         legend.title = element_blank(),
         strip.background = element_rect(colour = "black", fill = "white", size = 1.5))
