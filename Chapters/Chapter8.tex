@@ -149,6 +149,19 @@ Furthermore, Accelerate generates \CUDA code specialized for Nvidia \GPUs and it
 
 \bigskip
 
+\citeauthor{HijmaNiJaBa2015} presents a stepwise-refinement methodology for programming \GPUs and Intel Xeon Phi accelerators~\cite{HijmaNiJaBa2015}.
+Programs are written using a \code{foreach} statement which allows parallel execution.
+By combining the program with a separate hardware description a compiler generates code for \GPUs and accelerators.
+Using traditional compiler analysis the compiler provides feedback to the user on which part to focus the optimization efforts.
+The proposed system allows the user to stay at an abstract portable level or to decide to optimize for a particular hardware architecture and lose portability.
+The presented results report substantial performance benefits comparing a high-level unoptimized implementation versus a non-portable implementation optimized for a particular hardware.
+
+Using this approach the programmer is still performing the difficult optimizations manually, requiring detailed hardware knowledge.
+This is different using our compilation technique, where the compiler is empowered to perform advanced optimizations without user interaction.
+Furthermore, our approach does not force the user to choose between performance and portability, which is still required in this work.
+
+\bigskip
+
 Many projects following the tradition of \emph{\OpenMP}~\cite{OpenMP} working with annotations of sequential code have been proposed for \GPU programming as well.
 Directives are used by the programmer to annotate sequential code, usually loops, which can be executed in parallel.
 A compiler supporting them reads the directives and generates parallel code automatically.
@@ -169,7 +182,9 @@ All these approaches using directives promise minimal source code change for exi
 \SkelCL requires programmers to express their programs in a well structured way using algorithmic skeletons, which might force programmers to reimplement parts of their programs.
 We consider this actually a benefit of \SkelCL, as restructuring the code using skeletons will likely increase its maintainability.
 
-\bigskip
+%\bigskip
+
+\pagebreak
 
 Many new programming languages have been proposed for \GPU programming as well.
 Some existing programming languages have been extended to support \GPU programming directly from the language without the need of specific libraries, including IBM's X10 language~\cite{TakeuchiMaKaHoSuSuOn2011}.
@@ -208,7 +223,9 @@ Programs are implemented in a Lisp-style notation where function application is 
 Built-in parallel operations include map, reduce, and scan.
 Different to our approach fixed implementations of these patterns are used which are manually optimized for Nvidias \GPUs.
 
-\bigskip
+%\bigskip
+
+\pagebreak
 
 Finally, \emph{Petabricks}~\cite{AnselCWOZEA09} allows the programmer to specify a range of valid implementations for a given problem.
 The programmer thereby specifies an implementation space the Petabricks compiler and runtime explores using autotuning strategies.
