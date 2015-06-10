@@ -1,0 +1,19 @@
+\Title{Improving Programmability and Performance Portability on Many-Core Processors}
+
+\Author{Michel Steuwer}
+
+\Copyright{Copyright \copyright 2015 Michel Steuwer, University of Münster, Institute for Computer Science}
+
+\Keywords{Algorithmic Skeletons\sep 
+		  SkelCL\sep
+		  GPU Programming\sep
+		  Performance Portability}
+
+\Subject{Computer processors have radically changed in the recent 20 years with multi- and many-core architectures emerging to address the increasing demand for performance and energy efficiency. Multi-core CPUs and Graphics Processing Units (GPUs) are currently widely programmed with low-level, ad-hoc, and unstructured programming models, like multi-threading or OpenCL / CUDA. Developing functionally correct applications using these approaches is challenging as they do not shield programmers from complex issues of parallelism, like deadlocks or non-determinism. Developing optimized parallel programs is an even more demanding task - even for experienced programmers. Optimizations are often applied ad-hoc and exploit specific hardware features making them non-portable.
+In this thesis we address these two challenges of programmability and performance portability for modern parallel processors.
+In the first part of the thesis, we present the SkelCL programming model which addresses the programmability challenge. SkelCL introduces three main high-level features which simplify GPU programming:
+1) parallel container data types simplify the data management in GPU systems;
+2) regular patterns of parallel programming (a.k.a., algorithmic skeletons) simplify the programming by expressing parallel computation in a structured way;
+3) data distributions simplify the programming of multi-GPU systems by automatically managing data across all the GPUs in the system.
+We present a C++ library implementation of our programming model and we demonstrate in an experimental evaluation that SkelCL greatly simplifies GPU programming without sacrificing performance.
+In the second part of the thesis, we present a novel compilation technique which addresses the performance portability challenge. We introduce a novel set of high-level and low-level parallel patterns along with a set of rewrite rules which systematically express high-level algorithmic implementation choices as well as low-level, hardware-specific optimizations. By applying the rewrite rules pattern-based programs are transformed from a single portable high-level representation into hardware-specific low-level expressions from which efficient OpenCL code is generated. We formally prove the soundness of our approach by showing that the rewrite rules do not change the program semantics. Furthermore, we experimentally confirm that our novel compilation technique can transform a single portable expression into highly efficient code for three different parallel processors, thus, providing performance portability.}

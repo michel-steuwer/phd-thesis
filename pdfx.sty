@@ -1,0 +1,461 @@
+%%
+%% This is file `pdfx.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% pdfx.dtx  (with options: `package')
+%% 
+%%  Copyright (c) 2014, CV Radhakrishnan <cvr@river-valley.org>,
+%%    Han The Thanh <thanh@river-valley.org>,
+%%    Ross Moore <ross.moore@mq.edu.au>,
+%%    Peter Selinger <selinger@mathstat.dal.ca>
+%% 
+%%  This file may be distributed and/or modified under the conditions
+%%  of the LaTeX Project Public License, either version 1.2 of this
+%%  license or (at your option) any later version.  The latest version
+%%  of this license is in:
+%% 
+%%    http://www.latex-project.org/lppl.txt
+%% 
+%%  and version 1.2 or later is part of all distributions of LaTeX
+%%  version 1999/12/01 or later.
+%% 
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{pdfx}
+  [2014/08/17 v1.5 PDF/X and PDF/A support (CVR/HTH/RRM/PS)]
+
+% Not all combinations of the following parameters are meaningful.
+\newif\ifpdfx@x \pdfx@xfalse   % PDF/X mode
+\def\xmp@Part{1}               % PDF/A part: 1, 2, or 3
+\def\xmp@Conformance{B}        % Conformance level: A, B, or U
+\def\xmp@ReleaseDate{2005}     % 2001 for PDF/X-1, 2005 for PDF/A-1,
+                               % 2010 for PDF/A-2, 2012 for PDF/A-3.
+
+\DeclareOption{a-1a}{\global\pdfx@xfalse\def\xmp@Part{1}\def\xmp@Conformance{A}\def\xmp@ReleaseDate{2005}}
+\DeclareOption{a-1b}{\global\pdfx@xfalse\def\xmp@Part{1}\def\xmp@Conformance{B}\def\xmp@ReleaseDate{2005}}
+\DeclareOption{a-2a}{\global\pdfx@xfalse\def\xmp@Part{2}\def\xmp@Conformance{A}\def\xmp@ReleaseDate{2010}}
+\DeclareOption{a-2b}{\global\pdfx@xfalse\def\xmp@Part{2}\def\xmp@Conformance{B}\def\xmp@ReleaseDate{2010}}
+\DeclareOption{a-2u}{\global\pdfx@xfalse\def\xmp@Part{2}\def\xmp@Conformance{U}\def\xmp@ReleaseDate{2010}}
+\DeclareOption{a-3a}{\global\pdfx@xfalse\def\xmp@Part{3}\def\xmp@Conformance{A}\def\xmp@ReleaseDate{2012}}
+\DeclareOption{a-3b}{\global\pdfx@xfalse\def\xmp@Part{3}\def\xmp@Conformance{B}\def\xmp@ReleaseDate{2012}}
+\DeclareOption{a-3u}{\global\pdfx@xfalse\def\xmp@Part{3}\def\xmp@Conformance{U}\def\xmp@ReleaseDate{2012}}
+\DeclareOption{x-1a}{\global\pdfx@xtrue\def\xmp@Part{1}\def\xmp@Conformance{A}\def\xmp@ReleaseDate{2001}}
+
+\DeclareOption{pdf13}{\global\pdfminorversion=3 }
+\DeclareOption{pdf14}{\global\pdfminorversion=4 }
+\DeclareOption{pdf15}{\global\pdfminorversion=5 }
+\DeclareOption{pdf16}{\global\pdfminorversion=6 }
+\DeclareOption{pdf17}{\global\pdfminorversion=7 }
+
+\pdfminorversion=4
+\expandafter\ifx\csname pdfresetpageorigin\endcsname\relax\else
+ \pdfresetpageorigin=0
+\fi
+\ProcessOptions
+
+\ifpdfx@x
+ \pdfminorversion=3
+ \pdfobjcompresslevel=0
+ \expandafter\ifx\csname pdfinterwordspaceoff\endcsname\relax\else
+  \pdfinterwordspaceoff
+  \let\pdfinterwordspaceon\pdfinterwordspaceoff
+  \let\pdfinterwordspace\relax
+ \fi
+ \expandafter\ifx\csname pdfgeninterwordspace\endcsname\relax\else
+  \pdfgeninterwordspace=0
+ \fi
+ \pdfpageattr{/MediaBox[0 0 595 793]
+              /BleedBox[0 0 595 793]
+              /TrimBox[25 20 570 773]}
+\fi
+\ifnum\pdfminorversion >3 \relax
+ \pdfmapline{+dummy-space <dummy-space.pfb}
+ \expandafter\ifx\csname pdfgeninterwordspace\endcsname\relax\else
+  \pdfgeninterwordspace=1
+ \fi
+\fi
+\ifpdfx@x
+ \@ifpackageloaded{hyperref}{%
+  \hypersetup{draft,pdftex,pdfpagemode=UseNone,bookmarks=false,pdfversion=1.\the\pdfminorversion}
+ }{%
+  \RequirePackage[draft,pdftex,pdfpagemode=UseNone,bookmarks=false,pdfversion=1.\the\pdfminorversion]{hyperref}
+ }%
+\else
+ \@ifpackageloaded{hyperref}{%
+  \hypersetup{pdftex,pdfa}%
+ }{%
+  \RequirePackage[pdftex,pdfa]{hyperref}
+ }%
+\fi
+\hypersetup{pdfencoding=unicode}
+
+\RequirePackage{inputenc}
+
+%----------------------------------------------------------------------
+% Macros for reading XMP data with special catcodes. Usage:
+%
+% \xmp@parse{continuation}{data}
+%
+% The effect is to read the data with special catcodes: '<', '>', and
+% '&' are "active", and '^', '_', '#', '$', '~' are "other". The data
+% is then bound to the locally scoped name \@this, and the
+% continuation is called.
+\def\xmp@parse#1{
+ \begingroup
+ \catcode`\<=13\catcode`\>=13\catcode`\&=13\catcode`\^=12
+ \catcode`\_=12\catcode`\#=12\catcode`\$=12\catcode`\~=12
+ \xmp@doparse{#1}
+}
+\def\xmp@doparse#1#2{
+ \def\@this{#2}#1
+ \endgroup
+}
+
+%----------------------------------------------------------------------
+% Local commands. They are only brought into scope during the reading
+% of xmpdata.
+\def\pdfx@localcommands{
+ \def\Title{\xmp@parse{\global\let\xmp@Title\@this}}
+ \def\Author{\xmp@parse{\global\let\xmp@Author\@this}}
+ \def\Keywords{\xmp@parse{\global\let\xmp@Keywords\@this}}
+ \def\Subject{\xmp@parse{\global\let\xmp@Subject\@this}}
+ \def\CreatorTool{\xmp@parse{\global\let\xmp@CreatorTool\@this}}
+ \def\Producer{\xmp@parse{\global\let\xmp@Producer\@this}}
+ \def\Volume{\xmp@parse{\global\let\xmp@Volume\@this}}
+ \def\Issue{\xmp@parse{\global\let\xmp@Issue\@this}}
+ \def\CoverDisplayDate{\xmp@parse{\global\let\xmp@CoverDisplayDate\@this}}
+ \def\CoverDate{\xmp@parse{\global\let\xmp@CoverDate\@this}}
+ \def\Copyright{\xmp@parse{\global\let\xmp@Copyright\@this%
+   \ifx\xmp@Copyrighted\@empty\gdef\xmp@Copyrighted{True}\fi}}
+ \def\CopyrightURL{\xmp@parse{\global\let\xmp@CopyrightURL\@this%
+   \ifx\xmp@Copyrighted\@empty\gdef\xmp@Copyrighted{True}\fi}}
+ \def\Copyrighted{\xmp@parse{\global\let\xmp@Copyrighted\@this}}
+ \def\Doi{\xmp@parse{\global\let\xmp@Doi\@this}}
+ \def\Lastpage{\xmp@parse{\global\let\xmp@Lastpage\@this}}
+ \def\Firstpage{\xmp@parse{\global\let\xmp@Firstpage\@this}}
+ \def\PublicationType{\xmp@parse{\global\let\xmp@PublicationType\@this}}
+ \def\Journaltitle{\xmp@parse{\global\let\xmp@Journaltitle\@this%
+   \ifx\xmp@PublicationType\@empty\gdef\xmp@PublicationType{journal}\fi}}
+ \def\Journalnumber{\xmp@parse{\global\let\xmp@Journalnumber\@this}}
+ \def\Org{\xmp@parse{\global\let\xmp@Org\@this}}
+ \def\AuthoritativeDomain{\xmp@parse{\global\let\xmp@AuthoritativeDomain\@this}}
+ \let\Creator\CreatorTool  % for backward compatibility
+}
+
+%----------------------------------------------------------------------
+% The following characters and markup can be used within the XMP data
+% defined by \Author, \Title, and so on. 
+%
+% * All printable non-whitespace ASCII characters except
+%   '%', '{', '}', '\' can be used as themselves.
+% 
+% * All printable non-whitespace UTF-8 encoded Unicode characters
+%   from the basic multilingual plane can be used as themselves.
+% 
+% * As usual, consecutive whitespace characters are contracted to a
+%   single space. Whitespace after a macro such as \copyright is
+%   ignored. Blank lines are not permitted. 
+% 
+% * The following markup can be used:
+%   '\ '        - a literal space  (for example after a macro)
+%   \%          - a literal '%'
+%   \{          - a literal '{'
+%   \}          - a literal '}'
+%   \backslash  - a literal '\'
+%   \copyright  - the (c) copyright symbol
+%
+%   \sep        - only permitted within \Author, \Keywords, \Org,
+%                 \AuthoritativeDomain. 
+% 
+% * For backward compatibility, \& and \TextCopyright are also
+%   provided. Their use is deprecated.
+
+%----------------------------------------------------------------------
+% The macro \pdfx@actives binds the active characters
+% '&', '<', and '>' to \pdfx@amp, \pdfx@lt, and \pdfx@gt,
+% respectively, without actually making them active.
+\begingroup
+ \catcode`\<=13
+ \catcode`\>=13
+ \catcode`\&=13
+ \gdef\pdfx@actives{
+  \def&{\pdfx@amp}
+  \def<{\pdfx@lt}
+  \def>{\pdfx@gt}
+ }
+\endgroup
+
+%----------------------------------------------------------------------
+% Markup bindings to be used during XMP generation.
+
+\def\pdfx@xmpmarkup{
+ \pdfx@actives
+ \def\@amp{\expandafter\@gobble\string\&}
+ \def\@hash{\expandafter\@gobble\string\#}
+ \def\ {\expandafter\@gobble\string\ }
+ \def\%{\expandafter\@gobble\string\%}
+ \def\{{\expandafter\@gobble\string\{}
+ \def\}{\expandafter\@gobble\string\}}
+ \def\backslash{\expandafter\@gobble\string\\}
+ \def\@unicode##1{\@amp\@hash x##1;}
+ \def\pdfx@amp{\@unicode{0026}}
+ \def\pdfx@lt{\@unicode{003c}}
+ \def\pdfx@gt{\@unicode{003e}}
+ \def\copyright{\@unicode{00A9}}
+ \let\&\pdfx@amp               % for backward compatibility
+ \let\TextCopyright\copyright  % for backward compatibility
+ {\obeyspaces\gdef\pdfx@sep{</rdf:li>^^J     <rdf:li>}}%
+ \let\sep\pdfx@sep
+}
+
+%----------------------------------------------------------------------
+% Markup bindings to be used during PDF string generation.
+
+\def\pdfx@pdfmarkup{
+ \pdfx@actives
+ \def\%{\expandafter\@gobble\string\%}
+ \def\{{\expandafter\@gobble\string\{}
+ \def\}{\expandafter\@gobble\string\}}
+ \def\pdfx@backslash{\expandafter\@gobble\string\\}
+ \def\backslash{\pdfx@backslash000\pdfx@backslash134}
+ \def\pdfx@amp{\expandafter\@gobble\string\&}
+ \def\pdfx@lt{\expandafter\@gobble\string\<}
+ \def\pdfx@gt{\expandafter\@gobble\string\>}
+ \let\TextCopyright\copyright  % for backward compatibility
+ \def\sep{, }
+ % Note: '\ ', \&, \copyright are already predefined by hyperref.
+}
+
+%----------------------------------------------------------------------
+% Defaults
+
+\def\xmp@Producer{pdfTeX}
+\def\xmp@CreatorTool{\@pdfcreator}
+
+\let\xmp@Title\@empty
+\let\xmp@Author\@empty
+\let\xmp@Keywords\@empty
+\let\xmp@Subject\@empty
+\let\xmp@Volume\@empty
+\let\xmp@Issue\@empty
+\let\xmp@CoverDisplayDate\@empty
+\let\xmp@CoverDate\@empty
+\let\xmp@Copyright\@empty
+\let\xmp@CopyrightURL\@empty
+\let\xmp@Copyrighted\@empty
+\let\xmp@Doi\@empty
+\let\xmp@Lastpage\@empty
+\let\xmp@Firstpage\@empty
+\let\xmp@PublicationType\@empty
+\let\xmp@Journaltitle\@empty
+\let\xmp@Journalnumber\@empty
+\let\xmp@Org\@empty
+\let\xmp@AuthoritativeDomain\@empty
+
+%----------------------------------------------------------------------
+\def\pdfx@findUUID#1{\edef\pdfx@tmpstring{\pdfmdfivesum{#1}}
+     \expandafter\pdfx@eightofnine\pdfx@tmpstring\end}
+\def\pdfx@eightofnine#1#2#3#4#5#6#7#8#9\end{%
+     \xdef\pdfx@eightchars{#1#2#3#4#5#6#7#8}
+     \pdfx@fouroffive#9\end}
+\def\pdfx@fouroffive#1#2#3#4#5\end{\xdef\pdfx@ffourchars{#1#2#3#4}
+     \pdfx@sfouroffive#5\end}
+\def\pdfx@sfouroffive#1#2#3#4#5\end{\xdef\pdfx@sfourchars{#1#2#3#4}
+     \pdfx@tfouroffive#5\end}
+\def\pdfx@tfouroffive#1#2#3#4#5\end{\xdef\pdfx@tfourchars{#1#2#3#4}
+     \xdef\pdfx@laststring{#5}}
+
+\def\pdfx@uuid{\pdfx@eightchars-%
+          \pdfx@ffourchars-%
+          \pdfx@sfourchars-%
+          \pdfx@tfourchars-%
+          \pdfx@laststring}
+
+\pdfx@findUUID{\jobname.pdf}
+\edef\xmp@docid{\pdfx@uuid}
+\pdfx@findUUID{\pdfcreationdate}
+\edef\xmp@instid{\pdfx@uuid}
+
+\begingroup
+ \pdfx@localcommands
+ \inputencoding{8bit}
+ \InputIfFileExists{\jobname.xmpdata}{}{}
+\endgroup
+
+% ----------------------------------------------------------------------
+% Make a version of \xmp@Keywords and \xmp@Author where \sep has been
+% replaced by a comma. The first is for the pdf:Keywords property,
+% which accepts a comma-separated string of keywords, and seems to be
+% mandatory for PDF/A-1 compliance. The second is for the dc:creator
+% property. Although it is defined to be a sequence of authors, Adobe
+% Acrobat will in fact ignore and delete all except the first author.
+% Therefore, it's safer to always separate authors by commas.
+
+\begingroup
+ \pdfx@xmpmarkup
+ \def\sep{, }
+ \inputencoding{8bit}\makeatletter
+ \xdef\xmp@@Keywords{\xmp@Keywords}
+ \xdef\xmp@@Author{\xmp@Author}
+\endgroup
+
+%----------------------------------------------------------------------
+\RequirePackage{xmpincl}
+\def\xmp@convertDate{\pdfx@getYear}
+{\catcode`\D=12 \catcode`\:=12
+ \gdef\pdfx@getYear D:#1#2#3#4{\edef\pdfx@xYear{#1#2#3#4}\pdfx@getMonth}
+}
+\def\pdfx@getMonth#1#2{\edef\pdfx@xMonth{#1#2}\pdfx@getDay}
+\def\pdfx@getDay#1#2{\edef\pdfx@xDay{#1#2}\pdfx@getHour}
+\def\pdfx@getHour#1#2{\edef\pdfx@xHour{#1#2}\pdfx@getMin}
+\def\pdfx@getMin#1#2{\edef\pdfx@xMin{#1#2}\pdfx@getSec}
+\def\pdfx@getSec#1#2{\edef\pdfx@xSec{#1#2}\pdfx@getTZh}
+\def\pdfx@getTZh{\futurelet\pdfx@next\getTzh@branches}
+{\catcode`\@=11 \catcode`\Z=12 \catcode`\+=12 \catcode`\-=12
+\gdef\getTzh@branches{%
+ \ifx\pdfx@next Z\let\pdfx@getTzbranch\pdfx@getTznozone
+ \else\ifx\pdfx@next +\let\pdfx@getTzbranch\pdfx@getTzplus
+ \else\ifx\pdfx@next -\let\pdfx@getTzbranch\pdfx@getTzminus
+ \else\let\pdfx@getTzbranch\pdfx@getTzerror
+ \fi\fi\fi \pdfx@getTzbranch }
+\catcode`\0=12
+\gdef\pdfx@getTznozone Z#1\pdfx@getTzend{%
+ \edef\pdfx@xTzh{+00}\edef\pdfx@xTzm{00}}
+\gdef\pdfx@getTzplus +#1'#2'#3\pdfx@getTzend{%
+ \edef\pdfx@xTzh{+#1}\edef\pdfx@xTzm{#2}%
+ \ifx\relax#2\relax\def\pdfx@xTzm{00}\fi}
+\gdef\pdfx@getTzminus -#1'#2'#3\pdfx@getTzend{%
+ \edef\pdfx@xTzh{-#1}\edef\pdfx@xTzm{#2}%
+ \ifx\relax#2\relax\def\pdfx@xTzm{00}\fi}
+\expandafter\xmp@convertDate\pdfcreationdate''\pdfx@getTzend
+\xdef\pdfx@convDate{\pdfx@xYear\pdfx@xMonth\pdfx@xDay\pdfx@xHour\pdfx@xMin\pdfx@xSec\pdfx@xTzh'\pdfx@xTzm}%
+\xdef\xmp@convDate{\pdfx@xYear-\pdfx@xMonth-\pdfx@xDay T\pdfx@xHour:\pdfx@xMin:\pdfx@xSec\pdfx@xTzh:\pdfx@xTzm}%
+}% end of \catcode
+\ifpdfx@x
+ \def\@pctchar{\expandafter\@gobble\string\%}
+ \def\@bchar{\expandafter\@gobble\string\\}
+ \immediate\pdfobj stream attr{/N 4}  file{coated_FOGRA39L_argl.icc}
+ \edef\OBJ@CVR{\the\pdflastobj}
+ \pdfcatalog{%
+   /OutputIntents [ <<
+   /Type/OutputIntent
+   /S/GTS_PDFX
+   /OutputCondition (FOGRA39)
+   /OutputConditionIdentifier (coated FOGRA39L argl)
+   /DestOutputProfile \OBJ@CVR\space 0 R
+   /RegistryName(http://www.argyllcms.com)
+  >> ]}
+\else
+ \immediate\pdfobj stream attr{/N 3} file{sRGB_IEC61966-2-1_black_scaled.icc}
+ \edef\OBJ@RVT{\the\pdflastobj}
+ \pdfcatalog{%
+   /ViewerPreferences <</DisplayDocTitle true >>
+   /OutputIntents [ <<
+   /Type /OutputIntent
+   /S/GTS_PDFA1
+   /DestOutputProfile \OBJ@RVT\space 0 R
+   /OutputConditionIdentifier (sRGB IEC61966-2-1 black scaled)
+   /Info(sRGB IEC61966-2-1 black scaled)
+  >> ]}
+\fi
+\begingroup
+ \ifpdfx@x
+  \def\xmp@template{pdfx-1a}%
+ \else
+  \def\xmp@template{pdfa}%
+ \fi
+ \pdfx@xmpmarkup
+ \inputencoding{8bit}\makeatletter
+ \includexmp{\xmp@template}
+\endgroup
+
+% ----------------------------------------------------------------------
+% \pdfx@topdfstring\toka\tokb: Convert the string in \tokb to a format
+% appropriate for PDF /Info strings, i.e., PDFDoc encoding or UTF-16
+% encoding, and store the result in \toka. As a special case, if \tokb
+% is \@empty, set \toka to \@empty.
+
+\def\pdfx@topdfstring#1#2{
+ \ifx#2\@empty
+  \global\let#1\@empty
+ \else
+  \begingroup
+   \inputencoding{utf8}
+   \hypersetup{pdfencoding=unicode}
+   \pdfstringdef#1{#2}
+  \endgroup
+ \fi
+}
+
+% Convert the relevant XMP properties to PDF strings, expanding markup
+% (such as \sep, \&, \copyright, etc) in an appropriate way.
+\begingroup
+ \pdfx@pdfmarkup
+ \pdfx@topdfstring\pdfx@Title\xmp@Title
+ \pdfx@topdfstring\pdfx@Author\xmp@Author
+ \pdfx@topdfstring\pdfx@Subject\xmp@Subject
+ \pdfx@topdfstring\pdfx@Keywords\xmp@Keywords
+ \pdfx@topdfstring\pdfx@CreatorTool\xmp@CreatorTool
+ \pdfx@topdfstring\pdfx@Producer\xmp@Producer
+\endgroup
+
+\input glyphtounicode.tex
+\input glyphtounicode-cmr.tex
+\pdfgentounicode=1
+\ifpdfx@x
+ {\def\sep{,}%
+  \pdfinfo{
+      \ifx\pdfx@Title\@empty\relax\else /Title(\pdfx@Title)\fi
+      \ifx\pdfx@Author\@empty\relax\else /Author(\pdfx@Author)\fi
+      \ifx\pdfx@Subject\@empty\relax\else /Subject(\pdfx@Subject)\fi
+      \ifx\pdfx@Keywords\@empty\relax\else /Keywords(\pdfx@Keywords)\fi
+      /Creator(\pdfx@CreatorTool)%
+      /CreationDate(D:\pdfx@convDate)%
+      /ModDate(D:\pdfx@convDate)%
+      /Producer(\pdfx@Producer)%
+      /Trapped /False
+      /GTS_PDFXVersion (PDF/X-1:2001)%
+      /GTS_PDFXConformance (PDF/X-1a:2001)%
+  }}%
+\else
+ \def\pdfx@confA{a}%
+ \def\pdfx@confB{b}%
+ \def\pdfx@confU{u}%
+ \def\xmp@conf{\csname pdfx@conf\xmp@Conformance\endcsname}%
+ \def\PDF@FinishDoc{%
+  \Hy@UseMaketitleInfos
+  {\pdfinfo{%
+     \ifx\pdfx@Title\@empty\else /Title(\pdfx@Title)\fi
+     \ifx\pdfx@Author\@empty\else /Author(\pdfx@Author)\fi
+     \ifx\pdfx@Subject\@empty\else /Subject(\pdfx@Subject)\fi
+     \ifx\pdfx@Keywords\@empty\else /Keywords(\pdfx@Keywords)\fi
+     /Creator(\pdfx@CreatorTool)%
+    \ifx\@pdfcreationdate\@empty
+      /CreationDate(D:\pdfx@convDate)%
+    \else
+      /CreationDate(\@pdfcreationdate)%
+    \fi
+    \ifx\@pdfmoddate\@empty
+      /ModDate(D:\pdfx@convDate)%
+    \else
+      /ModDate(\@pdfmoddate)%
+    \fi
+    /Producer(\pdfx@Producer)%
+    /Trapped /False
+    /GTS_PDFA1Version (PDF/A-\xmp@Part\xmp@conf:\xmp@ReleaseDate)%
+  }}%
+ }
+ \fi
+ \Hy@DisableOption{pdfauthor}%
+ \Hy@DisableOption{pdftitle}%
+ \Hy@DisableOption{pdfsubject}%
+ \Hy@DisableOption{pdfcreator}%
+ \Hy@DisableOption{pdfcreationdate}%
+ \Hy@DisableOption{pdfmoddate}%
+ \Hy@DisableOption{pdfproducer}%
+ \Hy@DisableOption{pdfkeywords}%
+\endinput
+%%
+%% End of file `pdfx.sty'.
+
